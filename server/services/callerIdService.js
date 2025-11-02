@@ -7,6 +7,9 @@ import { HID } from "node-hid";
 import fetch from "node-fetch";
 import { LRUCache } from "lru-cache";
 
+import dotenv from "dotenv";
+dotenv.config();
+
 // ====================== AUTO-DETECT JD-2000S ======================
 function findJD2000S() {
   try {
@@ -48,8 +51,9 @@ function findJD2000S() {
 const DEVICE_PATH = findJD2000S() || "/dev/hidraw0";
 const CUSTOMERS_DB = path.join(process.cwd(), 'data', 'customers.json');
 const POSTCODES_VALIDATOR_PATH = path.join(process.cwd(), 'data', 'postcodes_detailed.json');
-const GETADDRESS_API_KEY = "5KnrJ4PC70e_G0D4FnmdGA48491";
-const STORE_POSTCODE = "NG9 8GF";
+const GETADDRESS_API_KEY = process.env.GETADDRESS_API_KEY;
+const STORE_POSTCODE = process.env.STORE_POSTCODE;
+if (!STORE_POSTCODE) throw new Error("STORE_POSTCODE not set");
 const DEBUG = process.env.DEBUG === "true";
 
 // ====================== STATE ======================
