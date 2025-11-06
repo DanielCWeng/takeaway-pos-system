@@ -48,7 +48,7 @@ function findJD2000S() {
 const DEVICE_PATH = findJD2000S() || "/dev/hidraw0";
 const CUSTOMERS_DB = path.join(process.cwd(), 'data', 'customers.json');
 const POSTCODES_VALIDATOR_PATH = path.join(process.cwd(), 'data', 'postcodes_detailed.json');
-const GETADDRESS_API_KEY = "5KnrJ4PC70e_G0D4FnmdGA48491";
+const GETADDRESS_API_KEY = ""; //change
 const STORE_POSTCODE = "NG9 8GF";
 const DEBUG = process.env.DEBUG === "true";
 
@@ -83,11 +83,6 @@ async function loadPostcodeValidator() {
   } catch (err) {
     console.warn('⚠️ VALIDATOR: Could not load postcodes_detailed.json. Proceeding without fast validation.');
   }
-}
-
-// ====================== LOAD LOCAL CSV (DISABLED) ======================
-async function loadLocalAddressDB() {
-  console.log('INFO: Local CSV address database is disabled. Using API for address lookups.');
 }
 
 // ====================== CUSTOMERS ======================
@@ -128,11 +123,7 @@ async function saveCustomers(customers) {
   }
 }
 
-// ====================== POS NOTIFY ======================
-// This is exported so it can be overwritten by server.js
-export let notifyPOS = async (cust, addrData, dist) => {
-    console.log("notifyPOS called with:", cust.phone);
-};
+
 
 // ====================== EXTRACT PHONE ======================
 function extractPhone(data) {
@@ -298,7 +289,6 @@ async function handleCall(phone, onCallHandled) {
     }
   }
   await saveCustomers(customers);
-  // [CHANGE] Use the provided callback instead of the internal notifyPOS
   await onCallHandled(customer, addressData, distance);
   console.log("=== CALL HANDLED ===\n");
 }

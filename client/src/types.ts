@@ -46,7 +46,7 @@ export interface CustomerInfo {
   address?: string;
   distance?: number; // <-- ADD THIS
   deliveryInstructions?: string; // <-- ADD THIS
-  status?: 'COMPLETE' | 'NEEDS_ADDRESS';s
+  status?: 'COMPLETE' | 'NEEDS_ADDRESS';
 }
 
 // Add this new interface

@@ -1,11 +1,21 @@
-// --- START OF FILE src/components/AdminPage.tsx (Revamped) ---
+// --- START OF FILE src/components/AdminPage.tsx (With Delete Functionality) ---
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Order } from '../types'; // Make sure Order type is comprehensive
+// This 'Order' type will need to be imported from your types file
+// It should include 'id', 'archivedAt', 'orderType', 'customerInfo', 'items', and 'total'.
+interface Order {
+  id: number;
+  archivedAt: string;
+  orderType: string;
+  customerInfo: { name?: string; phone?: string; address?: string };
+  items: { id: string; quantity: number; displayName: string; finalPrice: number }[];
+  total: number;
+}
 
-const ADMIN_PASSWORD = 'password123'; // Hardcoded for now
 
-// A new, small component for the Order Details Modal
+const ADMIN_PASSWORD = 'password123';
+
+// ... (The OrderDetailsModal component remains unchanged) ...
 const OrderDetailsModal: React.FC<{ order: Order; onClose: () => void; onReprint: (order: Order) => void }> = ({ order, onClose, onReprint }) => {
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[60]">
@@ -42,6 +52,28 @@ const OrderDetailsModal: React.FC<{ order: Order; onClose: () => void; onReprint
     );
 };
 
+
+// [NEW] A new confirmation modal for the delete action
+const DeleteConfirmationModal: React.FC<{ orderCount: number; date: string; onClose: () => void; onConfirm: () => void; }> = ({ orderCount, date, onClose, onConfirm }) => {
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-[70]">
+            <div className="bg-white text-black p-6 rounded-lg shadow-xl flex flex-col gap-4 w-96">
+                <h2 className="text-xl font-bold">Confirm Deletion</h2>
+                <p>
+                    Are you sure you want to permanently delete all <strong>{orderCount}</strong> orders for <strong>{date}</strong>?
+                    <br />
+                    <span className="font-bold text-red-600">This action cannot be undone.</span>
+                </p>
+                <div className="flex justify-end gap-4 mt-4">
+                    <button onClick={onClose} className="px-4 py-2 bg-gray-300 rounded-md hover:bg-gray-400">Cancel</button>
+                    <button onClick={onConfirm} className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">Delete</button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
 const AdminPage: React.FC<{ onClose: () => void; }> = ({ onClose }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [password, setPassword] = useState('');
@@ -54,21 +86,22 @@ const AdminPage: React.FC<{ onClose: () => void; }> = ({ onClose }) => {
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().substring(0, 10));
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+    
+    // [NEW] State to control the delete confirmation modal
+    const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
-    // Fetch orders when the component mounts or when the selected date changes
+
     useEffect(() => {
         if (!isAuthenticated) return;
-        
         const fetchOrders = async () => {
             setIsLoading(true);
             setFetchError(null);
             try {
-                // [FIX] Add the full backend URL
                 const response = await fetch(`http://localhost:4000/api/archived-orders?date=${selectedDate}`);
                 if (!response.ok) throw new Error('Failed to fetch orders.');
                 const data: Order[] = await response.json();
                 setOrders(data);
-            } catch (err) {
+            } catch (err: any) {
                 setFetchError(err.message);
             } finally {
                 setIsLoading(false);
@@ -85,8 +118,7 @@ const AdminPage: React.FC<{ onClose: () => void; }> = ({ onClose }) => {
             setLoginError('Incorrect password.');
         }
     };
-
-    // Filter orders based on the search query
+    
     const filteredOrders = useMemo(() => {
         if (!searchQuery) return orders;
         const lowercasedQuery = searchQuery.toLowerCase();
@@ -97,7 +129,6 @@ const AdminPage: React.FC<{ onClose: () => void; }> = ({ onClose }) => {
         );
     }, [orders, searchQuery]);
 
-    // Calculate daily total from the real, filtered orders
     const dailyTotal = useMemo(() => {
         return filteredOrders.reduce((total, order) => total + order.total, 0);
     }, [filteredOrders]);
@@ -105,16 +136,33 @@ const AdminPage: React.FC<{ onClose: () => void; }> = ({ onClose }) => {
     const handleReprint = async (order: Order) => {
         console.log(`Reprinting order #${order.id}...`);
         try {
-            // [FIX] Add the full backend URL
             const response = await fetch('http://localhost:4000/api/print', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(order),
             });
             const result = await response.json();
-            alert(result.message); // Give user feedback
+            alert(result.message);
         } catch (err) {
             alert('Failed to send reprint request.');
+        }
+    };
+
+    // [NEW] Function to handle the confirmed deletion
+    const handleDeleteDay = async () => {
+        console.log(`Deleting all orders for ${selectedDate}...`);
+        try {
+            const response = await fetch(`http://localhost:4000/api/archived-orders?date=${selectedDate}`, {
+                method: 'DELETE',
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.message || 'Failed to delete orders.');
+            
+            alert(result.message); // Show success message
+            setOrders([]); // Clear the orders from the view
+            setIsDeleteConfirmOpen(false); // Close the modal
+        } catch (err: any) {
+            alert(`Error: ${err.message}`);
         }
     };
 
@@ -144,20 +192,28 @@ const AdminPage: React.FC<{ onClose: () => void; }> = ({ onClose }) => {
 
                 <div className="flex-shrink-0 bg-gray-700 p-4 rounded-md flex flex-col md:flex-row justify-between items-center gap-4 mb-4">
                     <div className="flex items-center gap-4">
+                        {/* ... Date selector and search input are unchanged ... */}
                         <div>
                             <label htmlFor="date-selector" className="mr-2">Date:</label>
                             <input type="date" id="date-selector" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} className="bg-gray-800 p-1 rounded-md" />
                         </div>
                         <input type="text" placeholder="Search by ID, Name, Phone..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="bg-gray-800 p-1 rounded-md w-64"/>
                     </div>
-                    <div className="text-2xl text-center">
-                        <span>Daily Total: </span>
-                        <span className="font-bold font-mono text-green-400">£{dailyTotal.toFixed(2)}</span>
+                    <div className="flex items-center gap-4"> {/* [NEW] Flex container for total and delete button */}
+                        <div className="text-2xl text-center">
+                            <span>Daily Total: </span>
+                            <span className="font-bold font-mono text-green-400">£{dailyTotal.toFixed(2)}</span>
+                        </div>
+                        {/* [NEW] The delete button. It's disabled if there are no orders to delete. */}
+                        <button onClick={() => setIsDeleteConfirmOpen(true)} disabled={orders.length === 0} className="px-3 py-1 bg-red-700 text-white rounded-md hover:bg-red-800 disabled:bg-gray-500 disabled:cursor-not-allowed">
+                            Delete All
+                        </button>
                     </div>
                 </div>
 
+                {/* ... The orders table remains unchanged ... */}
                 <div className="flex-grow bg-gray-900 rounded-md p-2 overflow-y-auto">
-                    {isLoading ? <p>Loading orders...</p> : fetchError ? <p className="text-red-400">{fetchError}</p> : (
+                     {isLoading ? <p>Loading orders...</p> : fetchError ? <p className="text-red-400">{fetchError}</p> : (
                         <table className="w-full text-left">
                             <thead className="sticky top-0 bg-gray-800">
                                 <tr>
@@ -185,10 +241,13 @@ const AdminPage: React.FC<{ onClose: () => void; }> = ({ onClose }) => {
                     )}
                 </div>
             </div>
+
             {selectedOrder && <OrderDetailsModal order={selectedOrder} onClose={() => setSelectedOrder(null)} onReprint={handleReprint} />}
+            
+            {/* [NEW] Conditionally render the new confirmation modal */}
+            {isDeleteConfirmOpen && <DeleteConfirmationModal orderCount={orders.length} date={selectedDate} onClose={() => setIsDeleteConfirmOpen(false)} onConfirm={handleDeleteDay} />}
         </>
     );
 };
 
 export default AdminPage;
-// --- END OF FILE ---

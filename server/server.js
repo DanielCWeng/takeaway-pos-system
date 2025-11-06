@@ -146,7 +146,7 @@ app.get('/api/test-call', (req, res) => {
 
 app.post('/api/verify-address', async (req, res) => {
   // [CHANGE] Destructure all the new fields
-  const { phone, address, postcode, houseNumber, street } = req.body; 
+  const { phone, address, postcode, houseNumber, street, town } = req.body;
 
   if (!phone || !address || !postcode) { // Basic validation remains the same
     return res.status(400).json({ error: 'Phone, address, and postcode are required.' });
@@ -312,6 +312,51 @@ app.get('/api/archived-orders', async (req, res) => {
     }
 });
 
+
+app.delete('/api/archived-orders', async (req, res) => {
+    const { date } = req.query; // e.g., ?date=2023-11-03
+
+    if (!date) {
+        return res.status(400).json({ message: 'A date query parameter is required.' });
+    }
+    console.log(`[Archive] Received request to DELETE all orders for date: ${date}`);
+
+    try {
+        let allOrders = [];
+        try {
+            const data = await fs.readFile(ARCHIVED_ORDERS_PATH, 'utf8');
+            allOrders = JSON.parse(data);
+        } catch (readError) {
+            // If the file doesn't exist, there's nothing to delete.
+            if (readError.code === 'ENOENT') {
+                console.log('[Archive] No orders file found. Nothing to delete.');
+                return res.status(200).json({ success: true, message: 'No orders to delete.' });
+            }
+            throw readError; // Re-throw other errors
+        }
+
+        const initialCount = allOrders.length;
+        // Keep only the orders that DO NOT start with the specified date
+        const ordersToKeep = allOrders.filter(order => !order.archivedAt.startsWith(date));
+
+        if (ordersToKeep.length === initialCount) {
+             console.log(`[Archive] No orders found for ${date}. No changes made.`);
+             return res.status(200).json({ success: true, message: `No orders found for ${date} to delete.` });
+        }
+
+        // Overwrite the file with the filtered list
+        await fs.writeFile(ARCHIVED_ORDERS_PATH, JSON.stringify(ordersToKeep, null, 2));
+
+        const deletedCount = initialCount - ordersToKeep.length;
+        console.log(`[Archive] Successfully deleted ${deletedCount} orders for ${date}.`);
+        res.status(200).json({ success: true, message: `Successfully deleted ${deletedCount} orders.` });
+
+    } catch (error) {
+        console.error('[API] CRITICAL Error deleting archived orders:', error);
+        res.status(500).json({ message: 'Server error during deletion.' });
+    }
+});
+
 // ===================================================================
 //                          STARTUP
 // ===================================================================
@@ -336,6 +381,7 @@ server.listen(PORT, () => {
         houseNumber: cust.houseNumber, // Attempting to read this
         street: cust.street,           // Attempting to read this
         distance: dist, 
+        town: cust.town,
         availableAddresses: addrData?.addresses || null, 
         callCount: cust.callCount, 
         status: cust.address ? "COMPLETE" : "NEEDS_ADDRESS" 

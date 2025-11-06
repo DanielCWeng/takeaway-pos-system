@@ -14,6 +14,7 @@ const PRIMARY_CATEGORIES_ICONS = [
 ];
 
 const SECONDARY_CATEGORIES_PAGES = [
+    // --- PAGE 1 (Existing Categories) ---
     [
       { zh: '全部', en: 'Show All' }, { zh: '头盘', en: 'Starter' }, { zh: '排骨', en: 'Spare Rib' }, { zh: '鸡翅', en: 'Chicken Wing' }, { zh: '汤', en: 'Soup' }, { zh: '召盐', en: 'Salt & Pepper' }, { zh: '沙爹', en: 'Satay' },
       { zh: '士召', en: 'Black Bean' }, { zh: '加哩', en: 'Curry' }, { zh: '泰加哩', en: 'Thai-Curry' }, { zh: '泰式', en: 'Thai' }, { zh: '三保', en: 'Sambal' }, { zh: '特色', en: "Chef's" }, { zh: '姜葱', en: 'Ginger & S Onion' },
@@ -21,6 +22,26 @@ const SECONDARY_CATEGORIES_PAGES = [
       { zh: '宫保', en: 'Kung Po' }, { zh: '什水', en: 'Chop Suey' }, { zh: '什菜', en: 'Mixed Veg' }, { zh: '四川', en: 'Szechuan' }, { zh: '蚝油', en: 'Oyster' }, { zh: '毛菇', en: 'Mushroom' }, { zh: '饭', en: 'Rice' },
       { zh: '面', en: 'Chow Mein' }, { zh: '斋', en: 'Vegetarian' }, { zh: '餐盒', en: 'Snack Box' }, { zh: '西餐', en: 'English' }, { zh: '芙蓉', en: 'Foo Yung' }, { zh: '<<', en: '<<' }, { zh: '>>', en: '>>' },
     ],
+    // --- [NEW] PAGE 2 (New Categories) ---
+    [
+      { zh: '全部', en: 'Show All' }, // Show All is on every page
+      { zh: '乌冬', en: 'Udon' },
+      { zh: '脆面', en: 'Crispy Noodle' },
+      { zh: '中式', en: 'Chinese Style' },
+      { zh: '蒜蓉', en: 'Garlic Sauce' },
+      { zh: '上海', en: 'Shanghai Style' },
+      { zh: '洋葱', en: 'Onion' },
+      // -- The rest are empty placeholders to keep the grid consistent --
+      { zh: '', en: '' }, { zh: '', en: '' }, { zh: '', en: '' }, { zh: '', en: '' }, { zh: '', en: '' }, { zh: '', en: '' }, { zh: '', en: '' },
+      { zh: '', en: '' }, { zh: '', en: '' }, { zh: '', en: '' }, { zh: '', en: '' }, { zh: '', en: '' }, { zh: '', en: '' }, { zh: '', en: '' },
+      { zh: '', en: '' }, { zh: '', en: '' }, { zh: '', en: '' }, { zh: '', en: '' }, { zh: '', en: '' }, { zh: '', en: '' }, { zh: '', en: '' },
+      { zh: '', en: '' }, { zh: '', en: '' }, { zh: '', en: '' }, { zh: '', en: '' }, { zh: '', en: '' },
+      
+      // VVVV --- THIS IS THE FIX --- VVVV
+      // Change en: ' ' to en: '<<' and en: '>>' to match Page 1
+      { zh: '<<', en: '<<' }, 
+      { zh: '>>', en: '>>' },
+    ]
 ];
 
 interface RightPanelProps {
@@ -42,21 +63,32 @@ const PrimaryHorizontalButton = ({ icon, isActive, onClick }: { icon: string, is
     </button>
 );
 
-const DishStyleButton = ({ label, onClick, isSelected }: { label: { zh: string, en: string }, onClick: () => void, isSelected: boolean }) => (
-    <button
-        className={`h-full w-full border-2 flex flex-col items-center justify-center text-black p-0.5
-        ${isSelected
-            ? 'bg-blue-600 text-white border-l-gray-700 border-t-gray-700 border-r-blue-400 border-b-blue-400'
-            : label.en === 'Show All'
-              ? 'bg-red-400 border-r-gray-600 border-b-gray-600 border-l-gray-100 border-t-gray-100'
-              : 'bg-green-400 border-r-gray-600 border-b-gray-600 border-l-gray-100 border-t-gray-100'
-        }`}
-        onClick={onClick}
-    >
-        <span className="font-bold">{label.zh}</span>
-        <span className="text-xs">{label.en}</span>
-    </button>
-);
+const DishStyleButton = ({ label, onClick, isSelected }: { label: { zh: string, en: string }, onClick: () => void, isSelected: boolean }) => {
+    // [NEW] If the button has no English text, treat it as an empty placeholder.
+    const isEmpty = !label.en;
+
+    return (
+        <button
+            // [NEW] Add a disabled attribute if the button is empty
+            disabled={isEmpty} 
+            className={`h-full w-full border-2 flex flex-col items-center justify-center text-black p-0.5
+            ${
+                // [NEW] Add a specific style for the disabled, empty button
+                isEmpty 
+                  ? 'bg-gray-200 border-gray-400 cursor-not-allowed'
+                  : isSelected
+                    ? 'bg-blue-600 text-white border-l-gray-700 border-t-gray-700 border-r-blue-400 border-b-blue-400'
+                    : label.en === 'Show All'
+                      ? 'bg-red-400 border-r-gray-600 border-b-gray-600 border-l-gray-100 border-t-gray-100'
+                      : 'bg-green-400 border-r-gray-600 border-b-gray-600 border-l-gray-100 border-t-gray-100'
+            }`}
+            onClick={onClick}
+        >
+            <span className="font-bold">{label.zh}</span>
+            <span className="text-xs">{label.en}</span>
+        </button>
+    );
+};
 
 
 const RightPanel: React.FC<RightPanelProps> = ({ menuItems, onAddItem, onOpenMenuRef }) => {
@@ -200,16 +232,39 @@ const RightPanel: React.FC<RightPanelProps> = ({ menuItems, onAddItem, onOpenMen
                 </div>
 
                 <div className="flex-grow grid grid-cols-7 grid-rows-5 gap-1">
-                    {currentSecondaryGrid.map((cat) => {
-                        if (cat.en === '<<') {
-                            return <DishStyleButton key={cat.en} label={cat} onClick={() => setSecondaryPage(p => Math.max(0, p - 1))} isSelected={false} />;
+                    {currentSecondaryGrid.map((cat, index) => {
+                        // [FIX] Create a key that is guaranteed to be unique across all pages.
+                        const uniqueKey = `${secondaryPage}-${index}`;
+                        const isEmpty = !cat.en;
+
+                        // Render a simple, non-interactive div for empty placeholder buttons.
+                        if (isEmpty) {
+                            return <div key={uniqueKey} className="bg-gray-200 border-2 border-r-gray-400 border-b-gray-400 border-l-gray-100 border-t-gray-100 rounded-sm"></div>;
                         }
-                        if (cat.en === '>>') {
-                            return <DishStyleButton key={cat.en} label={cat} onClick={() => setSecondaryPage(p => Math.min(SECONDARY_CATEGORIES_PAGES.length - 1, p + 1))} isSelected={false} />;
+
+                        // Handle the navigation buttons separately.
+                        if (cat.en === '<<' || cat.en === '>>') {
+                            const isNextButton = cat.en === '>>';
+                            const newPage = isNextButton
+                                ? Math.min(SECONDARY_CATEGORIES_PAGES.length - 1, secondaryPage + 1)
+                                : Math.max(0, secondaryPage - 1);
+                            
+                            return (
+                                <DishStyleButton
+                                    key={uniqueKey}
+                                    label={cat}
+                                    // [FIX] The onClick now correctly navigates pages.
+                                    onClick={() => setSecondaryPage(newPage)}
+                                    // [FIX] Hardcode isSelected to false so nav buttons are never highlighted blue.
+                                    isSelected={false}
+                                />
+                            );
                         }
+
+                        // This is the default case for all regular category buttons.
                         return (
                             <DishStyleButton
-                              key={cat.en}
+                              key={uniqueKey}
                               label={cat}
                               isSelected={selectedSecondary === cat.en}
                               onClick={() => handleSecondarySelect(cat.en)}

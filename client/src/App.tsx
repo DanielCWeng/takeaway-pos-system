@@ -246,12 +246,48 @@ export default function App() {
   }, [itemWithOptions, currentOrderItems, isZeroPriceMode, activeOrderIndex, updateOrder]);
 
   const handleRemoveItem = useCallback(() => {
-    if (!selectedOrderItemId) return;
-    const newItems = currentOrderItems.filter(item => item.id !== selectedOrderItemId);
-    updateOrder(activeOrderIndex, { items: newItems });
-    setSelectedOrderItemId(null);
-  }, [selectedOrderItemId, currentOrderItems, activeOrderIndex, updateOrder]);
+      // 1. Safety check: Do nothing if no item is selected.
+      if (!selectedOrderItemId) return;
 
+      // 2. Find the item to act upon and its index in the list.
+      const itemIndex = currentOrderItems.findIndex(item => item.id === selectedOrderItemId);
+      if (itemIndex === -1) return; // Item not found, do nothing.
+      
+      const itemToRemove = currentOrderItems[itemIndex];
+      let newItems: OrderItem[];
+
+      // 3. Decide whether to decrement quantity or remove the item entirely.
+      if (itemToRemove.quantity > 1) {
+          // --- DECREMENT LOGIC ---
+          // Just decrease the quantity, the selection does not need to change.
+          newItems = currentOrderItems.map(item =>
+              item.id === selectedOrderItemId
+                  ? { ...item, quantity: item.quantity - 1 }
+                  : item
+          );
+          updateOrder(activeOrderIndex, { items: newItems });
+
+      } else {
+          // --- REMOVE LOGIC ---
+          // Filter out the item with quantity 1.
+          newItems = currentOrderItems.filter(item => item.id !== selectedOrderItemId);
+          
+          // 4. THIS IS THE NEW HIGHLIGHT LOGIC
+          let newSelectedItemId: string | null = null;
+          if (newItems.length > 0) {
+              // If items remain, calculate the new index to highlight.
+              // We try to select the item at the same index, or the new last item.
+              const newIndexToSelect = Math.min(itemIndex, newItems.length - 1);
+              newSelectedItemId = newItems[newIndexToSelect].id;
+          }
+
+          // 5. Update both the items list and the selected item ID state.
+          updateOrder(activeOrderIndex, { items: newItems });
+          setSelectedOrderItemId(newSelectedItemId);
+      }
+  }, [selectedOrderItemId, currentOrderItems, activeOrderIndex, updateOrder, orders]);
+
+  
   const handleDuplicateItem = useCallback(() => {
     if (!selectedOrderItemId) return;
     const newItems = currentOrderItems.map(item => item.id === selectedOrderItemId ? { ...item, quantity: item.quantity + 1 } : item);

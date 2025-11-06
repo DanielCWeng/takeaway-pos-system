@@ -23,7 +23,7 @@ interface DeliveryAddressModalProps {
 const DeliveryAddressModal: React.FC<DeliveryAddressModalProps> = ({ customerInfo, onClose, onSave, initialFocusField }) => {
   
   // [MODIFY] Add 'town' to the form state
-  const [formState, setFormState] = useState({ postcode: '', street: '', houseNumber: '', town: '', name: '', phone: '', instructions: '' });
+  const [formState, setFormState] = useState({ postcode: '', street: '', houseNumber: '', town: '', ward: '', name: '', phone: '', instructions: '' });
   const [activeField, setActiveField] = useState<keyof typeof formState | null>(initialFocusField);
   const [postcodeDB, setPostcodeDB] = useState<Record<string, LocationData> | null>(null);
   const [distance, setDistance] = useState<number>(0);
