@@ -32,7 +32,7 @@ import {
   CustomerInfo,
   ItemOption,
 } from "./types";
-import { useCallerId } from "./context/CallerIdContext";
+import { useCallerId } from "./context/CallerIDContext";
 
 interface Order {
   id: number;
