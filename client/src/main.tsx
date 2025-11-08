@@ -1,11 +1,11 @@
 // client/src/main.tsx
 
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import App from './App';
-import { CallerIdProvider } from './context/CallerIdContext';
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App";
+import { CallerIdProvider } from "./context/CallerIDContext";
 
-const rootElement = document.getElementById('root');
+const rootElement = document.getElementById("root");
 if (!rootElement) {
   throw new Error("Could not find root element to mount to");
 }
@@ -13,8 +13,8 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   // <React.StrictMode> // <-- Comment this line out
-    <CallerIdProvider>
-      <App />
-    </CallerIdProvider>
+  <CallerIdProvider>
+    <App />
+  </CallerIdProvider>
   // </React.StrictMode> // <-- Comment this line out
 );
