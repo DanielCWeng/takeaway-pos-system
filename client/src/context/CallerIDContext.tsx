@@ -1,15 +1,15 @@
 // client/src/context/CallerIdContext.tsx
 
-import React, { createContext, useContext, ReactNode } from 'react';
-import { useWebSocket } from '../hooks/useWebSocket';
-import { CustomerInfo } from '../types'; // Assuming CustomerInfo is in your types file
+import React, { createContext, useContext, ReactNode } from "react";
+import { useWebSocket } from "../hooks/useWebSocket";
+import { CustomerInfo } from "../types"; // Assuming CustomerInfo is in your types file
 
 // Define the shape of the incoming call data payload
 interface IncomingCallPayload extends CustomerInfo {
-    timestamp: string;
-    availableAddresses: any[] | null;
-    callCount: number;
-    status: 'COMPLETE' | 'NEEDS_ADDRESS';
+  timestamp: string;
+  availableAddresses: any[] | null;
+  callCount: number;
+  status: "COMPLETE" | "NEEDS_ADDRESS";
 }
 
 // Define the shape of the context value
@@ -19,15 +19,23 @@ interface CallerIdContextType {
 }
 
 // Create the context with a default value
-const CallerIdContext = createContext<CallerIdContextType | undefined>(undefined);
+const CallerIdContext = createContext<CallerIdContextType | undefined>(
+  undefined
+);
 
 // Create the Provider component
 export function CallerIdProvider({ children }: { children: ReactNode }) {
-  const { lastMessage, isConnected } = useWebSocket<IncomingCallPayload>('ws://localhost:4000');
+  // Determine WebSocket protocol based on browser's protocol
+  const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  // Construct the WebSocket URL relative to the current host, pointing to the /ws/ path
+  const wsUrl = `${wsProtocol}//${window.location.host}/ws`;
+
+  const { lastMessage, isConnected } = useWebSocket<IncomingCallPayload>(wsUrl);
 
   // We only care about messages of type 'incoming_call'
-  const lastCall = lastMessage?.type === 'incoming_call' ? lastMessage.payload : null;
-  
+  const lastCall =
+    lastMessage?.type === "incoming_call" ? lastMessage.payload : null;
+
   const value = { lastCall, isConnected };
 
   return (
@@ -41,7 +49,7 @@ export function CallerIdProvider({ children }: { children: ReactNode }) {
 export function useCallerId() {
   const context = useContext(CallerIdContext);
   if (context === undefined) {
-    throw new Error('useCallerId must be used within a CallerIdProvider');
+    throw new Error("useCallerId must be used within a CallerIdProvider");
   }
   return context;
 }

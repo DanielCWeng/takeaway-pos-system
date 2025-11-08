@@ -127,9 +127,7 @@ export default function App() {
         console.log(
           `[EFFECT] New call from ${callData.phone}, fetching customer data...`
         );
-        const response = await fetch(
-          `http://localhost:4000/api/customer/${callData.phone}`
-        );
+        const response = await fetch(`/api/customer/${callData.phone}`);
 
         if (response.ok) {
           // --- CUSTOMER FOUND IN DATABASE ---
@@ -472,7 +470,7 @@ export default function App() {
         deliveryCharge: DELIVERY_CHARGE,
         paymentDetails,
       };
-      fetch("http://localhost:4000/api/print", {
+      fetch("/api/print", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(orderPayload),

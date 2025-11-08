@@ -335,21 +335,18 @@ const DeliveryAddressModal: React.FC<DeliveryAddressModalProps> = ({
     try {
       if (savedInfo.phone && savedInfo.address) {
         // [MODIFY] Send the new 'town' field to the backend
-        const response = await fetch(
-          "http://localhost:4000/api/verify-address",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              phone: savedInfo.phone,
-              address: savedInfo.address,
-              postcode: formState.postcode,
-              houseNumber: formState.houseNumber,
-              street: formState.street,
-              town: formState.town, // Send town to API
-            }),
-          }
-        );
+        const response = await fetch("/api/verify-address", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            phone: savedInfo.phone,
+            address: savedInfo.address,
+            postcode: formState.postcode,
+            houseNumber: formState.houseNumber,
+            street: formState.street,
+            town: formState.town, // Send town to API
+          }),
+        });
 
         if (!response.ok) {
           const errorData = await response.json();
