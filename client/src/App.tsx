@@ -119,34 +119,31 @@ export default function App() {
   // [THE CORRECT useEffect - THIS POPULATES THE ORDER]
   React.useEffect(() => {
     const handleIncomingCall = async (callData) => {
-      // Step 1: Show the notification popup (this is unchanged)
       setShowNotification(true);
       setCurrentCaller(callData);
+
       const timer = setTimeout(() => setShowNotification(false), 8000);
 
       try {
-        // Step 2: Fetch the full customer profile from our new endpoint
         console.log(
           `[EFFECT] New call from ${callData.phone}, fetching customer data...`
         );
+
         const response = await fetch(
           `${API_BASE_URL}/api/customer/${callData.phone}`
         );
 
         if (response.ok) {
-          // --- CUSTOMER FOUND IN DATABASE ---
           const customer = await response.json();
           console.log("[EFFECT] Found existing customer:", customer);
 
           if (customer.addresses && customer.addresses.length > 1) {
-            // Step 3a: MORE THAN ONE ADDRESS -> Trigger the selection modal
             console.log(
               "[EFFECT] Customer has multiple addresses. Opening selection modal."
             );
             setCustomerForSelection(customer);
             setIsAddressSelectionModalOpen(true);
           } else {
-            // Step 3b: ONLY ONE ADDRESS -> Proactively populate the order
             console.log(
               "[EFFECT] Customer has one address. Populating order automatically."
             );
@@ -158,19 +155,17 @@ export default function App() {
               houseNumber: singleAddress.houseNumber,
               street: singleAddress.street,
               town: singleAddress.town,
-              distance: callData.distance, // Use the fresh distance from the live call
+              distance: callData.distance,
             };
             updateOrder(activeOrderIndex, { customerInfo: newCustomerInfo });
           }
         } else {
-          // --- NEW CUSTOMER (404 Not Found) ---
-          // Step 3c: Populate order with only the basic info we have from the call
           console.log(
             "[EFFECT] New customer. Populating order from call data."
           );
           const newCustomerInfo = {
             phone: callData.phone,
-            postcode: callData.postcode, // May be null, that's fine
+            postcode: callData.postcode,
           };
           updateOrder(activeOrderIndex, { customerInfo: newCustomerInfo });
         }
@@ -178,20 +173,39 @@ export default function App() {
         console.error("[EFFECT] Error fetching customer data:", error);
       }
 
-      // Cleanup function for the timer
       return () => clearTimeout(timer);
     };
 
-    // This condition ensures we only process a new call on an empty order
+    // DEBUG LOGS - ALWAYS SHOW REASON WHY CALL DID OR DID NOT TRIGGER
+    console.log("[useEffect CHECK]", {
+      hasLastCall: !!lastCall,
+      hasActiveOrder: !!activeOrder,
+      itemsLength: activeOrder?.items.length,
+      hasPhone: !!activeOrder?.customerInfo?.phone,
+      lastCallPhone: lastCall?.phone,
+    });
+
+    if (
+      lastCall &&
+      activeOrder &&
+      (activeOrder.items.length > 0 || activeOrder.customerInfo.phone)
+    ) {
+      console.log(
+        "[CALL IGNORED] Order not empty or already has customer info"
+      );
+    }
+
+    //  ONLY fire incoming call logic when order is truly empty
     if (
       lastCall &&
       activeOrder &&
       activeOrder.items.length === 0 &&
       !activeOrder.customerInfo.phone
     ) {
+      console.log("[PROCESSING CALL] Conditions met, handling call...");
       handleIncomingCall(lastCall);
     }
-  }, [lastCall, activeOrder, activeOrderIndex, updateOrder]); // Keep dependencies
+  }, [lastCall, activeOrder, activeOrderIndex, updateOrder]);
 
   const handleSelectAddress = (selectedAddress: any) => {
     if (!customerForSelection) return;
