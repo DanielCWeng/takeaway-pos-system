@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, ReactNode } from "react";
 import { useWebSocket } from "../hooks/useWebSocket";
-import { CustomerInfo } from "../types"; // Assuming CustomerInfo is in your types file
+import { CustomerInfo } from "../types";
 
 // Define the shape of the incoming call data payload
 interface IncomingCallPayload extends CustomerInfo {
@@ -25,10 +25,8 @@ const CallerIdContext = createContext<CallerIdContextType | undefined>(
 
 // Create the Provider component
 export function CallerIdProvider({ children }: { children: ReactNode }) {
-  // Determine WebSocket protocol based on browser's protocol
-  const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  // Construct the WebSocket URL relative to the current host, pointing to the /ws/ path
-  const wsUrl = `${wsProtocol}//${window.location.host}/ws`;
+  // In prod, we might want to use an env variable
+  const wsUrl = `ws://192.168.1.154:4000`;
 
   const { lastMessage, isConnected } = useWebSocket<IncomingCallPayload>(wsUrl);
 

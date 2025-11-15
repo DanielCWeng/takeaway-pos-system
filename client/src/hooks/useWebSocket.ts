@@ -1,6 +1,6 @@
 // client/src/hooks/useWebSocket.ts
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from "react";
 
 // Define a generic type for the messages we expect
 interface WebSocketMessage<T> {
@@ -9,7 +9,9 @@ interface WebSocketMessage<T> {
 }
 
 export function useWebSocket<T>(url: string) {
-  const [lastMessage, setLastMessage] = useState<WebSocketMessage<T> | null>(null);
+  const [lastMessage, setLastMessage] = useState<WebSocketMessage<T> | null>(
+    null
+  );
   const [isConnected, setIsConnected] = useState(false);
   const ws = useRef<WebSocket | null>(null);
 
@@ -20,7 +22,7 @@ export function useWebSocket<T>(url: string) {
     ws.current = new WebSocket(url);
 
     ws.current.onopen = () => {
-      console.log('WebSocket connection established');
+      console.log("WebSocket connection established");
       setIsConnected(true);
     };
 
@@ -29,19 +31,19 @@ export function useWebSocket<T>(url: string) {
         const message = JSON.parse(event.data);
         setLastMessage(message);
       } catch (error) {
-        console.error('Failed to parse WebSocket message:', error);
+        console.error("Failed to parse WebSocket message:", error);
       }
     };
 
     ws.current.onclose = () => {
-      console.log('WebSocket connection closed');
+      console.log("WebSocket connection closed");
       setIsConnected(false);
       ws.current = null; // Clean up the ref
       // Optional: a reconnect mechanism could be added here
     };
 
     ws.current.onerror = (error) => {
-      console.error('WebSocket error:', error);
+      console.error("WebSocket error:", error);
     };
 
     // Clean up the connection when the component unmounts
