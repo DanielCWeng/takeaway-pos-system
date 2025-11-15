@@ -60,9 +60,9 @@ const SECONDARY_CATEGORIES_PAGES = [
     { zh: "<<", en: "<<" },
     { zh: ">>", en: ">>" },
   ],
-  // --- PAGE 2 (New Categories) ---
+  // --- [NEW] PAGE 2 (New Categories) ---
   [
-    { zh: "全部", en: "Show All" },
+    { zh: "全部", en: "Show All" }, // Show All is on every page
     { zh: "乌冬", en: "Udon" },
     { zh: "脆面", en: "Crispy Noodle" },
     { zh: "中式", en: "Chinese Style" },
@@ -105,6 +105,140 @@ interface RightPanelProps {
   onAddItem: (item: MenuItem) => void;
   onOpenMenuRef: () => void;
 }
+
+// --- MODAL COMPONENT FOR ITEM OPTIONS ---
+const ItemOptionsModal = ({
+  item,
+  onConfirm,
+  onClose,
+}: {
+  item: MenuItem;
+  onConfirm: (finalizedItem: MenuItem) => void;
+  onClose: () => void;
+}) => {
+  const [selections, setSelections] = useState<{
+    [key: string]: string | string[];
+  }>({});
+
+  // Pre-select the first option for each choice
+  useEffect(() => {
+    const initialSelections: { [key: string]: string | string[] } = {};
+    if (item.options) {
+      initialSelections["main"] = item.options[0]?.name || "";
+    }
+    if (item.contents) {
+      item.contents.forEach((content) => {
+        if (content.type === "choice") {
+          initialSelections[content.description] = content.options[0];
+        }
+      });
+    }
+    setSelections(initialSelections);
+  }, [item]);
+
+  const handleConfirm = () => {
+    const finalizedItem = JSON.parse(JSON.stringify(item)); // Deep copy
+
+    let selectionsText = Object.values(selections).flat().join(", ");
+    if (selectionsText) {
+      finalizedItem.name.en = `${item.name.en} (${selectionsText})`;
+    }
+
+    finalizedItem.selections = selections;
+
+    if (item.options) {
+      const selectedOption = item.options.find(
+        (opt) => opt.name === selections["main"]
+      );
+      if (selectedOption && selectedOption.price) {
+        finalizedItem.price = selectedOption.price;
+      }
+    }
+
+    onConfirm(finalizedItem);
+  };
+
+  const handleSelectionChange = (group: string, value: string) => {
+    setSelections((prev) => ({ ...prev, [group]: value }));
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
+        <h2 className="text-2xl font-bold mb-4">{item.name.en}</h2>
+        <div className="space-y-4">
+          {item.options && (
+            <div>
+              <h3 className="font-semibold text-lg">Options:</h3>
+              {item.options.map((opt) => (
+                <label key={opt.name} className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    name="main-option"
+                    value={opt.name}
+                    checked={selections["main"] === opt.name}
+                    onChange={() => handleSelectionChange("main", opt.name)}
+                  />
+                  <span>
+                    {opt.name} {opt.price ? `(£${opt.price.toFixed(2)})` : ""}
+                  </span>
+                </label>
+              ))}
+            </div>
+          )}
+          {item.contents && (
+            <div>
+              <h3 className="font-semibold text-lg">Includes:</h3>
+              <ul className="list-disc pl-5">
+                {item.contents.map((content, index) => {
+                  if (content.type === "choice") {
+                    return (
+                      <li key={index} className="mt-2">
+                        <p className="font-semibold">{content.description}:</p>
+                        {content.options.map((opt) => (
+                          <label
+                            key={opt}
+                            className="flex items-center space-x-2 pl-2"
+                          >
+                            <input
+                              type="radio"
+                              name={content.description}
+                              value={opt}
+                              checked={selections[content.description] === opt}
+                              onChange={() =>
+                                handleSelectionChange(content.description, opt)
+                              }
+                            />
+                            <span>{opt}</span>
+                          </label>
+                        ))}
+                      </li>
+                    );
+                  }
+                  return <li key={index}>{content.item}</li>;
+                })}
+              </ul>
+            </div>
+          )}
+        </div>
+        <div className="mt-6 flex justify-end space-x-2">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleConfirm}
+            className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+          >
+            Confirm & Add
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const PrimaryHorizontalButton = ({
   icon,
@@ -171,19 +305,23 @@ const RightPanel: React.FC<RightPanelProps> = ({
   );
   const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
   const [secondaryPage, setSecondaryPage] = useState(0);
+  const [itemForModal, setItemForModal] = useState<MenuItem | null>(null);
 
   const filteredResults = useMemo(() => {
     if (!selectedPrimary && !selectedSecondary) {
       return [...menuItems];
     }
-
     return menuItems.filter((item) => {
+      // ----- THIS IS THE FIX -----
+      // It safely checks if item.primaryCategories exists before calling .includes()
       const primaryMatch = selectedPrimary
-        ? item.primaryCategory === selectedPrimary
+        ? item.primaryCategories &&
+          item.primaryCategories.includes(selectedPrimary)
         : true;
+
       const secondaryMatch =
         selectedSecondary && selectedSecondary !== "Show All"
-          ? item.secondaryCategory.includes(selectedSecondary)
+          ? item.secondaryCategory === selectedSecondary
           : true;
 
       return primaryMatch && secondaryMatch;
@@ -191,12 +329,15 @@ const RightPanel: React.FC<RightPanelProps> = ({
   }, [menuItems, selectedPrimary, selectedSecondary]);
 
   useEffect(() => {
-    if (filteredResults.length > 0) {
+    if (
+      filteredResults.length > 0 &&
+      !filteredResults.find((i) => i.id === selectedResultId)
+    ) {
       setSelectedResultId(filteredResults[0].id);
-    } else {
+    } else if (filteredResults.length === 0) {
       setSelectedResultId(null);
     }
-  }, [filteredResults]);
+  }, [filteredResults, selectedResultId]);
 
   const handlePrimarySelect = (category: string) => {
     setSelectedPrimary((prev) => (prev === category ? null : category));
@@ -207,33 +348,29 @@ const RightPanel: React.FC<RightPanelProps> = ({
       setSelectedPrimary(null);
       setSelectedSecondary(null);
     } else {
-      setSelectedSecondary(category);
+      setSelectedSecondary((prev) => (prev === category ? null : category));
     }
   };
 
-  // This function is still used by the main "Add to Order" button
-  const handleAddItemAndClear = (item: MenuItem) => {
-    onAddItem(item);
+  const handleAttemptAddItem = (item: MenuItem) => {
+    if (item.options || item.contents) {
+      setItemForModal(item);
+    } else {
+      onAddItem(item);
+      setSelectedPrimary(null);
+      setSelectedSecondary(null);
+    }
+  };
+
+  const handleConfirmItemWithOptions = (finalizedItem: MenuItem) => {
+    onAddItem(finalizedItem);
+    setItemForModal(null);
     setSelectedPrimary(null);
     setSelectedSecondary(null);
   };
 
-  // ===================================================================
-  //               VVV --- NEW FUNCTION --- VVV
-  // This new handler adds an item with a single click without clearing filters
-  // ===================================================================
-  const handleRowClick = (item: MenuItem) => {
-    // First, set the item as selected so it's highlighted in the list
-    setSelectedResultId(item.id);
-
-    // Second, immediately add the item to the order
-    onAddItem(item);
-  };
-  // ===================================================================
-
   const handleNavigate = (direction: "up" | "down") => {
     if (!selectedResultId || filteredResults.length === 0) return;
-
     const currentIndex = filteredResults.findIndex(
       (item) => item.id === selectedResultId
     );
@@ -259,6 +396,13 @@ const RightPanel: React.FC<RightPanelProps> = ({
 
   return (
     <div className="w-[62%] bg-gray-300 flex flex-col gap-2">
+      {itemForModal && (
+        <ItemOptionsModal
+          item={itemForModal}
+          onConfirm={handleConfirmItemWithOptions}
+          onClose={() => setItemForModal(null)}
+        />
+      )}
       <div className="h-[40%] bg-yellow-100 border-2 border-t-gray-600 border-l-gray-600 border-b-gray-100 border-r-gray-100 p-1 flex flex-col overflow-hidden">
         <div className="flex-grow overflow-y-auto">
           <table className="w-full text-left text-sm">
@@ -272,13 +416,10 @@ const RightPanel: React.FC<RightPanelProps> = ({
             </thead>
             <tbody>
               {filteredResults.map((item) => (
-                // ===================================================================
-                // VVV --- THIS IS THE MODIFIED TABLE ROW --- VVV
-                // Switched to single-click logic and removed onDoubleClick
-                // ===================================================================
                 <tr
                   key={item.id}
-                  onClick={() => handleRowClick(item)}
+                  onClick={() => setSelectedResultId(item.id)}
+                  onDoubleClick={() => handleAttemptAddItem(item)}
                   className={`cursor-pointer ${
                     selectedResultId === item.id
                       ? "bg-blue-600 text-white"
@@ -289,17 +430,20 @@ const RightPanel: React.FC<RightPanelProps> = ({
                   <td className="p-1">{item.name.en}</td>
                   <td className="p-1">{item.name.zh}</td>
                   <td className="p-1 font-mono text-right">
-                    £{(item.price ?? 0).toFixed(2)}
+                    {item.price != null
+                      ? `£${item.price.toFixed(2)}`
+                      : item.options || item.contents
+                      ? "See options"
+                      : "£0.00"}
                   </td>
                 </tr>
-                // ===================================================================
               ))}
             </tbody>
           </table>
         </div>
         <div className="flex-shrink-0 mt-1 flex gap-1">
           <button
-            onClick={() => selectedItem && handleAddItemAndClear(selectedItem)}
+            onClick={() => selectedItem && handleAttemptAddItem(selectedItem)}
             disabled={!selectedItem}
             className="flex-grow h-10 bg-green-500 text-white font-bold border border-green-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
@@ -332,7 +476,6 @@ const RightPanel: React.FC<RightPanelProps> = ({
             Menu Ref 餐号入单
           </button>
         </div>
-
         <div className="flex flex-wrap gap-1 h-14 mb-2 items-center justify-start">
           {PRIMARY_CATEGORIES_ICONS.map((cat) => (
             <PrimaryHorizontalButton
@@ -343,30 +486,17 @@ const RightPanel: React.FC<RightPanelProps> = ({
             />
           ))}
         </div>
-
         <div className="flex-grow grid grid-cols-7 grid-rows-5 gap-1">
           {currentSecondaryGrid.map((cat, index) => {
             const uniqueKey = `${secondaryPage}-${index}`;
-            const isEmpty = !cat.en;
-
-            if (isEmpty) {
-              return (
-                <div
-                  key={uniqueKey}
-                  className="bg-gray-200 border-2 border-r-gray-400 border-b-gray-400 border-l-gray-100 border-t-gray-100 rounded-sm"
-                ></div>
-              );
-            }
-
             if (cat.en === "<<" || cat.en === ">>") {
-              const isNextButton = cat.en === ">>";
-              const newPage = isNextButton
-                ? Math.min(
-                    SECONDARY_CATEGORIES_PAGES.length - 1,
-                    secondaryPage + 1
-                  )
-                : Math.max(0, secondaryPage - 1);
-
+              const newPage =
+                cat.en === ">>"
+                  ? Math.min(
+                      SECONDARY_CATEGORIES_PAGES.length - 1,
+                      secondaryPage + 1
+                    )
+                  : Math.max(0, secondaryPage - 1);
               return (
                 <DishStyleButton
                   key={uniqueKey}
@@ -376,7 +506,6 @@ const RightPanel: React.FC<RightPanelProps> = ({
                 />
               );
             }
-
             return (
               <DishStyleButton
                 key={uniqueKey}
