@@ -46,8 +46,12 @@ function findJD2000S() {
 
 // ====================== CONFIG ======================
 const DEVICE_PATH = findJD2000S() || "/dev/hidraw0";
-const CUSTOMERS_DB = path.join(process.cwd(), 'data', 'customers.json');
-const POSTCODES_VALIDATOR_PATH = path.join(process.cwd(), 'data', 'postcodes_detailed.json');
+const CUSTOMERS_DB = path.join(process.cwd(), "data", "customers.json");
+const POSTCODES_VALIDATOR_PATH = path.join(
+  process.cwd(),
+  "data",
+  "postcodes_detailed.json"
+);
 const GETADDRESS_API_KEY = ""; //change
 const STORE_POSTCODE = "NG9 8GF";
 const DEBUG = process.env.DEBUG === "true";
@@ -77,11 +81,17 @@ function normalizePostcode(postcode) {
 let postcodeValidator = {};
 async function loadPostcodeValidator() {
   try {
-    const data = await fsp.readFile(POSTCODES_VALIDATOR_PATH, 'utf8');
+    const data = await fsp.readFile(POSTCODES_VALIDATOR_PATH, "utf8");
     postcodeValidator = JSON.parse(data);
-    console.log(`✅ VALIDATOR: Loaded ${Object.keys(postcodeValidator).length} postcodes for validation.`);
+    console.log(
+      `✅ VALIDATOR: Loaded ${
+        Object.keys(postcodeValidator).length
+      } postcodes for validation.`
+    );
   } catch (err) {
-    console.warn('⚠️ VALIDATOR: Could not load postcodes_detailed.json. Proceeding without fast validation.');
+    console.warn(
+      "⚠️ VALIDATOR: Could not load postcodes_detailed.json. Proceeding without fast validation."
+    );
   }
 }
 
@@ -92,7 +102,10 @@ async function loadCustomers() {
     const customers = JSON.parse(data);
     for (const cust of customers) {
       if (cust.postcode && cust.postcodeData) {
-        postcodeCache.set(normalizePostcode(cust.postcode), JSON.parse(JSON.stringify(cust.postcodeData)));
+        postcodeCache.set(
+          normalizePostcode(cust.postcode),
+          JSON.parse(JSON.stringify(cust.postcodeData))
+        );
       }
     }
     return customers;
@@ -123,11 +136,14 @@ async function saveCustomers(customers) {
   }
 }
 
-
-
 // ====================== EXTRACT PHONE ======================
 function extractPhone(data) {
-  if (DEBUG) logDebug(`Raw data length: ${data.length} Hex: ${data.toString("hex").slice(0, 50)}`);
+  if (DEBUG)
+    logDebug(
+      `Raw data length: ${data.length} Hex: ${data
+        .toString("hex")
+        .slice(0, 50)}`
+    );
   let digits = "";
   for (let i = 0; i < data.length; i++) {
     const byte = data[i];
@@ -145,7 +161,16 @@ function getOrCreateCustomer(phone, customers) {
   let cust = customers.find((c) => c.phone === phone);
   if (!cust) {
     console.log("NEW CUSTOMER:", phone);
-    cust = { phone, postcode: null, address: null, distance: null, postcodeData: null, firstCall: new Date().toISOString(), lastCall: new Date().toISOString(), callCount: 1 };
+    cust = {
+      phone,
+      postcode: null,
+      address: null,
+      distance: null,
+      postcodeData: null,
+      firstCall: new Date().toISOString(),
+      lastCall: new Date().toISOString(),
+      callCount: 1,
+    };
     customers.push(cust);
   } else {
     console.log("EXISTING CUSTOMER:", phone);
@@ -159,25 +184,42 @@ function getOrCreateCustomer(phone, customers) {
 async function lookupAddressesAPI(postcode) {
   const normalized = normalizePostcode(postcode);
   if (!normalized) return null;
-  const url = `https://api.getaddress.io/find/${encodeURIComponent(normalized)}?api-key=${GETADDRESS_API_KEY}&expand=true&format=true`;
-  logDebug("Fetching addresses from API: " + url.replace(GETADDRESS_API_KEY, "KEY_HIDDEN"));
+  const url = `https://api.getaddress.io/find/${encodeURIComponent(
+    normalized
+  )}?api-key=${GETADDRESS_API_KEY}&expand=true&format=true`;
+  logDebug(
+    "Fetching addresses from API: " +
+      url.replace(GETADDRESS_API_KEY, "KEY_HIDDEN")
+  );
   try {
     const response = await fetch(url);
     if (!response.ok) {
-        if (response.status === 404) {
-            console.log("POSTCODE NOT FOUND: Trying autocomplete fallback...");
-            return await lookupAddressesAutocomplete(postcode);
-        }
-        throw new Error(`HTTP ${response.status}`);
+      if (response.status === 404) {
+        console.log("POSTCODE NOT FOUND: Trying autocomplete fallback...");
+        return await lookupAddressesAutocomplete(postcode);
+      }
+      throw new Error(`HTTP ${response.status}`);
     }
     const data = await response.json();
-    if (!data.addresses || data.addresses.length === 0) throw new Error("No addresses returned");
+    if (!data.addresses || data.addresses.length === 0)
+      throw new Error("No addresses returned");
     const addresses = data.addresses.map((addr, idx) => {
       const parts = addr.split(",").map((p) => p.trim());
-      return { id: idx, line1: parts[0] || "", line2: parts[1] || "", line3: parts[2] || "", town: parts[3] || "", county: parts[4] || "", postcode: data.postcode, full: addr + ", " + data.postcode };
+      return {
+        id: idx,
+        line1: parts[0] || "",
+        line2: parts[1] || "",
+        line3: parts[2] || "",
+        town: parts[3] || "",
+        county: parts[4] || "",
+        postcode: data.postcode,
+        full: addr + ", " + data.postcode,
+      };
     });
     const result = { postcode: data.postcode, addresses, source: "api_find" };
-    console.log(`API: Found ${addresses.length} addresses for ${data.postcode}`);
+    console.log(
+      `API: Found ${addresses.length} addresses for ${data.postcode}`
+    );
     return result;
   } catch (err) {
     console.error("ERROR: Address lookup failed:", err.message);
@@ -187,22 +229,35 @@ async function lookupAddressesAPI(postcode) {
 async function lookupAddressesAutocomplete(postcode) {
   const cleaned = postcode.replace(/\s+/g, "").toUpperCase();
   const url = `https://api.getaddress.io/autocomplete/${cleaned}?api-key=${GETADDRESS_API_KEY}&all=true`;
-  logDebug("Trying autocomplete API: " + url.replace(GETADDRESS_API_KEY, "KEY_HIDDEN"));
+  logDebug(
+    "Trying autocomplete API: " + url.replace(GETADDRESS_API_KEY, "KEY_HIDDEN")
+  );
   try {
     const response = await fetch(url);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
     if (!data.suggestions || data.suggestions.length === 0) {
-        console.log("POSTCODE INVALID: No suggestions found");
-        return null;
+      console.log("POSTCODE INVALID: No suggestions found");
+      return null;
     }
     const addresses = data.suggestions.map((s, idx) => {
       const parts = s.address.split(",").map((p) => p.trim());
       const pc = parts[parts.length - 1];
-      return { id: idx, line1: parts[0] || "", line2: parts[1] || "", line3: parts[2] || "", town: parts[3] || "", county: parts[4] || "", postcode: pc, full: s.address };
+      return {
+        id: idx,
+        line1: parts[0] || "",
+        line2: parts[1] || "",
+        line3: parts[2] || "",
+        town: parts[3] || "",
+        county: parts[4] || "",
+        postcode: pc,
+        full: s.address,
+      };
     });
     const result = { postcode: cleaned, addresses, source: "api_autocomplete" };
-    console.log(`AUTOCOMPLETE: Found ${addresses.length} suggestions for ${cleaned}`);
+    console.log(
+      `AUTOCOMPLETE: Found ${addresses.length} suggestions for ${cleaned}`
+    );
     return result;
   } catch (err) {
     console.error("ERROR: Autocomplete failed:", err.message);
@@ -213,7 +268,9 @@ async function calculateDistance(fromPostcode, toPostcode) {
   const from = normalizePostcode(fromPostcode);
   const to = normalizePostcode(toPostcode);
   if (!from || !to) return null;
-  const url = `https://api.getaddress.io/distance/${encodeURIComponent(from)}/${encodeURIComponent(to)}?api-key=${GETADDRESS_API_KEY}`;
+  const url = `https://api.getaddress.io/distance/${encodeURIComponent(
+    from
+  )}/${encodeURIComponent(to)}?api-key=${GETADDRESS_API_KEY}`;
   logDebug(`Calculating distance: ${from} -> ${to}`);
   try {
     const response = await fetch(url);
@@ -222,14 +279,23 @@ async function calculateDistance(fromPostcode, toPostcode) {
     const miles = (data.metres / 1609.34).toFixed(2);
     const km = (data.metres / 1000).toFixed(2);
     console.log(`DISTANCE: ${miles} miles (${km} km)`);
-    return { metres: data.metres, miles: parseFloat(miles), km: parseFloat(km) };
+    return {
+      metres: data.metres,
+      miles: parseFloat(miles),
+      km: parseFloat(km),
+    };
   } catch (err) {
     console.error("ERROR: Distance failed:", err.message);
     return null;
   }
 }
 function isAddressDataComplete(addressData) {
-  if (!addressData || !addressData.addresses || addressData.addresses.length === 0) return false;
+  if (
+    !addressData ||
+    !addressData.addresses ||
+    addressData.addresses.length === 0
+  )
+    return false;
   const firstAddr = addressData.addresses[0];
   return firstAddr.line1 || firstAddr.full;
 }
@@ -239,16 +305,19 @@ export async function lookupAddresses(postcode) {
   const normalized = normalizePostcode(postcode);
   if (!normalized) return null;
   const validatorKey = normalized.replace(/\s/g, "").toUpperCase();
-  if (Object.keys(postcodeValidator).length > 0 && !postcodeValidator[validatorKey]) {
-      console.log(`🔴 INVALID: ${normalized} not found in local validator.`);
-      return { postcode: normalized, addresses: [], source: 'invalid_postcode' };
+  if (
+    Object.keys(postcodeValidator).length > 0 &&
+    !postcodeValidator[validatorKey]
+  ) {
+    console.log(`🔴 INVALID: ${normalized} not found in local validator.`);
+    return { postcode: normalized, addresses: [], source: "invalid_postcode" };
   }
   const key = normalized.replace(/\s/g, "");
   if (postcodeCache.has(normalized)) {
     console.log(`CACHE HIT: Using cached addresses for ${normalized}`);
     return postcodeCache.get(normalized);
   }
-  if (GETADDRESS_API_KEY && !GETADDRESS_API_KEY.startsWith('YOUR')) {
+  if (GETADDRESS_API_KEY && !GETADDRESS_API_KEY.startsWith("YOUR")) {
     console.log(`API LOOKUP: Fetching ${normalized} from getaddress.io`);
     const apiResult = await lookupAddressesAPI(normalized);
     if (apiResult) {
@@ -269,14 +338,18 @@ async function handleCall(phone, onCallHandled) {
   console.log("PHONE:", phone);
   const customers = await loadCustomers();
   const customer = getOrCreateCustomer(phone, customers);
-  let addressData = null, distance = null;
+  let addressData = null,
+    distance = null;
   if (customer.postcode) {
     if (customer.postcodeData && isAddressDataComplete(customer.postcodeData)) {
-      console.log(`CUSTOMER DATA: Using saved addresses for ${customer.postcode}`);
+      console.log(
+        `CUSTOMER DATA: Using saved addresses for ${customer.postcode}`
+      );
       addressData = customer.postcodeData;
     } else {
       addressData = await lookupAddresses(customer.postcode);
-      if (addressData) customer.postcodeData = JSON.parse(JSON.stringify(addressData));
+      if (addressData)
+        customer.postcodeData = JSON.parse(JSON.stringify(addressData));
     }
     if (addressData && STORE_POSTCODE) {
       if (!customer.distance) {
@@ -307,15 +380,18 @@ export async function startCallerIdService(onCallHandledCallback) {
     console.log("  Device:", DEVICE_PATH);
     console.log("  Customer DB:", CUSTOMERS_DB);
     console.log("  Validator DB:", POSTCODES_VALIDATOR_PATH);
-    console.log("  API Key:", GETADDRESS_API_KEY.startsWith('YOUR') ? "NOT SET" : "Configured");
+    console.log(
+      "  API Key:",
+      GETADDRESS_API_KEY.startsWith("YOUR") ? "NOT SET" : "Configured"
+    );
     console.log("  Store PC:", STORE_POSTCODE);
     console.log("  Debug:", DEBUG ? "ON" : "OFF");
     console.log("");
     device = new HID(DEVICE_PATH);
     console.log("✓ Connected to JD-2000S\n");
     await loadPostcodeValidator();
-    await loadLocalAddressDB();
-    if (GETADDRESS_API_KEY.startsWith('YOUR')) {
+    // await loadLocalAddressDB();
+    if (GETADDRESS_API_KEY.startsWith("YOUR")) {
       console.log("WARNING: API key not set - API fallback disabled\n");
     }
     console.log("Ready. Waiting for calls...\n");
@@ -336,7 +412,10 @@ export async function startCallerIdService(onCallHandledCallback) {
     });
     device.on("error", (err) => console.error("HID ERROR:", err.message));
   } catch (err) {
-    console.error("🔴 FATAL ERROR during Caller ID Service startup:", err.message);
+    console.error(
+      "🔴 FATAL ERROR during Caller ID Service startup:",
+      err.message
+    );
     throw err;
   }
 }
