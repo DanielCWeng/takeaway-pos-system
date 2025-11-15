@@ -1,28 +1,43 @@
+// A single option for a menu item, e.g., "Quarter" duck or "Chips" for a snack box.
+// Price is optional because some options don't change the price (e.g., steak doneness).
+export interface ItemOption {
+  name: string;
+  price?: number; // <--- CHANGED: Made price optional
+}
 
-// Modify MenuItem
-// In types.ts
+// Represents an item within a Set Dinner, which can be a fixed item or a choice.
+export interface MenuContent {
+  type?: "choice";
+  item?: string;
+  description?: string;
+  options?: string[];
+}
 
+// The main interface for any item on the menu.
 export interface MenuItem {
-  id: string; // <--- CHANGE THIS FROM number to string
+  id: string;
   name: {
     en: string;
     zh: string;
   };
-  price?: number; // Also make price optional as I suggested before
-  primaryCategory: string;
+  price?: number;
+  primaryCategories: string[]; // <-- CHANGED from primaryCategory: string
   secondaryCategory: string;
   options?: ItemOption[];
+  contents?: MenuContent[];
+  selections?: { [key: string]: string | string[] };
 }
-
+// A modifier that can be added to an order item (e.g., "Extra Sauce").
 export interface Modifier {
   id: number;
   name: string;
-  section: 'Sauce' | 'Veg' | 'Meat' | 'Misc';
+  section: "Sauce" | "Veg" | "Meat" | "Misc";
   priceChange: number;
 }
 
+// An item once it has been added to an order.
 export interface OrderItem {
-  id: string; // Unique ID for each item in the order, e.g., using Date.now()
+  id: string; // Unique ID for each item in the order
   menuItem: MenuItem;
   displayName: string;
   modifiers: Modifier[];
@@ -30,27 +45,23 @@ export interface OrderItem {
   finalPrice: number;
 }
 
+// The type of the current order.
 export enum OrderType {
-  InHouse = 'In-House',
-  Delivery = 'Delivery',
-  Collection = 'Collection',
+  InHouse = "In-House",
+  Delivery = "Delivery",
+  Collection = "Collection",
 }
 
+// Information for a customer, typically for delivery or collection.
 export interface CustomerInfo {
   phone?: string;
   name?: string;
   postcode?: string;
   houseNumber?: string;
   street?: string;
-  town?: string; // <-- ADD THIS
+  town?: string;
   address?: string;
-  distance?: number; // <-- ADD THIS
-  deliveryInstructions?: string; // <-- ADD THIS
-  status?: 'COMPLETE' | 'NEEDS_ADDRESS';
-}
-
-// Add this new interface
-export interface ItemOption {
-  name: string;
-  price: number;
+  distance?: number;
+  deliveryInstructions?: string;
+  status?: "COMPLETE" | "NEEDS_ADDRESS";
 }
