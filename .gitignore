@@ -23,3 +23,6 @@ yarn-error.log*
 # Personal editor files
 .vscode/
 .idea/
+
+# 
+server/customers.json
