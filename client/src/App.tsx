@@ -34,6 +34,8 @@ import {
 } from "./types";
 import { useCallerId } from "./context/CallerIDContext";
 
+const API_BASE_URL = "http://192.168.1.154:4000";
+
 interface Order {
   id: number;
   items: OrderItem[];
@@ -127,7 +129,9 @@ export default function App() {
         console.log(
           `[EFFECT] New call from ${callData.phone}, fetching customer data...`
         );
-        const response = await fetch(`/api/customer/${callData.phone}`);
+        const response = await fetch(
+          `${API_BASE_URL}/api/customer/${callData.phone}`
+        );
 
         if (response.ok) {
           // --- CUSTOMER FOUND IN DATABASE ---
@@ -470,7 +474,7 @@ export default function App() {
         deliveryCharge: DELIVERY_CHARGE,
         paymentDetails,
       };
-      fetch("/api/print", {
+      fetch(`${API_BASE_URL}/api/print`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(orderPayload),
