@@ -137,25 +137,64 @@ export default function App() {
           const customer = await response.json();
           console.log("[EFFECT] Found existing customer:", customer);
 
-          if (customer.addresses && customer.addresses.length > 1) {
+          // Check if customer has the new multi-address structure
+          if (customer.addresses && Array.isArray(customer.addresses)) {
+            if (customer.addresses.length > 1) {
+              console.log(
+                "[EFFECT] Customer has multiple addresses. Opening selection modal."
+              );
+              setCustomerForSelection(customer);
+              setIsAddressSelectionModalOpen(true);
+            } else if (customer.addresses.length === 1) {
+              console.log(
+                "[EFFECT] Customer has one address. Populating order automatically."
+              );
+              const singleAddress = customer.addresses[0];
+              const newCustomerInfo = {
+                phone: customer.phone,
+                name: customer.name,
+                postcode: singleAddress.postcode,
+                houseNumber: singleAddress.houseNumber,
+                street: singleAddress.street,
+                town: singleAddress.town,
+                distance: callData.distance,
+              };
+              updateOrder(activeOrderIndex, { customerInfo: newCustomerInfo });
+            } else {
+              // addresses array exists but is empty
+              console.log(
+                "[EFFECT] Customer exists but has no addresses saved."
+              );
+              const newCustomerInfo = {
+                phone: customer.phone,
+                name: customer.name || "",
+              };
+              updateOrder(activeOrderIndex, { customerInfo: newCustomerInfo });
+            }
+          } else if (customer.postcode) {
+            // OLD DATABASE FORMAT: Customer has postcode/address fields directly
             console.log(
-              "[EFFECT] Customer has multiple addresses. Opening selection modal."
+              "[EFFECT] Customer using old format. Populating from top-level fields."
             );
-            setCustomerForSelection(customer);
-            setIsAddressSelectionModalOpen(true);
-          } else {
-            console.log(
-              "[EFFECT] Customer has one address. Populating order automatically."
-            );
-            const singleAddress = customer.addresses[0];
             const newCustomerInfo = {
               phone: customer.phone,
-              name: customer.name,
-              postcode: singleAddress.postcode,
-              houseNumber: singleAddress.houseNumber,
-              street: singleAddress.street,
-              town: singleAddress.town,
+              name: customer.name || "",
+              postcode: customer.postcode,
+              houseNumber: customer.houseNumber,
+              street: customer.street,
+              town: customer.town,
+              address: customer.address,
               distance: callData.distance,
+            };
+            updateOrder(activeOrderIndex, { customerInfo: newCustomerInfo });
+          } else {
+            // Customer exists but has no address data at all
+            console.log(
+              "[EFFECT] Customer exists but has no address information."
+            );
+            const newCustomerInfo = {
+              phone: customer.phone,
+              name: customer.name || "",
             };
             updateOrder(activeOrderIndex, { customerInfo: newCustomerInfo });
           }
