@@ -18,20 +18,13 @@ import { DELIVERY_CHARGE } from "./constants";
 import LeftPanel from "./components/LeftPanel";
 import RightPanel from "./components/RightPanel";
 import ItemModificationModal from "./components/ItemModificationModal";
-import DeliveryAddressModal from "./components/DeliveryAddressModal"; // Corrected path
-import ItemOptionsModal from "./components/ItemOptionsModal";
+import DeliveryAddressModal from "./components/DeliveryAddressModal";
 import MenuRefModal from "./components/MenuRefModal";
 import AdminPage from "./components/AdminPage";
 import ConfirmationModal from "./components/ConfirmationModal";
-import AddressSelectionModal from "./components/AddressSelectionModal"; // Corrected path
+import AddressSelectionModal from "./components/AddressSelectionModal";
 import menuData from "./menu.json";
-import {
-  OrderItem,
-  MenuItem,
-  OrderType,
-  CustomerInfo,
-  ItemOption,
-} from "./types";
+import { OrderItem, MenuItem, OrderType, CustomerInfo } from "./types";
 import { useCallerId } from "./context/CallerIDContext";
 
 const API_BASE_URL = "http://192.168.1.154:4000";
@@ -64,7 +57,9 @@ const PosButton = ({ children, className = "", ...props }: PosButtonProps) => (
 );
 
 export default function App() {
-  const [menuItems, setMenuItems] = useState<MenuItem[]>(menuData);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>(
+    menuData as MenuItem[]
+  );
 
   const [orders, setOrders] = useState<Order[]>([createNewOrder(1)]);
   const [activeOrderIndex, setActiveOrderIndex] = useState(0);
@@ -80,8 +75,6 @@ export default function App() {
   >("postcode");
   const [isModificationModalOpen, setIsModificationModalOpen] = useState(false);
   const [itemToModify, setItemToModify] = useState<OrderItem | null>(null);
-  const [isOptionsModalOpen, setIsOptionsModalOpen] = useState(false);
-  const [itemWithOptions, setItemWithOptions] = useState<MenuItem | null>(null);
   const [isMenuRefModalOpen, setIsMenuRefModalOpen] = useState(false);
   const [isAdminPageOpen, setIsAdminPageOpen] = useState(false);
   const [orderToConfirm, setOrderToConfirm] = useState<Order | null>(null);
@@ -103,7 +96,7 @@ export default function App() {
 
   const { lastCall, isConnected } = useCallerId();
   const [showNotification, setShowNotification] = useState(false);
-  const [currentCaller, setCurrentCaller] = useState<any | null>(null); // Use 'any' for now to match callerId data
+  const [currentCaller, setCurrentCaller] = useState<any | null>(null);
 
   const updateOrder = useCallback(
     (orderIndex: number, updatedOrder: Partial<Order>) => {
@@ -116,13 +109,17 @@ export default function App() {
     []
   );
 
-  // [THE CORRECT useEffect - THIS POPULATES THE ORDER]
   React.useEffect(() => {
-    const handleIncomingCall = async (callData) => {
+    let notificationTimer: NodeJS.Timeout;
+
+    const handleIncomingCall = async (callData: any) => {
       setShowNotification(true);
       setCurrentCaller(callData);
 
-      const timer = setTimeout(() => setShowNotification(false), 8000);
+      if (notificationTimer) {
+        clearTimeout(notificationTimer);
+      }
+      notificationTimer = setTimeout(() => setShowNotification(false), 8000);
 
       try {
         console.log(
@@ -137,18 +134,11 @@ export default function App() {
           const customer = await response.json();
           console.log("[EFFECT] Found existing customer:", customer);
 
-          // Check if customer has the new multi-address structure
           if (customer.addresses && Array.isArray(customer.addresses)) {
             if (customer.addresses.length > 1) {
-              console.log(
-                "[EFFECT] Customer has multiple addresses. Opening selection modal."
-              );
               setCustomerForSelection(customer);
               setIsAddressSelectionModalOpen(true);
             } else if (customer.addresses.length === 1) {
-              console.log(
-                "[EFFECT] Customer has one address. Populating order automatically."
-              );
               const singleAddress = customer.addresses[0];
               const newCustomerInfo = {
                 phone: customer.phone,
@@ -161,10 +151,6 @@ export default function App() {
               };
               updateOrder(activeOrderIndex, { customerInfo: newCustomerInfo });
             } else {
-              // addresses array exists but is empty
-              console.log(
-                "[EFFECT] Customer exists but has no addresses saved."
-              );
               const newCustomerInfo = {
                 phone: customer.phone,
                 name: customer.name || "",
@@ -172,10 +158,6 @@ export default function App() {
               updateOrder(activeOrderIndex, { customerInfo: newCustomerInfo });
             }
           } else if (customer.postcode) {
-            // OLD DATABASE FORMAT: Customer has postcode/address fields directly
-            console.log(
-              "[EFFECT] Customer using old format. Populating from top-level fields."
-            );
             const newCustomerInfo = {
               phone: customer.phone,
               name: customer.name || "",
@@ -188,10 +170,6 @@ export default function App() {
             };
             updateOrder(activeOrderIndex, { customerInfo: newCustomerInfo });
           } else {
-            // Customer exists but has no address data at all
-            console.log(
-              "[EFFECT] Customer exists but has no address information."
-            );
             const newCustomerInfo = {
               phone: customer.phone,
               name: customer.name || "",
@@ -209,49 +187,30 @@ export default function App() {
           updateOrder(activeOrderIndex, { customerInfo: newCustomerInfo });
         }
       } catch (error) {
-        console.error("[EFFECT] Error fetching customer data:", error);
+        console.error("[EFFECT] Error processing incoming call:", error);
       }
-
-      return () => clearTimeout(timer);
     };
 
-    // DEBUG LOGS - ALWAYS SHOW REASON WHY CALL DID OR DID NOT TRIGGER
-    console.log("[useEffect CHECK]", {
-      hasLastCall: !!lastCall,
-      hasActiveOrder: !!activeOrder,
-      itemsLength: activeOrder?.items.length,
-      hasPhone: !!activeOrder?.customerInfo?.phone,
-      lastCallPhone: lastCall?.phone,
-    });
-
-    if (
-      lastCall &&
-      activeOrder &&
-      (activeOrder.items.length > 0 || activeOrder.customerInfo.phone)
-    ) {
-      console.log(
-        "[CALL IGNORED] Order not empty or already has customer info"
-      );
+    if (lastCall && activeOrder) {
+      const isOrderEmpty =
+        activeOrder.items.length === 0 && !activeOrder.customerInfo.phone;
+      if (isOrderEmpty) {
+        console.log(
+          "[EFFECT] Conditions met. Handling incoming call for empty order."
+        );
+        handleIncomingCall(lastCall);
+      } else {
+        console.log("[EFFECT] Call ignored: active order is not empty.");
+      }
     }
 
-    //  ONLY fire incoming call logic when order is truly empty
-    if (
-      lastCall &&
-      activeOrder &&
-      activeOrder.items.length === 0 &&
-      !activeOrder.customerInfo.phone
-    ) {
-      console.log("[PROCESSING CALL] Conditions met, handling call...");
-      handleIncomingCall(lastCall);
-    }
+    return () => {
+      clearTimeout(notificationTimer);
+    };
   }, [lastCall, activeOrder, activeOrderIndex, updateOrder]);
 
   const handleSelectAddress = (selectedAddress: any) => {
     if (!customerForSelection) return;
-
-    console.log("Address selected:", selectedAddress.fullAddress);
-
-    // Populate the active order with the selected address details
     const newCustomerInfo = {
       phone: customerForSelection.phone,
       name: customerForSelection.name,
@@ -260,13 +219,8 @@ export default function App() {
       street: selectedAddress.street,
       town: selectedAddress.town,
       address: selectedAddress.fullAddress,
-      // Note: We don't have 'distance' here, but that's okay for now.
-      // The DeliveryAddressModal can recalculate it if needed.
     };
-
     updateOrder(activeOrderIndex, { customerInfo: newCustomerInfo });
-
-    // Close the modal
     setIsAddressSelectionModalOpen(false);
     setCustomerForSelection(null);
   };
@@ -292,42 +246,33 @@ export default function App() {
     setIsCustomerModalOpen(true);
   }, []);
 
-  // [THE CORRECT, SIMPLIFIED handleSelectOrderType]
   const handleSelectOrderType = useCallback(
     (type: OrderType) => {
       if (type === OrderType.Delivery) {
-        // The order is ALREADY populated by useEffect.
-        // We just set the type and open the modal. We do NOT touch customerInfo here.
         updateOrder(activeOrderIndex, { orderType: type });
         handleOpenCustomerModal("postcode");
       } else {
-        // Collection logic is unchanged
         updateOrder(activeOrderIndex, { orderType: type });
       }
     },
     [activeOrderIndex, updateOrder, handleOpenCustomerModal]
   );
 
-  // --- ALL OTHER HANDLERS AND JSX BELOW ARE UNCHANGED ---
-
   const handleAddItem = useCallback(
     (item: MenuItem) => {
-      if (item.options && item.options.length > 0) {
-        setItemWithOptions(item);
-        setIsOptionsModalOpen(true);
-        return;
-      }
-
       const newOrderItem: OrderItem = {
         id: crypto.randomUUID(),
-        menuItem: item,
-        displayName: `${item.name.en} | ${item.name.zh}`,
+        menuItem: { ...item },
+        displayName: item.name.en,
         modifiers: [],
         quantity: 1,
         finalPrice: isZeroPriceMode ? 0 : item.price || 0,
+        selections: (item as any).selections,
       };
+
       if (isZeroPriceMode) {
         newOrderItem.displayName += " (£0)";
+        newOrderItem.finalPrice = 0;
       }
 
       const newOrderItems = [...currentOrderItems, newOrderItem];
@@ -337,53 +282,17 @@ export default function App() {
     [currentOrderItems, isZeroPriceMode, activeOrderIndex, updateOrder]
   );
 
-  const handleSelectOption = useCallback(
-    (option: ItemOption) => {
-      if (!itemWithOptions) return;
-      const newOrderItem: OrderItem = {
-        id: crypto.randomUUID(),
-        menuItem: itemWithOptions,
-        displayName: `${itemWithOptions.name.en} (${option.name})`,
-        modifiers: [],
-        quantity: 1,
-        finalPrice: isZeroPriceMode ? 0 : option.price,
-      };
-      if (isZeroPriceMode) {
-        newOrderItem.displayName += " (£0)";
-      }
-      const newOrderItems = [...currentOrderItems, newOrderItem];
-      updateOrder(activeOrderIndex, { items: newOrderItems });
-
-      setIsOptionsModalOpen(false);
-      setItemWithOptions(null);
-      setSelectedOrderItemId(newOrderItem.id);
-    },
-    [
-      itemWithOptions,
-      currentOrderItems,
-      isZeroPriceMode,
-      activeOrderIndex,
-      updateOrder,
-    ]
-  );
-
   const handleRemoveItem = useCallback(() => {
-    // 1. Safety check: Do nothing if no item is selected.
     if (!selectedOrderItemId) return;
-
-    // 2. Find the item to act upon and its index in the list.
     const itemIndex = currentOrderItems.findIndex(
       (item) => item.id === selectedOrderItemId
     );
-    if (itemIndex === -1) return; // Item not found, do nothing.
+    if (itemIndex === -1) return;
 
     const itemToRemove = currentOrderItems[itemIndex];
     let newItems: OrderItem[];
 
-    // 3. Decide whether to decrement quantity or remove the item entirely.
     if (itemToRemove.quantity > 1) {
-      // --- DECREMENT LOGIC ---
-      // Just decrease the quantity, the selection does not need to change.
       newItems = currentOrderItems.map((item) =>
         item.id === selectedOrderItemId
           ? { ...item, quantity: item.quantity - 1 }
@@ -391,32 +300,18 @@ export default function App() {
       );
       updateOrder(activeOrderIndex, { items: newItems });
     } else {
-      // --- REMOVE LOGIC ---
-      // Filter out the item with quantity 1.
       newItems = currentOrderItems.filter(
         (item) => item.id !== selectedOrderItemId
       );
-
-      // 4. THIS IS THE NEW HIGHLIGHT LOGIC
       let newSelectedItemId: string | null = null;
       if (newItems.length > 0) {
-        // If items remain, calculate the new index to highlight.
-        // We try to select the item at the same index, or the new last item.
         const newIndexToSelect = Math.min(itemIndex, newItems.length - 1);
         newSelectedItemId = newItems[newIndexToSelect].id;
       }
-
-      // 5. Update both the items list and the selected item ID state.
       updateOrder(activeOrderIndex, { items: newItems });
       setSelectedOrderItemId(newSelectedItemId);
     }
-  }, [
-    selectedOrderItemId,
-    currentOrderItems,
-    activeOrderIndex,
-    updateOrder,
-    orders,
-  ]);
+  }, [selectedOrderItemId, currentOrderItems, activeOrderIndex, updateOrder]);
 
   const handleDuplicateItem = useCallback(() => {
     if (!selectedOrderItemId) return;
@@ -544,7 +439,7 @@ export default function App() {
         .catch((error) => {
           console.error("Background Printing Error:", error);
           alert(
-            `Order ${orderToPrint.id} was accepted, but failed to print automatically. Please check the kitchen printer. Error: ${error.message}`
+            `Order ${orderToPrint.id} was accepted, but failed to print automatically. Error: ${error.message}`
           );
         });
     },
@@ -652,13 +547,6 @@ export default function App() {
           initialFocusField={initialFocusField}
         />
       )}
-      {isOptionsModalOpen && itemWithOptions && (
-        <ItemOptionsModal
-          item={itemWithOptions}
-          onClose={() => setIsOptionsModalOpen(false)}
-          onSelect={handleSelectOption}
-        />
-      )}
       {isMenuRefModalOpen && (
         <MenuRefModal
           onClose={() => setIsMenuRefModalOpen(false)}
@@ -682,7 +570,7 @@ export default function App() {
         <AddressSelectionModal
           customer={customerForSelection}
           onClose={() => setIsAddressSelectionModalOpen(false)}
-          onSelect={handleSelectAddress} // We will create this function next
+          onSelect={handleSelectAddress}
         />
       )}
     </div>
