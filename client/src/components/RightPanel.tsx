@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { MenuItem } from "../types";
 
 // Data now includes Chinese translations for buttons
@@ -62,15 +62,13 @@ const SECONDARY_CATEGORIES_PAGES = [
   ],
   // --- [NEW] PAGE 2 (New Categories) ---
   [
-    { zh: "全部", en: "Show All" }, // Show All is on every page
+    { zh: "全部", en: "Show All" },
     { zh: "乌冬", en: "Udon" },
     { zh: "脆面", en: "Crispy Noodle" },
     { zh: "中式", en: "Chinese Style" },
     { zh: "蒜蓉", en: "Garlic Sauce" },
     { zh: "上海", en: "Shanghai Style" },
     { zh: "洋葱", en: "Onion" },
-    { zh: "", en: "" },
-    { zh: "", en: "" },
     { zh: "", en: "" },
     { zh: "", en: "" },
     { zh: "", en: "" },
@@ -106,7 +104,6 @@ interface RightPanelProps {
   onOpenMenuRef: () => void;
 }
 
-// --- MODAL COMPONENT FOR ITEM OPTIONS ---
 const ItemOptionsModal = ({
   item,
   onConfirm,
@@ -119,118 +116,105 @@ const ItemOptionsModal = ({
   const [selections, setSelections] = useState<{
     [key: string]: string | string[];
   }>({});
-
-  // Pre-select the first option for each choice
   useEffect(() => {
     const initialSelections: { [key: string]: string | string[] } = {};
-    if (item.options) {
-      initialSelections["main"] = item.options[0]?.name || "";
-    }
+    if (item.options) initialSelections["main"] = item.options[0]?.name || "";
     if (item.contents) {
       item.contents.forEach((content) => {
-        if (content.type === "choice") {
+        if (content.type === "choice")
           initialSelections[content.description] = content.options[0];
-        }
       });
     }
     setSelections(initialSelections);
   }, [item]);
-
   const handleConfirm = () => {
-    const finalizedItem = JSON.parse(JSON.stringify(item)); // Deep copy
-
-    let selectionsText = Object.values(selections).flat().join(", ");
-    if (selectionsText) {
-      finalizedItem.name.en = `${item.name.en} (${selectionsText})`;
-    }
-
+    const finalizedItem = JSON.parse(JSON.stringify(item));
+    const selectionValues = Object.values(selections).flat();
+    if (selectionValues.length > 0)
+      finalizedItem.name.en = `${item.name.en} (${selectionValues.join(", ")})`;
     finalizedItem.selections = selections;
-
     if (item.options) {
       const selectedOption = item.options.find(
         (opt) => opt.name === selections["main"]
       );
-      if (selectedOption && selectedOption.price) {
+      if (selectedOption && selectedOption.price)
         finalizedItem.price = selectedOption.price;
-      }
     }
-
     onConfirm(finalizedItem);
   };
-
-  const handleSelectionChange = (group: string, value: string) => {
+  const handleSelectionChange = (group: string, value: string) =>
     setSelections((prev) => ({ ...prev, [group]: value }));
-  };
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
-        <h2 className="text-2xl font-bold mb-4">{item.name.en}</h2>
-        <div className="space-y-4">
+    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+      <div className="bg-gray-200 w-full max-w-2xl flex flex-col p-4 gap-4 border-4 border-t-gray-100 border-l-gray-100 border-b-gray-500 border-r-gray-500">
+        <h2 className="text-3xl font-bold">Options for {item.name.en}</h2>
+        <div className="flex-grow overflow-y-auto max-h-[60vh] space-y-4 pr-2">
           {item.options && (
             <div>
-              <h3 className="font-semibold text-lg">Options:</h3>
-              {item.options.map((opt) => (
-                <label key={opt.name} className="flex items-center space-x-2">
-                  <input
-                    type="radio"
-                    name="main-option"
-                    value={opt.name}
-                    checked={selections["main"] === opt.name}
-                    onChange={() => handleSelectionChange("main", opt.name)}
-                  />
-                  <span>
-                    {opt.name} {opt.price ? `(£${opt.price.toFixed(2)})` : ""}
-                  </span>
-                </label>
-              ))}
+              <h3 className="font-bold text-xl mb-2">Options:</h3>
+              <div className="grid grid-cols-3 gap-3">
+                {item.options.map((opt) => (
+                  <button
+                    key={opt.name}
+                    onClick={() => handleSelectionChange("main", opt.name)}
+                    className={`h-24 flex flex-col items-center justify-center p-2 border-2 ${
+                      selections["main"] === opt.name
+                        ? "bg-blue-600 text-white border-blue-400"
+                        : "bg-gray-300 border-r-gray-500 border-b-gray-500"
+                    }`}
+                  >
+                    <span className="text-lg">{opt.name}</span>
+                    {opt.price != null && (
+                      <span className="font-bold text-2xl">
+                        £{opt.price.toFixed(2)}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
-          {item.contents && (
-            <div>
-              <h3 className="font-semibold text-lg">Includes:</h3>
-              <ul className="list-disc pl-5">
-                {item.contents.map((content, index) => {
-                  if (content.type === "choice") {
-                    return (
-                      <li key={index} className="mt-2">
-                        <p className="font-semibold">{content.description}:</p>
-                        {content.options.map((opt) => (
-                          <label
-                            key={opt}
-                            className="flex items-center space-x-2 pl-2"
-                          >
-                            <input
-                              type="radio"
-                              name={content.description}
-                              value={opt}
-                              checked={selections[content.description] === opt}
-                              onChange={() =>
-                                handleSelectionChange(content.description, opt)
-                              }
-                            />
-                            <span>{opt}</span>
-                          </label>
-                        ))}
-                      </li>
-                    );
-                  }
-                  return <li key={index}>{content.item}</li>;
-                })}
-              </ul>
-            </div>
-          )}
+          {item.contents?.map((content, index) => {
+            if (content.type === "item")
+              return <p key={index}>Includes: {content.item}</p>;
+            if (content.type === "choice")
+              return (
+                <div key={index}>
+                  <h3 className="font-bold text-xl mb-2">
+                    {content.description}:
+                  </h3>
+                  <div className="grid grid-cols-3 gap-3">
+                    {content.options.map((opt) => (
+                      <button
+                        key={opt}
+                        onClick={() =>
+                          handleSelectionChange(content.description, opt)
+                        }
+                        className={`h-24 flex items-center justify-center p-2 border-2 text-lg ${
+                          selections[content.description] === opt
+                            ? "bg-blue-600 text-white border-blue-400"
+                            : "bg-gray-300 border-r-gray-500 border-b-gray-500"
+                        }`}
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            return null;
+          })}
         </div>
-        <div className="mt-6 flex justify-end space-x-2">
+        <div className="flex justify-end space-x-3 mt-4">
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+            className="px-6 py-3 text-xl bg-red-500 text-white border-2 border-r-red-700 border-b-red-700"
           >
             Cancel
           </button>
           <button
             onClick={handleConfirm}
-            className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+            className="px-6 py-3 text-xl bg-green-500 text-white border-2 border-r-green-700 border-b-green-700"
           >
             Confirm & Add
           </button>
@@ -251,17 +235,15 @@ const PrimaryHorizontalButton = ({
 }) => (
   <button
     onClick={onClick}
-    className={`h-12 w-12 border-2 flex items-center justify-center p-1 rounded-md
-      ${
-        isActive
-          ? "bg-blue-600 text-white border-l-gray-700 border-t-gray-700 border-r-blue-400 border-b-blue-400"
-          : "bg-gray-300 border-r-gray-500 border-b-gray-500 border-l-gray-100 border-t-gray-100"
-      }`}
+    className={`h-12 w-12 border-2 flex items-center justify-center p-1 rounded-md ${
+      isActive
+        ? "bg-blue-600 text-white border-l-gray-700 border-t-gray-700 border-r-blue-400 border-b-blue-400"
+        : "bg-gray-300 border-r-gray-500 border-b-gray-500 border-l-gray-100 border-t-gray-100"
+    }`}
   >
     <span className="text-2xl">{icon}</span>
   </button>
 );
-
 const DishStyleButton = ({
   label,
   onClick,
@@ -272,20 +254,18 @@ const DishStyleButton = ({
   isSelected: boolean;
 }) => {
   const isEmpty = !label.en;
-
   return (
     <button
       disabled={isEmpty}
-      className={`h-full w-full border-2 flex flex-col items-center justify-center text-black p-0.5
-            ${
-              isEmpty
-                ? "bg-gray-200 border-gray-400 cursor-not-allowed"
-                : isSelected
-                ? "bg-blue-600 text-white border-l-gray-700 border-t-gray-700 border-r-blue-400 border-b-blue-400"
-                : label.en === "Show All"
-                ? "bg-red-400 border-r-gray-600 border-b-gray-600 border-l-gray-100 border-t-gray-100"
-                : "bg-green-400 border-r-gray-600 border-b-gray-600 border-l-gray-100 border-t-gray-100"
-            }`}
+      className={`h-full w-full border-2 flex flex-col items-center justify-center text-black p-0.5 ${
+        isEmpty
+          ? "bg-gray-200 border-gray-400 cursor-not-allowed"
+          : isSelected
+          ? "bg-blue-600 text-white border-l-gray-700 border-t-gray-700 border-r-blue-400 border-b-blue-400"
+          : label.en === "Show All"
+          ? "bg-red-400 border-r-gray-600 border-b-gray-600 border-l-gray-100 border-t-gray-100"
+          : "bg-green-400 border-r-gray-600 border-b-gray-600 border-l-gray-100 border-t-gray-100"
+      }`}
       onClick={onClick}
     >
       <span className="font-bold">{label.zh}</span>
@@ -307,23 +287,21 @@ const RightPanel: React.FC<RightPanelProps> = ({
   const [secondaryPage, setSecondaryPage] = useState(0);
   const [itemForModal, setItemForModal] = useState<MenuItem | null>(null);
 
-  const filteredResults = useMemo(() => {
-    if (!selectedPrimary && !selectedSecondary) {
-      return [...menuItems];
-    }
-    return menuItems.filter((item) => {
-      // ----- THIS IS THE FIX -----
-      // It safely checks if item.primaryCategories exists before calling .includes()
-      const primaryMatch = selectedPrimary
-        ? item.primaryCategories &&
-          item.primaryCategories.includes(selectedPrimary)
-        : true;
+  // 1. CREATE THE REF
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
+  const filteredResults = useMemo(() => {
+    if (!selectedPrimary && !selectedSecondary) return [...menuItems];
+    return menuItems.filter((item: any) => {
+      const primaryMatch = selectedPrimary
+        ? item.primaryCategory === selectedPrimary ||
+          (item.primaryCategories &&
+            item.primaryCategories.includes(selectedPrimary))
+        : true;
       const secondaryMatch =
         selectedSecondary && selectedSecondary !== "Show All"
           ? item.secondaryCategory === selectedSecondary
           : true;
-
       return primaryMatch && secondaryMatch;
     });
   }, [menuItems, selectedPrimary, selectedSecondary]);
@@ -332,17 +310,27 @@ const RightPanel: React.FC<RightPanelProps> = ({
     if (
       filteredResults.length > 0 &&
       !filteredResults.find((i) => i.id === selectedResultId)
-    ) {
+    )
       setSelectedResultId(filteredResults[0].id);
-    } else if (filteredResults.length === 0) {
-      setSelectedResultId(null);
-    }
+    else if (filteredResults.length === 0) setSelectedResultId(null);
   }, [filteredResults, selectedResultId]);
 
-  const handlePrimarySelect = (category: string) => {
-    setSelectedPrimary((prev) => (prev === category ? null : category));
-  };
+  // 2. ADD THE AUTO-SCROLLING useEffect
+  useEffect(() => {
+    if (!selectedResultId || !scrollContainerRef.current) return;
+    const activeRow = scrollContainerRef.current.querySelector(
+      `[data-id="${selectedResultId}"]`
+    );
+    if (activeRow) {
+      activeRow.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+      });
+    }
+  }, [selectedResultId]);
 
+  const handlePrimarySelect = (category: string) =>
+    setSelectedPrimary((prev) => (prev === category ? null : category));
   const handleSecondarySelect = (category: string) => {
     if (category === "Show All") {
       setSelectedPrimary(null);
@@ -351,49 +339,38 @@ const RightPanel: React.FC<RightPanelProps> = ({
       setSelectedSecondary((prev) => (prev === category ? null : category));
     }
   };
-
   const handleAttemptAddItem = (item: MenuItem) => {
-    if (item.options || item.contents) {
-      setItemForModal(item);
-    } else {
+    setSelectedResultId(item.id);
+    if (item.options || item.contents) setItemForModal(item);
+    else {
       onAddItem(item);
       setSelectedPrimary(null);
       setSelectedSecondary(null);
     }
   };
-
   const handleConfirmItemWithOptions = (finalizedItem: MenuItem) => {
     onAddItem(finalizedItem);
     setItemForModal(null);
     setSelectedPrimary(null);
     setSelectedSecondary(null);
   };
-
   const handleNavigate = (direction: "up" | "down") => {
     if (!selectedResultId || filteredResults.length === 0) return;
     const currentIndex = filteredResults.findIndex(
       (item) => item.id === selectedResultId
     );
     if (currentIndex === -1) return;
-
     let newIndex = currentIndex;
-    if (direction === "up") {
-      newIndex = Math.max(0, currentIndex - 1);
-    } else {
-      newIndex = Math.min(filteredResults.length - 1, currentIndex + 1);
-    }
-
-    if (newIndex !== currentIndex) {
+    if (direction === "up") newIndex = Math.max(0, currentIndex - 1);
+    else newIndex = Math.min(filteredResults.length - 1, currentIndex + 1);
+    if (newIndex !== currentIndex)
       setSelectedResultId(filteredResults[newIndex].id);
-    }
   };
-
   const currentSecondaryGrid = SECONDARY_CATEGORIES_PAGES[secondaryPage] || [];
   const selectedItem = useMemo(
     () => filteredResults.find((i) => i.id === selectedResultId),
     [filteredResults, selectedResultId]
   );
-
   return (
     <div className="w-[62%] bg-gray-300 flex flex-col gap-2">
       {itemForModal && (
@@ -404,7 +381,8 @@ const RightPanel: React.FC<RightPanelProps> = ({
         />
       )}
       <div className="h-[40%] bg-yellow-100 border-2 border-t-gray-600 border-l-gray-600 border-b-gray-100 border-r-gray-100 p-1 flex flex-col overflow-hidden">
-        <div className="flex-grow overflow-y-auto">
+        {/* 3. ATTACH THE REF */}
+        <div ref={scrollContainerRef} className="flex-grow overflow-y-auto">
           <table className="w-full text-left text-sm">
             <thead className="sticky top-0 bg-yellow-200">
               <tr>
@@ -418,8 +396,8 @@ const RightPanel: React.FC<RightPanelProps> = ({
               {filteredResults.map((item) => (
                 <tr
                   key={item.id}
-                  onClick={() => setSelectedResultId(item.id)}
-                  onDoubleClick={() => handleAttemptAddItem(item)}
+                  data-id={item.id} // 4. TAG THE ROW
+                  onClick={() => handleAttemptAddItem(item)}
                   className={`cursor-pointer ${
                     selectedResultId === item.id
                       ? "bg-blue-600 text-white"
@@ -463,7 +441,6 @@ const RightPanel: React.FC<RightPanelProps> = ({
           </button>
         </div>
       </div>
-
       <div className="flex-grow flex flex-col">
         <div className="flex-shrink-0 flex gap-2 h-8 mb-2">
           <button className="bg-gray-300 border-2 border-r-gray-500 border-b-gray-500 border-l-gray-100 border-t-gray-100 px-2">
