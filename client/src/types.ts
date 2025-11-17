@@ -7,7 +7,7 @@ export interface ItemOption {
 
 // Represents an item within a Set Dinner, which can be a fixed item or a choice.
 export interface MenuContent {
-  type?: "choice";
+  type?: "choice" | "item";
   item?: string;
   description?: string;
   options?: string[];
