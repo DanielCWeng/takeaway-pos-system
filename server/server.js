@@ -207,6 +207,8 @@ function printReceipt(orderData) {
       });
 
       receiptParts.push(
+        Buffer.from("\n\n\n"), // Gap at top
+
         Buffer.from([
           ESC,
           0x40, // Initialize
@@ -336,7 +338,9 @@ function printReceipt(orderData) {
           `Rendering: Mileage: ${orderData.customerInfo.distance} 公里`
         );
         const mileageBitmap = textToBitmap(
-          `Mileage: ${orderData.customerInfo.distance} 公里`,
+          `Mileage: ${parseFloat(orderData.customerInfo.distance).toFixed(
+            2
+          )} 公里`,
           28 * 2,
           "left"
         );
@@ -359,7 +363,9 @@ function printReceipt(orderData) {
       }
 
       if (orderData.customerInfo.postcode) {
-        receiptParts.push(Buffer.from(`${orderData.customerInfo.postcode}\n`));
+        receiptParts.push(
+          Buffer.from(`${orderData.customerInfo.postcode.toUpperCase()}\n`)
+        );
       }
 
       if (orderData.customerInfo.phone) {
@@ -381,7 +387,7 @@ function printReceipt(orderData) {
 
       // ---- Feed & Cut ----
       receiptParts.push(
-        Buffer.from([ESC, 0x64, 6]), // Feed 6 lines
+        Buffer.from([ESC, 0x64, 3]), // Feed 3 lines
         Buffer.from([GS, 0x56, 0x00]) // Cut paper
       );
 
