@@ -14,7 +14,7 @@ if (!crypto.randomUUID) {
 }
 
 import React, { useState, useCallback, useMemo, ComponentProps } from "react";
-import { DELIVERY_CHARGE } from "./constants";
+import { DELIVERY_CHARGE, API_BASE_URL } from "./constants";
 import LeftPanel from "./components/LeftPanel";
 import RightPanel from "./components/RightPanel";
 import ItemModificationModal from "./components/ItemModificationModal";
@@ -27,7 +27,6 @@ import menuData from "./menu.json";
 import { OrderItem, MenuItem, OrderType, CustomerInfo } from "./types";
 import { useCallerId } from "./context/CallerIDContext";
 
-const API_BASE_URL = "http://192.168.1.154:4000";
 
 interface Order {
   id: number;

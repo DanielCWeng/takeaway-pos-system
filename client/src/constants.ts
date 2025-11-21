@@ -118,3 +118,5 @@ export const MODIFIERS: Modifier[] = [
 export const CATEGORIES: MenuItem['category'][] = ['Chicken', 'Beef', 'Vegetable', 'Special', 'Seafood', 'Drink'];
 
 export const DELIVERY_CHARGE = 2.50;
+
+export const API_BASE_URL = "http://192.168.1.154:4000";

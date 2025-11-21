@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { CustomerInfo } from "../types"; // Adjusted path assuming types.ts is in src/
+import { API_BASE_URL } from "../constants";
 import postcodeData from "../postcodes_detailed.json";
 
 // --- Helper Components (Unchanged) ---
@@ -335,7 +336,7 @@ const DeliveryAddressModal: React.FC<DeliveryAddressModalProps> = ({
     try {
       if (savedInfo.phone && savedInfo.address) {
         // [MODIFY] Send the new 'town' field to the backend
-        const response = await fetch("/api/verify-address", {
+        const response = await fetch(`${API_BASE_URL}/api/verify-address`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
