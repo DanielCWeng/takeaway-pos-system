@@ -235,7 +235,39 @@ function printReceipt(orderData) {
 
         // Print English name with price (bold)
         const itemRef = item.menuItem.id || "";
-        const englishName = `(${itemRef}) ${item.menuItem.name.en}`;
+        let englishName = `(${itemRef}) ${item.menuItem.name.en}`;
+
+        // --- MODIFIER LOGIC ---
+        const commandTranslations = {
+          REMOVE: "走",
+          LESS: "少",
+          MORE: "加",
+          WANT: "要",
+          ONLY: "只要",
+        };
+
+        let englishModifierString = "";
+        let chineseModifierString = "";
+
+        if (item.modifiers && item.modifiers.length > 0) {
+          englishModifierString = item.modifiers
+            .map((mod) => `(${mod.command} ${mod.ingredient.name})`)
+            .join(" ");
+          chineseModifierString = item.modifiers
+            .map(
+              (mod) =>
+                `(${commandTranslations[mod.command] || mod.command} ${
+                  mod.ingredient.zh
+                })`
+            )
+            .join(" ");
+        }
+
+        if (englishModifierString) {
+          englishName += ` ${englishModifierString}`;
+        }
+        // ---------------------
+
         const itemTotal = item.finalPrice * item.quantity;
 
         receiptParts.push(
@@ -246,7 +278,10 @@ function printReceipt(orderData) {
 
         // Print Chinese name as bitmap (large, bold)
         if (item.menuItem.name.zh) {
-          const chineseText = `${item.quantity} ${item.menuItem.name.zh}`;
+          let chineseText = `${item.quantity} ${item.menuItem.name.zh}`;
+          if (chineseModifierString) {
+            chineseText += ` ${chineseModifierString}`;
+          }
           const bitmap = textToBitmap(chineseText, 48, "left", true);
           receiptParts.push(bitmapToESCPOS(bitmap));
           receiptParts.push(Buffer.from("\n"));
