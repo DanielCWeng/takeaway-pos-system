@@ -108,18 +108,31 @@ export default function App() {
     },
     []
   );
+  // Ref to track the last processed call timestamp to prevent duplicate handling
+  const lastProcessedCallTime = React.useRef<string | null>(null);
 
+  // [THE CORRECT useEffect - THIS POPULATES THE ORDER]
   React.useEffect(() => {
-    let notificationTimer: NodeJS.Timeout;
-
     const handleIncomingCall = async (callData: any) => {
+      // Always show notification for a new call
       setShowNotification(true);
       setCurrentCaller(callData);
 
-      if (notificationTimer) {
-        clearTimeout(notificationTimer);
+      const timer = setTimeout(() => setShowNotification(false), 8000);
+
+      // Logic to decide if we should auto-populate the order
+      // We only auto-populate if the active order is effectively empty
+      const shouldAutoPopulate =
+        activeOrder &&
+        activeOrder.items.length === 0 &&
+        !activeOrder.customerInfo.phone;
+
+      if (!shouldAutoPopulate) {
+        console.log(
+          "[EFFECT] Call received but order is active. Notification shown only."
+        );
+        return () => clearTimeout(timer);
       }
-      notificationTimer = setTimeout(() => setShowNotification(false), 8000);
 
       try {
         console.log(
@@ -134,11 +147,18 @@ export default function App() {
           const customer = await response.json();
           console.log("[EFFECT] Found existing customer:", customer);
 
+          // Check if customer has the new multi-address structure
           if (customer.addresses && Array.isArray(customer.addresses)) {
             if (customer.addresses.length > 1) {
+              console.log(
+                "[EFFECT] Customer has multiple addresses. Opening selection modal."
+              );
               setCustomerForSelection(customer);
               setIsAddressSelectionModalOpen(true);
             } else if (customer.addresses.length === 1) {
+              console.log(
+                "[EFFECT] Customer has one address. Populating order automatically."
+              );
               const singleAddress = customer.addresses[0];
               const newCustomerInfo = {
                 phone: customer.phone,
@@ -151,6 +171,10 @@ export default function App() {
               };
               updateOrder(activeOrderIndex, { customerInfo: newCustomerInfo });
             } else {
+              // addresses array exists but is empty
+              console.log(
+                "[EFFECT] Customer exists but has no addresses saved."
+              );
               const newCustomerInfo = {
                 phone: customer.phone,
                 name: customer.name || "",
@@ -158,6 +182,10 @@ export default function App() {
               updateOrder(activeOrderIndex, { customerInfo: newCustomerInfo });
             }
           } else if (customer.postcode) {
+            // OLD DATABASE FORMAT: Customer has postcode/address fields directly
+            console.log(
+              "[EFFECT] Customer using old format. Populating from top-level fields."
+            );
             const newCustomerInfo = {
               phone: customer.phone,
               name: customer.name || "",
@@ -170,6 +198,10 @@ export default function App() {
             };
             updateOrder(activeOrderIndex, { customerInfo: newCustomerInfo });
           } else {
+            // Customer exists but has no address data at all
+            console.log(
+              "[EFFECT] Customer exists but has no address information."
+            );
             const newCustomerInfo = {
               phone: customer.phone,
               name: customer.name || "",
@@ -187,26 +219,18 @@ export default function App() {
           updateOrder(activeOrderIndex, { customerInfo: newCustomerInfo });
         }
       } catch (error) {
-        console.error("[EFFECT] Error processing incoming call:", error);
+        console.error("[EFFECT] Error fetching customer data:", error);
       }
+
+      return () => clearTimeout(timer);
     };
 
-    if (lastCall && activeOrder) {
-      const isOrderEmpty =
-        activeOrder.items.length === 0 && !activeOrder.customerInfo.phone;
-      if (isOrderEmpty) {
-        console.log(
-          "[EFFECT] Conditions met. Handling incoming call for empty order."
-        );
-        handleIncomingCall(lastCall);
-      } else {
-        console.log("[EFFECT] Call ignored: active order is not empty.");
-      }
+    // Check if we have a call and if it's a NEW call (different timestamp)
+    if (lastCall && lastCall.timestamp !== lastProcessedCallTime.current) {
+      console.log("[PROCESSING CALL] New call detected:", lastCall);
+      lastProcessedCallTime.current = lastCall.timestamp;
+      handleIncomingCall(lastCall);
     }
-
-    return () => {
-      clearTimeout(notificationTimer);
-    };
   }, [lastCall, activeOrder, activeOrderIndex, updateOrder]);
 
   const handleSelectAddress = (selectedAddress: any) => {
