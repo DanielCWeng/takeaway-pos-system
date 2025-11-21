@@ -109,6 +109,9 @@ interface ItemModificationModalProps {
 const ItemModificationModal: React.FC<ItemModificationModalProps> = ({ item, onClose, onSave }) => {
     const [activeCommand, setActiveCommand] = useState<ModifierCommand | null>(null);
     const [modifiers, setModifiers] = useState<Modifier[]>(item.modifiers || []);
+    const [customPrice, setCustomPrice] = useState<string>(item.customPrice ? item.customPrice.toString() : '');
+    const [customName, setCustomName] = useState<string>(item.customName || '');
+    const [customInstructions, setCustomInstructions] = useState<string>(item.customInstructions || '');
 
     const handleIngredientClick = (ingredient: Ingredient) => {
         if (!activeCommand) return;
@@ -122,7 +125,7 @@ const ItemModificationModal: React.FC<ItemModificationModalProps> = ({ item, onC
     };
 
     const handleSave = () => {
-        const basePrice = item.menuItem.price || 0;
+        const basePrice = customPrice ? parseFloat(customPrice) : (item.menuItem.price || 0);
         const priceFromModifiers = modifiers.reduce((sum, mod) => sum + (mod.ingredient.price || 0), 0);
         
         // --- NEW: Translations for commands ---
@@ -134,7 +137,7 @@ const ItemModificationModal: React.FC<ItemModificationModalProps> = ({ item, onC
         const chineseModifierString = modifiers.map(mod => `(${commandTranslations[mod.command]} ${mod.ingredient.zh})`).join(' ');
         
         // --- NEW: Combine base names and modifier strings into a single, comprehensive display name ---
-        const englishPart = [item.menuItem.name.en, englishModifierString].filter(Boolean).join(' ');
+        const englishPart = [customName || item.menuItem.name.en, englishModifierString].filter(Boolean).join(' ');
         const chinesePart = [item.menuItem.name.zh, chineseModifierString].filter(Boolean).join(' ');
         const finalDisplayName = [englishPart, chinesePart].filter(Boolean).join(' | ');
 
@@ -143,6 +146,9 @@ const ItemModificationModal: React.FC<ItemModificationModalProps> = ({ item, onC
             modifiers,
             finalPrice: basePrice + priceFromModifiers,
             displayName: finalDisplayName,
+            customPrice: customPrice ? parseFloat(customPrice) : undefined,
+            customName: customName || undefined,
+            customInstructions: customInstructions || undefined,
         };
         onSave(updatedItem);
     };
@@ -154,6 +160,38 @@ const ItemModificationModal: React.FC<ItemModificationModalProps> = ({ item, onC
             {/* --- MODIFIED: Wider modal container --- */}
             <div className="bg-gray-100 w-full max-w-7xl h-[90vh] rounded-lg shadow-xl flex flex-col p-4 gap-4">
                 <h2 className="text-2xl font-bold text-center flex-shrink-0">Modify: {item.menuItem.name.en}</h2>
+                
+                <div className="grid grid-cols-3 gap-4 flex-shrink-0">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Custom Name</label>
+                        <input
+                            type="text"
+                            value={customName}
+                            onChange={(e) => setCustomName(e.target.value)}
+                            placeholder={item.menuItem.name.en}
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Custom Base Price</label>
+                        <input
+                            type="number"
+                            value={customPrice}
+                            onChange={(e) => setCustomPrice(e.target.value)}
+                            placeholder={item.menuItem.price?.toString()}
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Instructions</label>
+                        <input
+                            type="text"
+                            value={customInstructions}
+                            onChange={(e) => setCustomInstructions(e.target.value)}
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                        />
+                    </div>
+                </div>
                 
                 <div className="flex-shrink-0 flex gap-2">
                     {commands.map(cmd => (

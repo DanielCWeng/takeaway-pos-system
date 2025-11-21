@@ -43,6 +43,9 @@ export interface OrderItem {
   modifiers: Modifier[];
   quantity: number;
   finalPrice: number;
+  customPrice?: number;
+  customInstructions?: string;
+  customName?: string;
 }
 
 // The type of the current order.

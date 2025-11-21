@@ -10,6 +10,15 @@ export default defineConfig(({ mode }) => {
     return {
       // No server port defined here, so Vite will use its default (usually 5173)
       // This avoids conflict with our backend server on port 4000.
+      server: {
+        proxy: {
+            '/api': {
+                target: 'http://localhost:4000',
+                changeOrigin: true,
+                secure: false,
+            }
+        }
+      },
       plugins: [react()],
       define: {
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
