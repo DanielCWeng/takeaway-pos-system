@@ -13,6 +13,8 @@ interface Order {
 }
 
 
+import { API_BASE_URL } from '../constants';
+
 const ADMIN_PASSWORD = 'password123';
 
 // ... (The OrderDetailsModal component remains unchanged) ...
@@ -97,7 +99,7 @@ const AdminPage: React.FC<{ onClose: () => void; }> = ({ onClose }) => {
             setIsLoading(true);
             setFetchError(null);
             try {
-                const response = await fetch(`/api/archived-orders?date=${selectedDate}`);
+                const response = await fetch(`${API_BASE_URL}/api/archived-orders?date=${selectedDate}`);
                 if (!response.ok) throw new Error('Failed to fetch orders.');
                 const data: Order[] = await response.json();
                 setOrders(data);
@@ -136,7 +138,7 @@ const AdminPage: React.FC<{ onClose: () => void; }> = ({ onClose }) => {
     const handleReprint = async (order: Order) => {
         console.log(`Reprinting order #${order.id}...`);
         try {
-            const response = await fetch('/api/print', {
+            const response = await fetch(`${API_BASE_URL}/api/print`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(order),
@@ -152,7 +154,7 @@ const AdminPage: React.FC<{ onClose: () => void; }> = ({ onClose }) => {
     const handleDeleteDay = async () => {
         console.log(`Deleting all orders for ${selectedDate}...`);
         try {
-            const response = await fetch(`/api/archived-orders?date=${selectedDate}`, {
+            const response = await fetch(`${API_BASE_URL}/api/archived-orders?date=${selectedDate}`, {
                 method: 'DELETE',
             });
             const result = await response.json();

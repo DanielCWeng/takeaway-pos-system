@@ -119,4 +119,4 @@ export const CATEGORIES: MenuItem['category'][] = ['Chicken', 'Beef', 'Vegetable
 
 export const DELIVERY_CHARGE = 2.50;
 
-export const API_BASE_URL = "http://192.168.1.154:4000";
+export const API_BASE_URL = "http://" + window.location.hostname + ":4000";
