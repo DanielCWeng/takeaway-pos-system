@@ -119,6 +119,7 @@ export default function App() {
   );
   // Ref to track the last processed call timestamp to prevent duplicate handling
   const lastProcessedCallTime = React.useRef<string | null>(null);
+  const lastProcessedCallPhone = React.useRef<string | null>(null);
 
   // [THE CORRECT useEffect - THIS POPULATES THE ORDER]
   React.useEffect(() => {
@@ -275,13 +276,15 @@ export default function App() {
       return () => clearTimeout(timer);
     };
 
-    // Check if we have a call and if it's a NEW call (different timestamp)
-    if (lastCall && lastCall.timestamp !== lastProcessedCallTime.current) {
+    // Check if we have a call and if it's a NEW call (different timestamp or phone)
+    // We check phone too in case timestamps collide (e.g. rapid calls)
+    if (lastCall && (lastCall.timestamp !== lastProcessedCallTime.current || lastCall.phone !== lastProcessedCallPhone.current)) {
       console.log("[PROCESSING CALL] New call detected:", lastCall);
       lastProcessedCallTime.current = lastCall.timestamp;
+      lastProcessedCallPhone.current = lastCall.phone;
       handleIncomingCall(lastCall);
     }
-  }, [lastCall, activeOrderIndex]); // Removed activeOrder and updateOrder to avoid excessive deps, logic moved inside setter
+  }, [lastCall, activeOrderIndex, orders]); // Added orders to ensure activeOrder is fresh in closure
 
   // 5-minute timeout for auto-created orders
   React.useEffect(() => {
