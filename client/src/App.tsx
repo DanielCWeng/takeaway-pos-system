@@ -302,6 +302,13 @@ export default function App() {
         });
         
         if (ordersKeep.length !== prevOrders.length) {
+           // If we removed orders, we must ensure activeOrderIndex is still valid
+           setActiveOrderIndex(prevIndex => {
+              if (prevIndex >= ordersKeep.length) {
+                 return Math.max(0, ordersKeep.length - 1);
+              }
+              return prevIndex;
+           });
            return ordersKeep;
         }
         return prevOrders;
@@ -312,15 +319,17 @@ export default function App() {
   }, []);
 
   const handleSetActiveOrder = (index: number) => {
-    setActiveOrderIndex(index);
-    // Clear unread status
-    setOrders(prev => {
-       const newOrders = [...prev];
-       if (newOrders[index].hasUnreadChanges) {
-          newOrders[index] = { ...newOrders[index], hasUnreadChanges: false };
-       }
-       return newOrders;
-    });
+    if (index >= 0 && index < orders.length) {
+      setActiveOrderIndex(index);
+      // Clear unread status
+      setOrders(prev => {
+         const newOrders = [...prev];
+         if (newOrders[index] && newOrders[index].hasUnreadChanges) {
+            newOrders[index] = { ...newOrders[index], hasUnreadChanges: false };
+         }
+         return newOrders;
+      });
+    }
   };
 
   const handleSelectAddress = (selectedAddress: any) => {
@@ -559,6 +568,13 @@ export default function App() {
     },
     [orderToConfirm, orders, subtotal, total]
   );
+
+  // Safety check: if activeOrder is undefined (e.g. due to race condition), fallback to loading or reset
+  if (!activeOrder && orders.length > 0) {
+     // Try to recover by setting index to 0
+     if (activeOrderIndex !== 0) setActiveOrderIndex(0);
+     return <div>Recovering state...</div>;
+  }
 
   if (!activeOrder) return <div>Loading...</div>;
 
