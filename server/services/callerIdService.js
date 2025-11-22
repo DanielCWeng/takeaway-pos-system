@@ -395,18 +395,29 @@ export async function startCallerIdService(onCallHandledCallback) {
     }
     console.log("Ready. Waiting for calls...\n");
     device.on("data", async (data) => {
+      console.log("HID DATA RAW:", data.toString("hex"));
       const phone = extractPhone(data);
+      console.log("EXTRACTED PHONE:", phone);
+      
       if (phone?.length === 11) {
         // If we are already waiting for this phone (debounce window active), ignore subsequent signals
-        if (activeCallTimers.has(phone)) return;
+        if (activeCallTimers.has(phone)) {
+           console.log(`IGNORING ${phone} - Debounce active`);
+           return;
+        }
+
+        console.log(`STARTING TIMER FOR ${phone}`);
 
         // Start a timer for this specific phone
         const timer = setTimeout(async () => {
+          console.log(`TIMER FIRED FOR ${phone} - Processing call`);
           activeCallTimers.delete(phone); // Remove from map when processing starts
           await handleCall(phone, onCallHandledCallback);
         }, 2000);
 
         activeCallTimers.set(phone, timer);
+      } else {
+         console.log("NO VALID PHONE EXTRACTED");
       }
     });
     device.on("error", (err) => console.error("HID ERROR:", err.message));
