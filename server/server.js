@@ -383,6 +383,10 @@ function printReceipt(orderData) {
       }
 
       // Address lines
+      if (orderData.customerInfo.name) {
+        receiptParts.push(Buffer.from(`${orderData.customerInfo.name}\n`));
+      }
+
       if (orderData.customerInfo.houseNumber && orderData.customerInfo.street) {
         receiptParts.push(
           Buffer.from(
