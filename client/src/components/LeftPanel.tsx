@@ -38,17 +38,23 @@ interface LeftPanelProps {
 const OrderTab: React.FC<{
   orderId: number;
   isActive: boolean;
+  hasUnreadChanges?: boolean;
   onClick: () => void;
-}> = ({ orderId, isActive, onClick }) => (
+}> = ({ orderId, isActive, hasUnreadChanges, onClick }) => (
   <button
     onClick={onClick}
-    className={`w-10 h-8 border-2 flex items-center justify-center font-bold text-lg
+    className={`w-10 h-8 border-2 flex items-center justify-center font-bold text-lg relative
       ${isActive
         ? 'bg-blue-600 text-white border-l-gray-700 border-t-gray-700 border-r-blue-400 border-b-blue-400'
         : 'bg-gray-300 border-r-gray-500 border-b-gray-500 border-l-gray-100 border-t-gray-100'
       }`}
   >
     {orderId}
+    {hasUnreadChanges && !isActive && (
+      <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center border border-white">
+        !
+      </span>
+    )}
   </button>
 );
 
@@ -86,6 +92,7 @@ const LeftPanel: React.FC<LeftPanelProps> = ({
             key={order.id}
             orderId={order.id}
             isActive={activeOrder.id === order.id}
+            hasUnreadChanges={order.hasUnreadChanges}
             onClick={() => onSetActiveOrder(index)}
           />
         ))}

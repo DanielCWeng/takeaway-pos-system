@@ -34,14 +34,24 @@ interface Order {
   orderType: OrderType;
   customerInfo: CustomerInfo;
   discount: number;
+  autoCreated?: boolean;
+  createdAt?: number;
+  hasUnreadChanges?: boolean;
 }
 
-const createNewOrder = (id: number): Order => ({
+const createNewOrder = (
+  id: number,
+  autoCreated: boolean = false,
+  hasUnreadChanges: boolean = false
+): Order => ({
   id,
   items: [],
   orderType: OrderType.Collection,
   customerInfo: {},
   discount: 0,
+  autoCreated,
+  createdAt: autoCreated ? Date.now() : undefined,
+  hasUnreadChanges,
 });
 
 type PosButtonProps = ComponentProps<"button">;
@@ -126,11 +136,13 @@ export default function App() {
         activeOrder.items.length === 0 &&
         !activeOrder.customerInfo.phone;
 
+      let targetOrderIndex = activeOrderIndex;
+      let isNewOrder = false;
+
       if (!shouldAutoPopulate) {
         console.log(
-          "[EFFECT] Call received but order is active. Notification shown only."
+          "[EFFECT] Call received but order is active. Will create background order after data fetch."
         );
-        return () => clearTimeout(timer);
       }
 
       try {
@@ -142,24 +154,43 @@ export default function App() {
           `${API_BASE_URL}/api/customer/${callData.phone}`
         );
 
+        // Helper to update the target order (either active or newly created)
+        const updateTargetOrder = (info: Partial<Order>) => {
+          setOrders((prevOrders) => {
+            // If it was a new order, we need to find it again because state might have updated
+            // But since we are inside the effect, we rely on functional update
+            // However, 'targetOrderIndex' calculated above is valid for the *next* render, 
+            // but inside this async function, we need to be careful.
+            // Actually, simpler: just append/update based on index if we know it.
+            
+            // If we created a new order, it's at the end. 
+            // BUT, React state updates are batched/async. 
+            // The 'setOrders' above might not have applied yet when we run this.
+            // So we should probably do the fetch FIRST, then decide whether to create new or update existing.
+            return prevOrders; 
+          });
+        };
+        
+        // RE-FACTORING to avoid state race conditions:
+        // 1. Fetch data first.
+        // 2. Then determine if we need a new order or update existing.
+        
+        let customerDataToApply: CustomerInfo = {};
+
         if (response.ok) {
           const customer = await response.json();
           console.log("[EFFECT] Found existing customer:", customer);
 
-          // Check if customer has the new multi-address structure
           if (customer.addresses && Array.isArray(customer.addresses)) {
             if (customer.addresses.length > 1) {
-              console.log(
-                "[EFFECT] Customer has multiple addresses. Opening selection modal."
-              );
-              setCustomerForSelection(customer);
-              setIsAddressSelectionModalOpen(true);
-            } else if (customer.addresses.length === 1) {
-              console.log(
-                "[EFFECT] Customer has one address. Populating order automatically."
-              );
-              const singleAddress = customer.addresses[0];
-              const newCustomerInfo = {
+               // ... (complex address selection logic - might need to skip for background orders or pick default)
+               // For background orders, we probably can't show the modal immediately if user is working.
+               // Let's just pick the first one for now or leave it blank?
+               // Requirement: "put the phone number into a new order"
+               // If we need selection, maybe just set phone/name and let user pick address later?
+               // Let's pick first address for now to be helpful.
+               const singleAddress = customer.addresses[0];
+               customerDataToApply = {
                 phone: customer.phone,
                 name: customer.name,
                 postcode: singleAddress.postcode,
@@ -167,25 +198,32 @@ export default function App() {
                 street: singleAddress.street,
                 town: singleAddress.town,
                 distance: callData.distance,
-              };
-              updateOrder(activeOrderIndex, { customerInfo: newCustomerInfo });
+               };
+               // If it's the ACTIVE order, we can show modal.
+               if (shouldAutoPopulate) {
+                  setCustomerForSelection(customer);
+                  setIsAddressSelectionModalOpen(true);
+                  return () => clearTimeout(timer); // Stop here, let modal handle it
+               }
+            } else if (customer.addresses.length === 1) {
+               const singleAddress = customer.addresses[0];
+               customerDataToApply = {
+                phone: customer.phone,
+                name: customer.name,
+                postcode: singleAddress.postcode,
+                houseNumber: singleAddress.houseNumber,
+                street: singleAddress.street,
+                town: singleAddress.town,
+                distance: callData.distance,
+               };
             } else {
-              // addresses array exists but is empty
-              console.log(
-                "[EFFECT] Customer exists but has no addresses saved."
-              );
-              const newCustomerInfo = {
+               customerDataToApply = {
                 phone: customer.phone,
                 name: customer.name || "",
-              };
-              updateOrder(activeOrderIndex, { customerInfo: newCustomerInfo });
+               };
             }
           } else if (customer.postcode) {
-            // OLD DATABASE FORMAT: Customer has postcode/address fields directly
-            console.log(
-              "[EFFECT] Customer using old format. Populating from top-level fields."
-            );
-            const newCustomerInfo = {
+            customerDataToApply = {
               phone: customer.phone,
               name: customer.name || "",
               postcode: customer.postcode,
@@ -195,28 +233,41 @@ export default function App() {
               address: customer.address,
               distance: callData.distance,
             };
-            updateOrder(activeOrderIndex, { customerInfo: newCustomerInfo });
           } else {
-            // Customer exists but has no address data at all
-            console.log(
-              "[EFFECT] Customer exists but has no address information."
-            );
-            const newCustomerInfo = {
+            customerDataToApply = {
               phone: customer.phone,
               name: customer.name || "",
             };
-            updateOrder(activeOrderIndex, { customerInfo: newCustomerInfo });
           }
         } else {
-          console.log(
-            "[EFFECT] New customer. Populating order from call data."
-          );
-          const newCustomerInfo = {
+          customerDataToApply = {
             phone: callData.phone,
             postcode: callData.postcode,
           };
-          updateOrder(activeOrderIndex, { customerInfo: newCustomerInfo });
         }
+
+        // NOW apply to state
+        setOrders((prevOrders) => {
+           const newOrders = [...prevOrders];
+           // Re-evaluate shouldAutoPopulate inside the setter to be safe with latest state
+           const currentActive = newOrders[activeOrderIndex];
+           const actuallyShouldAutoPopulate = currentActive && currentActive.items.length === 0 && !currentActive.customerInfo.phone;
+
+           if (actuallyShouldAutoPopulate) {
+              newOrders[activeOrderIndex] = {
+                 ...newOrders[activeOrderIndex],
+                 customerInfo: customerDataToApply
+              };
+           } else {
+              // Create background order
+              const nextId = newOrders.length > 0 ? Math.max(...newOrders.map((o) => o.id)) + 1 : 1;
+              const newOrder = createNewOrder(nextId, true, true);
+              newOrder.customerInfo = customerDataToApply;
+              newOrders.push(newOrder);
+           }
+           return newOrders;
+        });
+
       } catch (error) {
         console.error("[EFFECT] Error fetching customer data:", error);
       }
@@ -230,7 +281,44 @@ export default function App() {
       lastProcessedCallTime.current = lastCall.timestamp;
       handleIncomingCall(lastCall);
     }
-  }, [lastCall, activeOrder, activeOrderIndex, updateOrder]);
+  }, [lastCall, activeOrderIndex]); // Removed activeOrder and updateOrder to avoid excessive deps, logic moved inside setter
+
+  // 5-minute timeout for auto-created orders
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      setOrders((prevOrders) => {
+        const now = Date.now();
+        const ordersKeep = prevOrders.filter((order) => {
+          if (order.autoCreated && order.items.length === 0) {
+             // Check if 5 minutes passed
+             if (order.createdAt && (now - order.createdAt > 5 * 60 * 1000)) {
+                return false; // Remove
+             }
+          }
+          return true;
+        });
+        
+        if (ordersKeep.length !== prevOrders.length) {
+           return ordersKeep;
+        }
+        return prevOrders;
+      });
+    }, 60 * 1000); // Check every minute
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleSetActiveOrder = (index: number) => {
+    setActiveOrderIndex(index);
+    // Clear unread status
+    setOrders(prev => {
+       const newOrders = [...prev];
+       if (newOrders[index].hasUnreadChanges) {
+          newOrders[index] = { ...newOrders[index], hasUnreadChanges: false };
+       }
+       return newOrders;
+    });
+  };
 
   const handleSelectAddress = (selectedAddress: any) => {
     if (!customerForSelection) return;
@@ -543,7 +631,7 @@ export default function App() {
           deliveryCharge={DELIVERY_CHARGE}
           onOpenCustomerModal={handleOpenCustomerModal}
           onNewOrder={handleNewOrder}
-          onSetActiveOrder={setActiveOrderIndex}
+          onSetActiveOrder={handleSetActiveOrder}
           isZeroPriceMode={isZeroPriceMode}
           onToggleZeroPriceMode={() => setIsZeroPriceMode((prev) => !prev)}
           onFocItem={handleFocItem}

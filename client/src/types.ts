@@ -46,6 +46,7 @@ export interface OrderItem {
   customPrice?: number;
   customInstructions?: string;
   customName?: string;
+  selections?: { [key: string]: string | string[] };
 }
 
 // The type of the current order.
@@ -65,6 +66,21 @@ export interface CustomerInfo {
   town?: string;
   address?: string;
   distance?: number;
+  deliveryInstructions?: string;
+  status?: "COMPLETE" | "NEEDS_ADDRESS";
+}
+
+// Represents an order.
+export interface Order {
+  postcode?: string;
+  houseNumber?: string;
+  street?: string;
+  town?: string;
+  address?: string;
+  discount: number;
+  autoCreated?: boolean;
+  createdAt?: number;
+  hasUnreadChanges?: boolean;
   deliveryInstructions?: string;
   status?: "COMPLETE" | "NEEDS_ADDRESS";
 }
