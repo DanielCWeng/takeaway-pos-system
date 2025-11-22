@@ -467,49 +467,43 @@ function checkPrinterStatus() {
 //                     API ENDPOINTS
 // ===================================================================
 app.get("/api/test-call", (req, res) => {
-  console.log("Received request on /api/test-call");
+  const { phone, name, postcode, address, type } = req.query;
 
-  const newCustomerPayload = {
-    type: "incoming_call",
-    payload: {
-      phone: "07111222333",
-      timestamp: new Date().toISOString(),
-      postcode: null,
-      address: null,
-      houseNumber: null,
-      street: null,
-      town: null,
-      distance: null,
-      availableAddresses: null,
-      callCount: 1,
-      status: "NEEDS_ADDRESS",
-    },
+  console.log("Received request on /api/test-call", req.query);
+
+  const timestamp = new Date().toISOString();
+  const randomPhone = "07" + Math.floor(Math.random() * 1000000000);
+
+  const payload = {
+    phone: phone || randomPhone,
+    timestamp: timestamp,
+    postcode: postcode || null,
+    address: address || null,
+    houseNumber: null,
+    street: null,
+    town: null,
+    distance: null,
+    availableAddresses: null,
+    callCount: 1,
+    status: address ? "COMPLETE" : "NEEDS_ADDRESS",
+    name: name || "", // Pass name if provided
   };
 
-  const existingCustomerPayload = {
-    type: "incoming_call",
-    payload: {
-      phone: "07987654321",
-      timestamp: new Date().toISOString(),
-      postcode: "NG10 1AA",
-      address: "123 High Street, Long Eaton",
-      houseNumber: "123",
-      street: "High Street",
-      town: "Long Eaton",
-      distance: 2.5,
-      availableAddresses: [{ id: 0, full: "123 High Street, Long Eaton" }],
-      callCount: 8,
-      status: "COMPLETE",
-    },
-  };
-
-  if (req.query.type === "existing") {
-    broadcast(existingCustomerPayload);
-    res.send("Sent test broadcast for an EXISTING customer.");
-  } else {
-    broadcast(newCustomerPayload);
-    res.send("Sent test broadcast for a NEW customer.");
+  // If simulating an existing customer with address
+  if (type === "existing" || (postcode && address)) {
+     payload.postcode = postcode || "NG10 1AA";
+     payload.address = address || "123 High Street, Long Eaton";
+     payload.status = "COMPLETE";
+     payload.availableAddresses = [{ id: 0, full: payload.address }];
   }
+
+  const message = {
+    type: "incoming_call",
+    payload: payload,
+  };
+
+  broadcast(message);
+  res.send(`Sent test broadcast for ${payload.phone}`);
 });
 
 app.post("/api/verify-address", async (req, res) => {

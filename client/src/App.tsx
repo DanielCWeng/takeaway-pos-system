@@ -135,7 +135,8 @@ export default function App() {
 
       console.log(`[CALL START] Processing call from ${callData.phone}. Timestamp: ${callData.timestamp}`);
       console.log(`[CALL STATE] Active Order Index: ${activeOrderIndex}`);
-      console.log(`[CALL STATE] Active Order Empty? ${activeOrder.items.length === 0}`);
+      console.log(`[CALL STATE] Active Order ID: ${activeOrder.id}`);
+      console.log(`[CALL STATE] Active Order Items Count: ${activeOrder.items.length}`);
       console.log(`[CALL STATE] Active Order Has Phone? ${!!activeOrder.customerInfo.phone}`);
       console.log(`[CALL STATE] Is Populating Lock? ${isPopulatingActiveOrder.current}`);
 
@@ -146,6 +147,8 @@ export default function App() {
         activeOrder &&
         activeOrder.items.length === 0 &&
         !activeOrder.customerInfo.phone;
+      
+      console.log(`[CALL DECISION] Should Auto Populate? ${shouldAutoPopulate}`);
 
       if (shouldAutoPopulate) {
          console.log("[CALL DECISION] Decided to AUTO-POPULATE active order. Acquiring lock.");
@@ -192,14 +195,6 @@ export default function App() {
                   console.log("[EFFECT] Opening address selection modal for active order.");
                   setCustomerForSelection(customer);
                   setIsAddressSelectionModalOpen(true);
-                  // Release lock because user interaction is now required, but we technically "populated" it enough to be busy?
-                  // Actually, if we open the modal, the order is still "empty" until they select.
-                  // But we don't want another call to hijack it.
-                  // So keep lock? Or set a flag on order?
-                  // For now, let's release lock after a short delay or just keep it true?
-                  // If we keep it true, it never resets.
-                  // We should reset it when the effect finishes?
-                  // But if we return early, we must reset it.
                   isPopulatingActiveOrder.current = false; 
                   return () => clearTimeout(timer); 
                }
@@ -248,12 +243,6 @@ export default function App() {
         // NOW apply to state
         setOrders((prevOrders) => {
            const newOrders = [...prevOrders];
-           // Re-evaluate shouldAutoPopulate inside the setter to be safe with latest state
-           // BUT we must respect our initial decision 'shouldAutoPopulate' which took the lock.
-           // If we took the lock, we MUST populate the active order (unless it somehow got filled by user in milliseconds?)
-           
-           // Actually, if we took the lock, we committed to populating the active order.
-           // If we didn't take the lock, we committed to background.
            
            if (shouldAutoPopulate) {
               console.log("[UPDATE STATE] Populating ACTIVE order index:", activeOrderIndex);
