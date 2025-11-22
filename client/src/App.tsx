@@ -121,6 +121,9 @@ export default function App() {
   const lastProcessedCallTime = React.useRef<string | null>(null);
   const lastProcessedCallPhone = React.useRef<string | null>(null);
 
+  // Ref to track if we are currently populating the active order to prevent race conditions
+  const isPopulatingActiveOrder = React.useRef(false);
+
   // [THE CORRECT useEffect - THIS POPULATES THE ORDER]
   React.useEffect(() => {
     const handleIncomingCall = async (callData: any) => {
@@ -130,19 +133,30 @@ export default function App() {
 
       const timer = setTimeout(() => setShowNotification(false), 8000);
 
+      console.log(`[CALL START] Processing call from ${callData.phone}. Timestamp: ${callData.timestamp}`);
+      console.log(`[CALL STATE] Active Order Index: ${activeOrderIndex}`);
+      console.log(`[CALL STATE] Active Order Empty? ${activeOrder.items.length === 0}`);
+      console.log(`[CALL STATE] Active Order Has Phone? ${!!activeOrder.customerInfo.phone}`);
+      console.log(`[CALL STATE] Is Populating Lock? ${isPopulatingActiveOrder.current}`);
+
       // Logic to decide if we should auto-populate the order
-      // We only auto-populate if the active order is effectively empty
+      // We only auto-populate if the active order is effectively empty AND we aren't already populating it
       const shouldAutoPopulate =
+        !isPopulatingActiveOrder.current &&
         activeOrder &&
         activeOrder.items.length === 0 &&
         !activeOrder.customerInfo.phone;
 
-      let targetOrderIndex = activeOrderIndex;
-      let isNewOrder = false;
+      if (shouldAutoPopulate) {
+         console.log("[CALL DECISION] Decided to AUTO-POPULATE active order. Acquiring lock.");
+         isPopulatingActiveOrder.current = true;
+      } else {
+         console.log("[CALL DECISION] Decided to create BACKGROUND order.");
+      }
 
       if (!shouldAutoPopulate) {
         console.log(
-          "[EFFECT] Call received but order is active. Will create background order after data fetch."
+          "[EFFECT] Call received but order is active (or locked). Will create background order after data fetch."
         );
       }
 
@@ -154,27 +168,6 @@ export default function App() {
         const response = await fetch(
           `${API_BASE_URL}/api/customer/${callData.phone}`
         );
-
-        // Helper to update the target order (either active or newly created)
-        const updateTargetOrder = (info: Partial<Order>) => {
-          setOrders((prevOrders) => {
-            // If it was a new order, we need to find it again because state might have updated
-            // But since we are inside the effect, we rely on functional update
-            // However, 'targetOrderIndex' calculated above is valid for the *next* render, 
-            // but inside this async function, we need to be careful.
-            // Actually, simpler: just append/update based on index if we know it.
-            
-            // If we created a new order, it's at the end. 
-            // BUT, React state updates are batched/async. 
-            // The 'setOrders' above might not have applied yet when we run this.
-            // So we should probably do the fetch FIRST, then decide whether to create new or update existing.
-            return prevOrders; 
-          });
-        };
-        
-        // RE-FACTORING to avoid state race conditions:
-        // 1. Fetch data first.
-        // 2. Then determine if we need a new order or update existing.
         
         let customerDataToApply: CustomerInfo = {};
 
@@ -184,12 +177,6 @@ export default function App() {
 
           if (customer.addresses && Array.isArray(customer.addresses)) {
             if (customer.addresses.length > 1) {
-               // ... (complex address selection logic - might need to skip for background orders or pick default)
-               // For background orders, we probably can't show the modal immediately if user is working.
-               // Let's just pick the first one for now or leave it blank?
-               // Requirement: "put the phone number into a new order"
-               // If we need selection, maybe just set phone/name and let user pick address later?
-               // Let's pick first address for now to be helpful.
                const singleAddress = customer.addresses[0];
                customerDataToApply = {
                 phone: customer.phone,
@@ -202,9 +189,19 @@ export default function App() {
                };
                // If it's the ACTIVE order, we can show modal.
                if (shouldAutoPopulate) {
+                  console.log("[EFFECT] Opening address selection modal for active order.");
                   setCustomerForSelection(customer);
                   setIsAddressSelectionModalOpen(true);
-                  return () => clearTimeout(timer); // Stop here, let modal handle it
+                  // Release lock because user interaction is now required, but we technically "populated" it enough to be busy?
+                  // Actually, if we open the modal, the order is still "empty" until they select.
+                  // But we don't want another call to hijack it.
+                  // So keep lock? Or set a flag on order?
+                  // For now, let's release lock after a short delay or just keep it true?
+                  // If we keep it true, it never resets.
+                  // We should reset it when the effect finishes?
+                  // But if we return early, we must reset it.
+                  isPopulatingActiveOrder.current = false; 
+                  return () => clearTimeout(timer); 
                }
             } else if (customer.addresses.length === 1) {
                const singleAddress = customer.addresses[0];
@@ -241,6 +238,7 @@ export default function App() {
             };
           }
         } else {
+          console.log("[EFFECT] New customer. Using raw call data.");
           customerDataToApply = {
             phone: callData.phone,
             postcode: callData.postcode,
@@ -251,15 +249,20 @@ export default function App() {
         setOrders((prevOrders) => {
            const newOrders = [...prevOrders];
            // Re-evaluate shouldAutoPopulate inside the setter to be safe with latest state
-           const currentActive = newOrders[activeOrderIndex];
-           const actuallyShouldAutoPopulate = currentActive && currentActive.items.length === 0 && !currentActive.customerInfo.phone;
-
-           if (actuallyShouldAutoPopulate) {
+           // BUT we must respect our initial decision 'shouldAutoPopulate' which took the lock.
+           // If we took the lock, we MUST populate the active order (unless it somehow got filled by user in milliseconds?)
+           
+           // Actually, if we took the lock, we committed to populating the active order.
+           // If we didn't take the lock, we committed to background.
+           
+           if (shouldAutoPopulate) {
+              console.log("[UPDATE STATE] Populating ACTIVE order index:", activeOrderIndex);
               newOrders[activeOrderIndex] = {
                  ...newOrders[activeOrderIndex],
                  customerInfo: customerDataToApply
               };
            } else {
+              console.log("[UPDATE STATE] Creating BACKGROUND order.");
               // Create background order
               const nextId = newOrders.length > 0 ? Math.max(...newOrders.map((o) => o.id)) + 1 : 1;
               const newOrder = createNewOrder(nextId, true, true);
@@ -271,6 +274,12 @@ export default function App() {
 
       } catch (error) {
         console.error("[EFFECT] Error fetching customer data:", error);
+      } finally {
+        // Always release the lock when done
+        if (shouldAutoPopulate) {
+           console.log("[LOCK] Releasing populating lock.");
+           isPopulatingActiveOrder.current = false;
+        }
       }
 
       return () => clearTimeout(timer);
