@@ -58,8 +58,7 @@ const DEBUG = process.env.DEBUG === "true";
 
 // ====================== STATE ======================
 let device;
-let lastPhone = null;
-let timeout = null;
+const activeCallTimers = new Map();
 let saveInProgress = false;
 let pendingSave = false;
 const postcodeCache = new LRUCache({ max: 5000 });
@@ -398,16 +397,16 @@ export async function startCallerIdService(onCallHandledCallback) {
     device.on("data", async (data) => {
       const phone = extractPhone(data);
       if (phone?.length === 11) {
-        if (lastPhone === phone && timeout) return;
-        lastPhone = phone;
-        clearTimeout(timeout);
-        timeout = setTimeout(async () => {
-          if (lastPhone) {
-            // [CHANGE] Pass the callback through to handleCall
-            await handleCall(lastPhone, onCallHandledCallback);
-            lastPhone = null;
-          }
+        // If we are already waiting for this phone (debounce window active), ignore subsequent signals
+        if (activeCallTimers.has(phone)) return;
+
+        // Start a timer for this specific phone
+        const timer = setTimeout(async () => {
+          activeCallTimers.delete(phone); // Remove from map when processing starts
+          await handleCall(phone, onCallHandledCallback);
         }, 2000);
+
+        activeCallTimers.set(phone, timer);
       }
     });
     device.on("error", (err) => console.error("HID ERROR:", err.message));
