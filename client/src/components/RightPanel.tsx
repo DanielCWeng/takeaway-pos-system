@@ -235,7 +235,7 @@ const PrimaryHorizontalButton = ({
 }) => (
   <button
     onClick={onClick}
-    className={`h-12 w-12 border-2 flex items-center justify-center p-1 rounded-md ${
+    className={`h-12 min-w-[3rem] flex-shrink border-2 flex items-center justify-center p-1 rounded-md ${
       isActive
         ? "bg-blue-600 text-white border-l-gray-700 border-t-gray-700 border-r-blue-400 border-b-blue-400"
         : "bg-gray-300 border-r-gray-500 border-b-gray-500 border-l-gray-100 border-t-gray-100"
@@ -453,7 +453,7 @@ const RightPanel: React.FC<RightPanelProps> = ({
             Menu Ref 餐号入单
           </button>
         </div>
-        <div className="flex flex-wrap gap-1 h-14 mb-2 items-center justify-start">
+        <div className="flex flex-nowrap gap-1 h-14 mb-2 items-center justify-start overflow-x-auto">
           {PRIMARY_CATEGORIES_ICONS.map((cat) => (
             <PrimaryHorizontalButton
               key={cat.name}
