@@ -1,6 +1,7 @@
 // --- START OF FILE src/components/AdminPage.tsx (With Delete Functionality) ---
 
 import React, { useState, useEffect, useMemo } from 'react';
+import KeyboardInputModal from './KeyboardInputModal';
 // This 'Order' type will need to be imported from your types file
 // It should include 'id', 'archivedAt', 'orderType', 'customerInfo', 'items', and 'total'.
 interface Order {
@@ -15,7 +16,7 @@ interface Order {
 
 import { API_BASE_URL } from '../constants';
 
-const ADMIN_PASSWORD = 'password123';
+const ADMIN_PASSWORD = '123';
 
 // ... (The OrderDetailsModal component remains unchanged) ...
 const OrderDetailsModal: React.FC<{ order: Order; onClose: () => void; onReprint: (order: Order) => void }> = ({ order, onClose, onReprint }) => {
@@ -78,7 +79,7 @@ const DeleteConfirmationModal: React.FC<{ orderCount: number; date: string; onCl
 
 const AdminPage: React.FC<{ onClose: () => void; }> = ({ onClose }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [password, setPassword] = useState('');
+    const [showKeyboard, setShowKeyboard] = useState(false);
     const [loginError, setLoginError] = useState('');
 
     const [isLoading, setIsLoading] = useState(true);
@@ -112,12 +113,14 @@ const AdminPage: React.FC<{ onClose: () => void; }> = ({ onClose }) => {
         fetchOrders();
     }, [isAuthenticated, selectedDate]);
 
-    const handleLogin = () => {
+    const handlePasswordEnter = (password: string) => {
         if (password === ADMIN_PASSWORD) {
             setIsAuthenticated(true);
             setLoginError('');
+            setShowKeyboard(false);
         } else {
             setLoginError('Incorrect password.');
+            setShowKeyboard(false);
         }
     };
     
@@ -170,17 +173,32 @@ const AdminPage: React.FC<{ onClose: () => void; }> = ({ onClose }) => {
 
     if (!isAuthenticated) {
         return (
-            <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-                <div className="bg-gray-200 text-black p-8 rounded-lg shadow-xl flex flex-col gap-4 w-80">
-                    <h2 className="text-2xl font-bold text-center">Admin Login</h2>
-                    <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleLogin()} className="p-2 border border-gray-400 rounded-md text-lg" placeholder="Enter password"/>
-                    {loginError && <p className="text-red-500 text-center">{loginError}</p>}
-                    <div className="flex gap-4">
-                        <button onClick={onClose} className="flex-1 p-2 bg-gray-400 text-white rounded-md hover:bg-gray-500">Cancel</button>
-                        <button onClick={handleLogin} className="flex-1 p-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Login</button>
+            <>
+                <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+                    <div className="bg-gray-200 text-black p-8 rounded-lg shadow-xl flex flex-col gap-4 w-80">
+                        <h2 className="text-2xl font-bold text-center">Admin Login</h2>
+                        <button 
+                            onClick={() => setShowKeyboard(true)}
+                            className="p-4 border-2 border-gray-400 rounded-md text-lg bg-white hover:bg-gray-50 text-left"
+                        >
+                            Click to enter password
+                        </button>
+                        {loginError && <p className="text-red-500 text-center">{loginError}</p>}
+                        <div className="flex gap-4">
+                            <button onClick={onClose} className="flex-1 p-2 bg-gray-400 text-white rounded-md hover:bg-gray-500">Cancel</button>
+                        </div>
                     </div>
                 </div>
-            </div>
+                {showKeyboard && (
+                    <KeyboardInputModal
+                        title="Enter Admin Password"
+                        inputType="password"
+                        placeholder="Password"
+                        onClose={() => setShowKeyboard(false)}
+                        onEnter={handlePasswordEnter}
+                    />
+                )}
+            </>
         );
     }
 
