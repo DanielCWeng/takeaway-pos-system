@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>V-Shape Aesthetic Analyzer</title>
+    <style>
+      :root {
+        --bg-color: #121212;
+        --card-bg: #1e1e1e;
+        --text-main: #e0e0e0;
+        --text-muted: #a0a0a0;
+        --accent: #00d4ff;
+        --good: #00e676;
+        --lagging: #ff5252;
+        --moderate: #ffab40;
+      }
+
+      body {
+        font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        background-color: var(--bg-color);
+        color: var(--text-main);
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        min-height: 100vh;
+      }
+
+      .container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        max-width: 1200px;
+        width: 100%;
+        padding: 2rem;
+      }
+
+      /* Input Section */
+      .panel {
+        background-color: var(--card-bg);
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      }
+
+      h1 {
+        margin-top: 0;
+        color: var(--accent);
+        font-size: 1.8rem;
+        text-align: center;
+        grid-column: 1 / -1;
+      }
+
+      h2 {
+        border-bottom: 2px solid var(--accent);
+        padding-bottom: 0.5rem;
+        margin-bottom: 1.5rem;
+        font-size: 1.2rem;
+      }
+
+      .input-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      .input-item {
+        display: flex;
+        flex-direction: column;
+      }
+
+      label {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin-bottom: 0.3rem;
+      }
+
+      input {
+        background: #2c2c2c;
+        border: 1px solid #444;
+        color: white;
+        padding: 0.8rem;
+        border-radius: 6px;
+        font-size: 1rem;
+        transition: border 0.3s;
+      }
+
+      input:focus {
+        outline: none;
+        border-color: var(--accent);
+      }
+
+      .btn {
+        width: 100%;
+        background-color: var(--accent);
+        color: #000;
+        font-weight: bold;
+        padding: 1rem;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 1rem;
+        margin-top: 1rem;
+        transition: transform 0.1s;
+      }
+
+      .btn:hover {
+        background-color: #33deff;
+      }
+
+      .btn:active {
+        transform: scale(0.98);
+      }
+
+      /* Visual Section */
+      .visual-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      #physique-svg {
+        height: 500px;
+        width: 100%;
+        max-width: 400px;
+        filter: drop-shadow(0 0 10px rgba(0, 0, 0, 0.5));
+      }
+
+      /* Muscle Groups SVG Styling */
+      .muscle {
+        fill: #333;
+        stroke: #222;
+        stroke-width: 1;
+        transition: fill 0.5s ease;
+      }
+
+      .muscle:hover {
+        opacity: 0.8;
+      }
+
+      /* Results Section */
+      .results-panel {
+        margin-top: 1.5rem;
+        background: #252525;
+        padding: 1rem;
+        border-radius: 8px;
+      }
+
+      .ratio-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #333;
+      }
+
+      .status-good {
+        color: var(--good);
+        font-weight: bold;
+      }
+      .status-lagging {
+        color: var(--lagging);
+        font-weight: bold;
+      }
+      .status-moderate {
+        color: var(--moderate);
+        font-weight: bold;
+      }
+
+      .recommendations {
+        margin-top: 1rem;
+        font-size: 0.9rem;
+        line-height: 1.5;
+      }
+
+      .recommendations li {
+        margin-bottom: 0.5rem;
+      }
+
+      @media (max-width: 768px) {
+        .container {
+          grid-template-columns: 1fr;
+        }
+        #physique-svg {
+          height: 400px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>V-Shape Aesthetic Analyzer</h1>
+
+      <!-- Left Column: Inputs -->
+      <div class="panel">
+        <h2>Enter Measurements</h2>
+        <p style="font-size: 0.8rem; color: #888; margin-bottom: 1rem">
+          Use a consistent unit (e.g., inches or cm). Measure circumference
+          flexed for muscles, relaxed for waist.
+        </p>
+
+        <div class="input-group">
+          <div class="input-item">
+            <label for="neck">Neck</label>
+            <input type="number" id="neck" placeholder="0" />
+          </div>
+          <div class="input-item">
+            <label for="shoulders">Shoulders (Circumference)</label>
+            <input type="number" id="shoulders" placeholder="0" />
+          </div>
+        </div>
+
+        <div class="input-group">
+          <div class="input-item">
+            <label for="chest">Chest</label>
+            <input type="number" id="chest" placeholder="0" />
+          </div>
+          <div class="input-item">
+            <label for="upperBack">Upper Back (Lats/Width)</label>
+            <input
+              type="number"
+              id="upperBack"
+              placeholder="Optional (or use Chest)"
+            />
+          </div>
+        </div>
+
+        <div class="input-group">
+          <div class="input-item">
+            <label for="waist">Waist (at navel)</label>
+            <input type="number" id="waist" placeholder="0" />
+          </div>
+          <div class="input-item">
+            <label for="lowerBack">Lower Back (Hips/Belt)</label>
+            <input type="number" id="lowerBack" placeholder="0" />
+          </div>
+        </div>
+
+        <div class="input-group">
+          <div class="input-item">
+            <label for="biceps">Biceps (Upper Arm)</label>
+            <input type="number" id="biceps" placeholder="0" />
+          </div>
+          <div class="input-item">
+            <label for="forearms">Forearms</label>
+            <input type="number" id="forearms" placeholder="0" />
+          </div>
+        </div>
+
+        <button class="btn" onclick="analyzePhysique()">
+          Analyze Physique
+        </button>
+
+        <div id="text-results" class="results-panel" style="display: none">
+          <h3>Analysis Report</h3>
+          <div id="ratio-list"></div>
+          <h4>Focus Areas:</h4>
+          <ul id="rec-list" class="recommendations"></ul>
+        </div>
+      </div>
+
+      <!-- Right Column: Visuals -->
+      <div class="panel visual-container">
+        <h2>Visual Assessment</h2>
+
+        <!-- Abstract Muscle Diagram SVG -->
+        <svg
+          id="physique-svg"
+          viewBox="0 0 200 300"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <!-- Neck -->
+          <path
+            id="svg-neck"
+            class="muscle"
+            d="M85,30 L115,30 L115,50 L85,50 Z"
+          />
+          <!-- Head (Static) -->
+          <circle cx="100" cy="25" r="18" fill="#444" />
+
+          <!-- Traps -->
+          <path
+            id="svg-traps"
+            class="muscle"
+            d="M85,50 L55,60 L100,60 L145,60 L115,50 Z"
+          />
+
+          <!-- Shoulders (Delts) -->
+          <path
+            id="svg-shoulders"
+            class="muscle"
+            d="M40,60 Q30,75 40,90 L55,80 L55,60 Z M160,60 Q170,75 160,90 L145,80 L145,60 Z"
+          />
+
+          <!-- Lats (V-Taper wings) -->
+          <path
+            id="svg-upperBack"
+            class="muscle"
+            d="M55,80 L45,140 L70,150 L55,80 Z M145,80 L155,140 L130,150 L145,80 Z"
+          />
+
+          <!-- Chest -->
+          <path
+            id="svg-chest"
+            class="muscle"
+            d="M55,60 L145,60 L145,100 Q100,115 55,100 Z"
+          />
+
+          <!-- Abs/Waist -->
+          <path
+            id="svg-waist"
+            class="muscle"
+            d="M70,140 L130,140 L125,180 L75,180 Z"
+          />
+
+          <!-- Lower Back / Hips -->
+          <path
+            id="svg-lowerBack"
+            class="muscle"
+            d="M75,180 L125,180 L130,200 L70,200 Z"
+          />
+
+          <!-- Biceps/Triceps -->
+          <path
+            id="svg-biceps"
+            class="muscle"
+            d="M40,90 L55,80 L55,130 L40,125 Z M160,90 L145,80 L145,130 L160,125 Z"
+          />
+
+          <!-- Forearms -->
+          <path
+            id="svg-forearms"
+            class="muscle"
+            d="M40,125 L55,130 L50,170 L42,170 Z M160,125 L145,130 L150,170 L158,170 Z"
+          />
+        </svg>
+
+        <div
+          style="margin-top: 1rem; display: flex; gap: 1rem; font-size: 0.8rem"
+        >
+          <div style="display: flex; align-items: center">
+            <div
+              style="
+                width: 12px;
+                height: 12px;
+                background: #00e676;
+                margin-right: 5px;
+              "
+            ></div>
+            Good
+          </div>
+          <div style="display: flex; align-items: center">
+            <div
+              style="
+                width: 12px;
+                height: 12px;
+                background: #ffab40;
+                margin-right: 5px;
+              "
+            ></div>
+            Moderate
+          </div>
+          <div style="display: flex; align-items: center">
+            <div
+              style="
+                width: 12px;
+                height: 12px;
+                background: #ff5252;
+                margin-right: 5px;
+              "
+            ></div>
+            Lagging
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function analyzePhysique() {
+        // 1. Get Inputs
+        const inputs = {
+          neck: parseFloat(document.getElementById("neck").value) || 0,
+          shoulders:
+            parseFloat(document.getElementById("shoulders").value) || 0,
+          chest: parseFloat(document.getElementById("chest").value) || 0,
+          upperBack:
+            parseFloat(document.getElementById("upperBack").value) || 0,
+          waist: parseFloat(document.getElementById("waist").value) || 0,
+          lowerBack:
+            parseFloat(document.getElementById("lowerBack").value) || 0,
+          biceps: parseFloat(document.getElementById("biceps").value) || 0,
+          forearms: parseFloat(document.getElementById("forearms").value) || 0,
+        };
+
+        // Validation
+        if (inputs.waist === 0 || inputs.shoulders === 0) {
+          alert(
+            "Please enter at least Shoulders and Waist measurements to calculate the V-Taper."
+          );
+          return;
+        }
+
+        // If Upper Back is empty, default to Chest measurement for calculation logic roughly
+        if (inputs.upperBack === 0) inputs.upperBack = inputs.chest;
+
+        // 2. Calculate Ratios
+        // Ideal standards based on Golden Ratio (Adonis Index) and Classic Physique aesthetics
+        const ratios = {
+          shoulderToWaist: inputs.shoulders / inputs.waist, // Golden Ratio Goal: ~1.618
+          chestToWaist: inputs.chest / inputs.waist, // Goal: ~1.4 - 1.5
+          bicepToForearm: inputs.biceps / inputs.forearms, // Goal: ~1.2
+          neckToArm: inputs.neck / inputs.biceps, // Goal: ~1.0 (Symmetry)
+          chestToArm: inputs.chest / inputs.biceps, // Goal: ~6.0 (Arms should be proportional to chest)
+        };
+
+        // 3. Analysis Logic & Coloring
+        const results = [];
+        const svgMap = {
+          shoulders: document.getElementById("svg-shoulders"),
+          chest: document.getElementById("svg-chest"),
+          upperBack: document.getElementById("svg-upperBack"), // Lats
+          waist: document.getElementById("svg-waist"),
+          lowerBack: document.getElementById("svg-lowerBack"),
+          biceps: document.getElementById("svg-biceps"),
+          forearms: document.getElementById("svg-forearms"),
+          neck: document.getElementById("svg-neck"),
+          traps: document.getElementById("svg-traps"),
+        };
+
+        // Reset colors
+        Object.values(svgMap).forEach((el) => (el.style.fill = "#333"));
+
+        // A. Shoulder-to-Waist (The V-Taper)
+        // Ideal is 1.618.
+        let swStatus = "";
+        if (ratios.shoulderToWaist >= 1.55) {
+          svgMap.shoulders.style.fill = "var(--good)";
+          svgMap.upperBack.style.fill = "var(--good)";
+          svgMap.waist.style.fill = "var(--good)";
+          swStatus = `<span class="status-good">Great (${ratios.shoulderToWaist.toFixed(
+            2
+          )})</span>`;
+        } else if (ratios.shoulderToWaist >= 1.4) {
+          svgMap.shoulders.style.fill = "var(--moderate)";
+          svgMap.upperBack.style.fill = "var(--moderate)";
+          svgMap.waist.style.fill = "var(--moderate)";
+          results.push(
+            "Prioritize <strong>Side Delts</strong> and <strong>Lats</strong> to widen the upper body."
+          );
+          swStatus = `<span class="status-moderate">Good (${ratios.shoulderToWaist.toFixed(
+            2
+          )})</span>`;
+        } else {
+          svgMap.shoulders.style.fill = "var(--lagging)";
+          svgMap.upperBack.style.fill = "var(--lagging)";
+          svgMap.waist.style.fill = "var(--lagging)"; // Waist is usually the culprit here
+          results.push(
+            "<strong>V-Taper Priority:</strong> Focus heavily on widening Lats/Delts and reducing waist fat."
+          );
+          swStatus = `<span class="status-lagging">Lagging (${ratios.shoulderToWaist.toFixed(
+            2
+          )})</span>`;
+        }
+
+        // B. Chest-to-Waist
+        let cwStatus = "";
+        if (ratios.chestToWaist >= 1.4) {
+          svgMap.chest.style.fill = "var(--good)";
+          cwStatus = `<span class="status-good">Great (${ratios.chestToWaist.toFixed(
+            2
+          )})</span>`;
+        } else {
+          // If chest is lagging but waist is okay (inferred from S2W), color chest red
+          if (ratios.shoulderToWaist > 1.4)
+            svgMap.chest.style.fill = "var(--lagging)";
+          else svgMap.chest.style.fill = "var(--moderate)";
+
+          results.push(
+            "Focus on <strong>Upper Chest</strong> thickness to improve torso volume."
+          );
+          cwStatus = `<span class="status-moderate">Moderate (${ratios.chestToWaist.toFixed(
+            2
+          )})</span>`;
+        }
+
+        // C. Arms (Biceps vs Chest)
+        // Classic ratio: Arms should be substantial. If Chest/Arm > 6.5, arms are small.
+        let armStatus = "";
+        if (ratios.chestToArm <= 6.5 && ratios.chestToArm > 4.0) {
+          svgMap.biceps.style.fill = "var(--good)";
+          armStatus = `<span class="status-good">Balanced</span>`;
+        } else if (ratios.chestToArm > 6.5) {
+          svgMap.biceps.style.fill = "var(--lagging)";
+          results.push(
+            "<strong>Arms Lagging:</strong> Arms are small compared to torso. Increase tricep/bicep volume."
+          );
+          armStatus = `<span class="status-lagging">Small relative to Chest</span>`;
+        } else {
+          // Arms huge
+          svgMap.biceps.style.fill = "var(--good)";
+          armStatus = `<span class="status-good">Dominant</span>`;
+        }
+
+        // D. Forearms
+        if (ratios.bicepToForearm > 1.3) {
+          svgMap.forearms.style.fill = "var(--lagging)";
+          results.push(
+            "Add <strong>Forearm</strong> work (farmer carries, reverse curls) to match upper arm size."
+          );
+        } else {
+          svgMap.forearms.style.fill = "var(--good)";
+        }
+
+        // E. Neck/Traps
+        if (Math.abs(1 - ratios.neckToArm) > 0.15) {
+          // If ratio is far from 1.0
+          if (ratios.neckToArm < 0.9) {
+            svgMap.neck.style.fill = "var(--lagging)";
+            svgMap.traps.style.fill = "var(--lagging)";
+            results.push("Neck/Traps look small relative to arms.");
+          } else {
+            svgMap.neck.style.fill = "var(--good)";
+            svgMap.traps.style.fill = "var(--good)";
+          }
+        } else {
+          svgMap.neck.style.fill = "var(--good)";
+          svgMap.traps.style.fill = "var(--good)";
+        }
+
+        // 4. Update Text UI
+        const resultsDiv = document.getElementById("text-results");
+        const ratioList = document.getElementById("ratio-list");
+        const recList = document.getElementById("rec-list");
+
+        resultsDiv.style.display = "block";
+
+        ratioList.innerHTML = `
+            <div class="ratio-row"><span>Shoulder-to-Waist (Ideal: 1.618)</span> ${swStatus}</div>
+            <div class="ratio-row"><span>Chest-to-Waist (Ideal: >1.4)</span> ${cwStatus}</div>
+            <div class="ratio-row"><span>Arm Proportions</span> ${armStatus}</div>
+        `;
+
+        recList.innerHTML = results.map((r) => `<li>${r}</li>`).join("");
+
+        if (results.length === 0) {
+          recList.innerHTML =
+            "<li>Excellent proportions! Maintain current training balance.</li>";
+        }
+      }
+    </script>
+  </body>
+</html>

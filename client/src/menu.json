@@ -83,21 +83,37 @@
     "name": { "en": "Fortune Kitchen's Munchy Box", "zh": "富厨餐盒" },
     "price": 14.0,
     "primaryCategory": "Special",
-    "secondaryCategory": "Snack Box"
+    "secondaryCategory": "Starter"
   },
   {
     "id": "3",
     "name": { "en": "Spare Ribs", "zh": "排骨" },
     "price": 7.0,
     "primaryCategory": "Pork",
-    "secondaryCategory": "Spare Rib"
+    "secondaryCategory": "Spare Rib",
+    "options": [
+      { "name": "BBQ", "price": 7.0 },
+      { "name": "Peking", "price": 7.0 },
+      { "name": "Honey & Chilli", "price": 7.0 },
+      { "name": "Salt & Pepper", "price": 7.0 },
+      { "name": "Thai Sweet Chilli", "price": 7.0 },
+      { "name": "Dry", "price": 7.0 }
+    ]
   },
   {
     "id": "4",
     "name": { "en": "Chicken Wings", "zh": "鸡翅" },
     "price": 5.6,
     "primaryCategory": "Chicken",
-    "secondaryCategory": "Chicken Wing"
+    "secondaryCategory": "Chicken Wing",
+    "options": [
+      { "name": "BBQ", "price": 5.6 },
+      { "name": "Peking", "price": 5.6 },
+      { "name": "Honey & Chilli", "price": 5.6 },
+      { "name": "Salt & Pepper", "price": 5.6 },
+      { "name": "Thai Sweet Chilli", "price": 5.6 },
+      { "name": "Dry", "price": 5.6 }
+    ]
   },
   {
     "id": "5",
@@ -314,7 +330,7 @@
     "name": { "en": "Chicken in Honey & Chilli Sauce", "zh": "蜜汁辣鸡" },
     "price": 6.6,
     "primaryCategory": "Chicken",
-    "secondaryCategory": "Thai"
+    "secondaryCategory": "Chef's"
   },
   {
     "id": "C6",
@@ -385,6 +401,26 @@
       "zh": "甜酸鸡球 (10个)"
     },
     "price": 6.3,
+    "primaryCategory": "Chicken",
+    "secondaryCategory": "Sweet & Sour"
+  },
+  {
+    "id": "39a",
+    "name": {
+      "en": "Sweet & Sour Chicken in Batter (5)",
+      "zh": "甜酸鸡球 (5个)"
+    },
+    "price": 3.3,
+    "primaryCategory": "Chicken",
+    "secondaryCategory": "Sweet & Sour"
+  },
+  {
+    "id": "39b",
+    "name": {
+      "en": "Sweet & Sour Chicken in Batter (4)",
+      "zh": "甜酸鸡球 (5个)"
+    },
+    "price": 0,
     "primaryCategory": "Chicken",
     "secondaryCategory": "Sweet & Sour"
   },
@@ -1964,52 +2000,32 @@
   },
   {
     "id": "245",
-    "name": { "en": "Can of Coke", "zh": "罐装可乐" },
-    "price": 1.1,
-    "primaryCategories": ["Special"],
-    "secondaryCategory": "English"
-  },
-  {
-    "id": "245a",
-    "name": { "en": "Can of Diet Coke", "zh": "罐装健怡可乐" },
-    "price": 1.1,
-    "primaryCategories": ["Special"],
-    "secondaryCategory": "English"
-  },
-  {
-    "id": "245b",
-    "name": { "en": "Can of Pepsi Max", "zh": "罐装百事可乐" },
-    "price": 1.1,
-    "primaryCategories": ["Special"],
-    "secondaryCategory": "English"
-  },
-  {
-    "id": "245c",
-    "name": { "en": "Can of Fanta", "zh": "罐装芬达" },
-    "price": 1.1,
-    "primaryCategories": ["Special"],
-    "secondaryCategory": "English"
-  },
-  {
-    "id": "245d",
-    "name": { "en": "Can of Sprite", "zh": "罐装雪碧" },
-    "price": 1.1,
-    "primaryCategories": ["Special"],
-    "secondaryCategory": "English"
-  },
-  {
-    "id": "245e",
-    "name": { "en": "Can of Dr Pepper", "zh": "罐装胡椒博士" },
-    "price": 1.1,
-    "primaryCategories": ["Special"],
-    "secondaryCategory": "English"
+    "name": { "en": "Cans", "zh": "罐装饮料" },
+    "primaryCategories": ["Btn 1"],
+    "secondaryCategory": "English",
+    "options": [
+      { "name": "Can of Coke", "price": 1.1 },
+      { "name": "Can of Diet Coke", "price": 1.1 },
+      { "name": "Can of Pepsi Max", "price": 1.1 },
+      { "name": "Can of Fanta", "price": 1.1 },
+      { "name": "Can of Sprite", "price": 1.1 },
+      { "name": "Can of Dr Pepper", "price": 1.1 }
+    ]
   },
   {
     "id": "246",
-    "name": { "en": "Bottle of Coke", "zh": "瓶装可乐" },
+    "name": { "en": "Bottles", "zh": "瓶装" },
     "price": 2.6,
-    "primaryCategories": ["Special"],
-    "secondaryCategory": "English"
+    "primaryCategories": ["Btn 1"],
+    "secondaryCategory": "English",
+    "options": [
+      { "name": "Can of Coke", "price": 2.2 },
+      { "name": "Can of Diet Coke", "price": 2.2 },
+      { "name": "Can of Pepsi Max", "price": 2.2 },
+      { "name": "Can of Fanta", "price": 2.2 },
+      { "name": "Can of Sprite", "price": 2.2 },
+      { "name": "Can of Dr Pepper", "price": 2.2 }
+    ]
   },
   {
     "id": "S1",
