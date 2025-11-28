@@ -9,6 +9,7 @@ import fs from "fs/promises";
 import { createCanvas } from "canvas";
 
 import * as callerIdService from "./services/callerIdService.js";
+import { initializeDatabase, getDb } from "./database.js";
 
 // ESM setup for __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -16,11 +17,7 @@ const __dirname = path.dirname(__filename);
 
 // Path to your customer data file
 const CUSTOMERS_DB_PATH = path.join(__dirname, "data", "customers.json");
-const ARCHIVED_ORDERS_PATH = path.join(
-  __dirname,
-  "data",
-  "archived_orders.json"
-);
+
 
 // ===================================================================
 //                        SERVER SETUP
@@ -585,15 +582,11 @@ app.post("/api/print", async (req, res) => {
 
   try {
     // --- Part 1: CRITICAL - SAVE THE ORDER ---
-    let archivedOrders = [];
-    try {
-      const data = await fs.readFile(ARCHIVED_ORDERS_PATH, "utf8");
-      archivedOrders = JSON.parse(data);
-    } catch (readError) {
-      if (readError.code !== "ENOENT") throw readError;
-    }
-
-    const maxId = Math.max(0, ...archivedOrders.map((o) => o.id));
+    const db = getDb();
+    
+    // Get max ID from DB
+    const result = await db.get('SELECT MAX(id) as maxId FROM orders');
+    const maxId = result.maxId || 0;
     newOrderId = maxId + 1;
 
     const orderToArchive = {
@@ -602,12 +595,13 @@ app.post("/api/print", async (req, res) => {
       archivedAt: new Date().toISOString(),
     };
 
-    archivedOrders.push(orderToArchive);
-    await fs.writeFile(
-      ARCHIVED_ORDERS_PATH,
-      JSON.stringify(archivedOrders, null, 2)
+    await db.run(
+      'INSERT INTO orders (id, data, archivedAt) VALUES (?, ?, ?)',
+      newOrderId,
+      JSON.stringify(orderToArchive),
+      orderToArchive.archivedAt
     );
-    console.log(`[Archive] Order #${newOrderId} saved successfully.`);
+    console.log(`[Archive] Order #${newOrderId} saved successfully to SQLite.`);
 
     // --- Part 2: NON-CRITICAL - TRY TO PRINT ---
     try {
@@ -673,18 +667,20 @@ app.get("/api/archived-orders", async (req, res) => {
   const { date } = req.query;
 
   try {
-    const data = await fs.readFile(ARCHIVED_ORDERS_PATH, "utf8");
-    let orders = JSON.parse(data);
+    const db = getDb();
+    let query = 'SELECT data FROM orders';
+    let params = [];
 
     if (date) {
-      orders = orders.filter((order) => order.archivedAt.startsWith(date));
+      query += ' WHERE archivedAt LIKE ?';
+      params.push(`${date}%`);
     }
+
+    const rows = await db.all(query, params);
+    const orders = rows.map(row => JSON.parse(row.data));
 
     res.json(orders);
   } catch (error) {
-    if (error.code === "ENOENT") {
-      return res.json([]);
-    }
     console.error("[API] Error fetching archived orders:", error);
     res.status(500).json({ message: "Server error" });
   }
@@ -703,26 +699,15 @@ app.delete("/api/archived-orders", async (req, res) => {
   );
 
   try {
-    let allOrders = [];
-    try {
-      const data = await fs.readFile(ARCHIVED_ORDERS_PATH, "utf8");
-      allOrders = JSON.parse(data);
-    } catch (readError) {
-      if (readError.code === "ENOENT") {
-        console.log("[Archive] No orders file found. Nothing to delete.");
-        return res
-          .status(200)
-          .json({ success: true, message: "No orders to delete." });
-      }
-      throw readError;
-    }
-
-    const initialCount = allOrders.length;
-    const ordersToKeep = allOrders.filter(
-      (order) => !order.archivedAt.startsWith(date)
+    const db = getDb();
+    
+    // Check if there are orders to delete
+    const countResult = await db.get(
+      'SELECT COUNT(*) as count FROM orders WHERE archivedAt LIKE ?', 
+      `${date}%`
     );
-
-    if (ordersToKeep.length === initialCount) {
+    
+    if (countResult.count === 0) {
       console.log(`[Archive] No orders found for ${date}. No changes made.`);
       return res.status(200).json({
         success: true,
@@ -730,18 +715,14 @@ app.delete("/api/archived-orders", async (req, res) => {
       });
     }
 
-    await fs.writeFile(
-      ARCHIVED_ORDERS_PATH,
-      JSON.stringify(ordersToKeep, null, 2)
-    );
+    await db.run('DELETE FROM orders WHERE archivedAt LIKE ?', `${date}%`);
 
-    const deletedCount = initialCount - ordersToKeep.length;
     console.log(
-      `[Archive] Successfully deleted ${deletedCount} orders for ${date}.`
+      `[Archive] Successfully deleted ${countResult.count} orders for ${date}.`
     );
     res.status(200).json({
       success: true,
-      message: `Successfully deleted ${deletedCount} orders.`,
+      message: `Successfully deleted ${countResult.count} orders.`,
     });
   } catch (error) {
     console.error("[API] CRITICAL Error deleting archived orders:", error);
@@ -758,6 +739,9 @@ server.listen(PORT, () => {
   );
   checkPrinterStatus();
   console.log("⚡ Initializing Caller ID Service...");
+  initializeDatabase().catch(err => {
+    console.error("🔴 FATAL: Failed to initialize database", err);
+  });
 
   const onCallDetected = async (cust, addrData, dist) => {
     console.log(
