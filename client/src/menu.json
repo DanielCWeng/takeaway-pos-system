@@ -217,7 +217,7 @@
     "id": "17",
     "name": { "en": "Sesame Prawn Toast (8)", "zh": "虾多士 (8件)" },
     "price": 5.0,
-    "primaryCategory": "Shrimp",
+    "primaryCategory": "King Prawn",
     "secondaryCategory": "Starter"
   },
   {
@@ -245,7 +245,7 @@
     "id": "22",
     "name": { "en": "Prawn Dumplings (6)", "zh": "虾饺 (6只)" },
     "price": 5.0,
-    "primaryCategory": "Shrimp",
+    "primaryCategory": "King Prawn",
     "secondaryCategory": "Starter"
   },
   {

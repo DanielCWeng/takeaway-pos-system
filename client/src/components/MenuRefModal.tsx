@@ -14,22 +14,25 @@ interface MenuRefModalProps {
     onEnter: (id: string) => void;
 }
 
-// --- MODIFIED: 'S' key added to the layout ---
-const numpadLayout = [
-    ['7', '8', '9'],
-    ['4', '5', '6'],
-    ['1', '2', '3'],
-    ['C', '0', 'S', '<-']
+// --- MODIFIED: Full alphanumeric keyboard layout ---
+const keyboardLayout = [
+    ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'],
+    ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
+    ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
+    ['Z', 'X', 'C', 'V', 'B', 'N', 'M', '<-'],
+    ['Clear', 'Space']
 ];
 
 const MenuRefModal: React.FC<MenuRefModalProps> = ({ onClose, onEnter }) => {
     const [inputValue, setInputValue] = useState('');
 
     const handleKeyPress = (key: string) => {
-        if (key === 'C') {
+        if (key === 'Clear') {
             setInputValue('');
         } else if (key === '<-') {
             setInputValue(val => val.slice(0, -1));
+        } else if (key === 'Space') {
+            setInputValue(val => val + ' ');
         } else {
             setInputValue(val => val + key);
         }
@@ -49,15 +52,22 @@ const MenuRefModal: React.FC<MenuRefModalProps> = ({ onClose, onEnter }) => {
                 <div className="bg-white text-right text-3xl font-mono p-2 border-2 border-t-gray-500 border-l-gray-500">
                     {inputValue || ' '}
                 </div>
-                {/* --- MODIFIED: Rendering logic updated to support varied row lengths --- */}
+                {/* --- MODIFIED: Rendering logic updated to support full keyboard layout --- */}
                 <div className="flex flex-col gap-2">
-                    {numpadLayout.map((row, rowIndex) => (
+                    {keyboardLayout.map((row, rowIndex) => (
                         <div key={rowIndex} className="flex justify-center gap-2">
-                            {row.map(key => (
-                                <PosButton key={key} onClick={() => handleKeyPress(key)} className="h-16 w-16 text-2xl">
-                                    {key}
-                                </PosButton>
-                            ))}
+                            {row.map(key => {
+                                const isWideKey = key === 'Clear' || key === 'Space';
+                                return (
+                                    <PosButton 
+                                        key={key} 
+                                        onClick={() => handleKeyPress(key)} 
+                                        className={`h-12 text-lg ${isWideKey ? 'flex-grow' : 'w-12'}`}
+                                    >
+                                        {key}
+                                    </PosButton>
+                                );
+                            })}
                         </div>
                     ))}
                 </div>
