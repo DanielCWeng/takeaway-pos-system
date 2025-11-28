@@ -15,9 +15,6 @@ import { initializeDatabase, getDb } from "./database.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Path to your customer data file
-const CUSTOMERS_DB_PATH = path.join(__dirname, "data", "customers.json");
-
 
 // ===================================================================
 //                        SERVER SETUP
@@ -513,52 +510,38 @@ app.post("/api/verify-address", async (req, res) => {
   }
 
   try {
-    const data = await fs.readFile(CUSTOMERS_DB_PATH, "utf8");
-    const customers = JSON.parse(data);
-    let customer = customers.find((c) => c.phone === phone);
-
-    if (customer) {
-      customer.address = address;
-      customer.postcode = postcode;
-      customer.houseNumber = houseNumber;
-      customer.street = street;
-      customer.town = town;
+    const db = getDb();
+    
+    // Check if customer exists
+    const existing = await db.get('SELECT * FROM customers WHERE phone = ?', phone);
+    
+    if (existing) {
+      // Update existing customer
+      await db.run(
+        `UPDATE customers SET 
+          address = ?, 
+          postcode = ?, 
+          houseNumber = ?, 
+          street = ?, 
+          town = ? 
+        WHERE phone = ?`,
+        address, postcode, houseNumber, street, town, phone
+      );
       console.log(`[CRM] Updated full address for ${phone}`);
     } else {
-      const newCustomer = {
-        phone,
-        name: "",
-        address,
-        postcode,
-        houseNumber,
-        street,
-        town,
-      };
-      customers.push(newCustomer);
+      // Insert new customer
+      await db.run(
+        `INSERT INTO customers 
+          (phone, name, address, postcode, houseNumber, street, town, callCount, firstCall, lastCall) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`,
+        phone, '', address, postcode, houseNumber, street, town, 
+        new Date().toISOString(), new Date().toISOString()
+      );
       console.log(`[CRM] Created new customer profile for ${phone}`);
     }
 
-    await fs.writeFile(CUSTOMERS_DB_PATH, JSON.stringify(customers, null, 2));
     res.status(200).json({ success: true, message: "Customer data saved." });
   } catch (error) {
-    if (error.code === "ENOENT") {
-      const newCustomer = {
-        phone,
-        name: "",
-        address,
-        postcode,
-        houseNumber,
-        street,
-        town,
-      };
-      await fs.writeFile(
-        CUSTOMERS_DB_PATH,
-        JSON.stringify([newCustomer], null, 2)
-      );
-      return res
-        .status(200)
-        .json({ success: true, message: "Customer data saved." });
-    }
     console.error("[CRM] Error saving customer data:", error);
     res.status(500).json({ error: "Failed to save customer data." });
   }
@@ -642,11 +625,35 @@ app.get("/api/customer/:phone", async (req, res) => {
   console.log(`[API] Received request for customer with phone: ${phone}`);
 
   try {
-    const data = await fs.readFile(CUSTOMERS_DB_PATH, "utf8");
-    const customers = JSON.parse(data);
-    const customer = customers.find((c) => c.phone === phone);
+    const db = getDb();
+    const customer = await db.get('SELECT * FROM customers WHERE phone = ?', phone);
 
     if (customer) {
+      // Deserialize JSON fields
+      if (customer.distance) {
+        try {
+          customer.distance = JSON.parse(customer.distance);
+        } catch (e) {
+          console.warn('Failed to parse distance JSON:', e);
+        }
+      }
+      
+      if (customer.postcodeData) {
+        try {
+          customer.postcodeData = JSON.parse(customer.postcodeData);
+        } catch (e) {
+          console.warn('Failed to parse postcodeData JSON:', e);
+        }
+      }
+      
+      if (customer.addresses) {
+        try {
+          customer.addresses = JSON.parse(customer.addresses);
+        } catch (e) {
+          console.warn('Failed to parse addresses JSON:', e);
+        }
+      }
+
       console.log(`[API] Found customer:`, customer.name || customer.phone);
       res.json(customer);
     } else {
@@ -654,10 +661,6 @@ app.get("/api/customer/:phone", async (req, res) => {
       res.status(404).json({ message: "Customer not found" });
     }
   } catch (error) {
-    if (error.code === "ENOENT") {
-      console.log(`[API] customers.json not found. Cannot look up customer.`);
-      return res.status(404).json({ message: "Customer file not found" });
-    }
     console.error("[API] Server error looking up customer:", error);
     res.status(500).json({ message: "Server error" });
   }

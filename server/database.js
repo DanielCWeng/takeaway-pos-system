@@ -9,6 +9,7 @@ const __dirname = path.dirname(__filename);
 
 const DB_PATH = path.join(__dirname, 'data', 'orders.db');
 const ARCHIVED_ORDERS_PATH = path.join(__dirname, 'data', 'archived_orders.json');
+const CUSTOMERS_PATH = path.join(__dirname, 'data', 'customers.json');
 
 let db;
 
@@ -28,8 +29,27 @@ export async function initializeDatabase() {
     );
   `);
 
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS customers (
+      phone TEXT PRIMARY KEY,
+      name TEXT,
+      postcode TEXT,
+      address TEXT,
+      houseNumber TEXT,
+      street TEXT,
+      town TEXT,
+      distance TEXT,
+      postcodeData TEXT,
+      firstCall TEXT,
+      lastCall TEXT,
+      callCount INTEGER DEFAULT 1,
+      addresses TEXT
+    );
+  `);
+
   console.log('✅ Database initialized');
   await migrateArchivedOrders();
+  await migrateCustomers();
 }
 
 export function getDb() {
@@ -76,6 +96,67 @@ async function migrateArchivedOrders() {
       console.error('🔴 Migration failed:', error);
       // We don't throw here to avoid crashing the server startup, 
       // but we log the error clearly.
+    }
+  }
+}
+
+async function migrateCustomers() {
+  try {
+    // Check if customers.json exists
+    await fs.access(CUSTOMERS_PATH);
+    
+    console.log('📦 Found customers.json, starting migration...');
+    const data = await fs.readFile(CUSTOMERS_PATH, 'utf8');
+    const customers = JSON.parse(data);
+
+    if (customers.length === 0) {
+      console.log('ℹ️ customers.json is empty, skipping migration.');
+    } else {
+      const stmt = await db.prepare(`
+        INSERT OR IGNORE INTO customers 
+        (phone, name, postcode, address, houseNumber, street, town, distance, postcodeData, firstCall, lastCall, callCount, addresses) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+      
+      for (const customer of customers) {
+        // Serialize complex objects to JSON strings
+        const distanceStr = customer.distance ? JSON.stringify(customer.distance) : null;
+        const postcodeDataStr = customer.postcodeData ? JSON.stringify(customer.postcodeData) : null;
+        const addressesStr = customer.addresses ? JSON.stringify(customer.addresses) : null;
+        
+        await stmt.run(
+          customer.phone,
+          customer.name || null,
+          customer.postcode || null,
+          customer.address || null,
+          customer.houseNumber || null,
+          customer.street || null,
+          customer.town || null,
+          distanceStr,
+          postcodeDataStr,
+          customer.firstCall || null,
+          customer.lastCall || null,
+          customer.callCount || 1,
+          addressesStr
+        );
+      }
+      
+      await stmt.finalize();
+      console.log(`✅ Migrated ${customers.length} customers to SQLite.`);
+    }
+
+    // Rename the file to .bak
+    const backupPath = `${CUSTOMERS_PATH}.bak`;
+    await fs.rename(CUSTOMERS_PATH, backupPath);
+    console.log(`✅ Renamed ${CUSTOMERS_PATH} to ${backupPath}`);
+
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      // File doesn't exist, nothing to migrate
+      console.log('ℹ️ No customers.json found, skipping migration.');
+    } else {
+      console.error('🔴 Customer migration failed:', error);
+      // We don't throw here to avoid crashing the server startup
     }
   }
 }

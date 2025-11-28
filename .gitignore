@@ -24,5 +24,10 @@ yarn-error.log*
 .vscode/
 .idea/
 
-# 
-server/customers.json
+# Data files - DO NOT COMMIT PRODUCTION DATA
+server/data/*.db
+server/data/*.db-shm
+server/data/*.db-wal
+server/data/*.json
+server/data/*.bak
+server/data/*.tmp

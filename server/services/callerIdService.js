@@ -7,6 +7,7 @@ import { HID } from "node-hid";
 import fetch from "node-fetch";
 import { LRUCache } from "lru-cache";
 import Database from "better-sqlite3";
+import { getDb } from "../database.js";
 
 // ====================== AUTO-DETECT JD-2000S ======================
 function findJD2000S() {
@@ -47,7 +48,6 @@ function findJD2000S() {
 
 // ====================== CONFIG ======================
 const DEVICE_PATH = findJD2000S() || "/dev/hidraw0";
-const CUSTOMERS_DB = path.join(process.cwd(), "data", "customers.json");
 const POSTCODES_DB_PATH = path.join(process.cwd(), "data", "postcodes.db");
 const GETADDRESS_API_KEY = ""; //change
 const STORE_POSTCODE = "NG9 8GF";
@@ -56,8 +56,6 @@ const DEBUG = process.env.DEBUG === "true";
 // ====================== STATE ======================
 let device;
 const activeCallTimers = new Map();
-let saveInProgress = false;
-let pendingSave = false;
 const postcodeCache = new LRUCache({ max: 5000 });
 let postcodeDb;
 
@@ -81,47 +79,6 @@ function normalizePostcode(postcode) {
   return cleaned;
 }
 
-// ====================== CUSTOMERS ======================
-async function loadCustomers() {
-  try {
-    let data = await fsp.readFile(CUSTOMERS_DB, "utf8").catch(() => "[]");
-    const customers = JSON.parse(data);
-    for (const cust of customers) {
-      if (cust.postcode && cust.postcodeData) {
-        postcodeCache.set(
-          normalizePostcode(cust.postcode),
-          JSON.parse(JSON.stringify(cust.postcodeData))
-        );
-      }
-    }
-    return customers;
-  } catch (err) {
-    console.error("Failed to load customers.json:", err.message);
-    return [];
-  }
-}
-async function saveCustomers(customers) {
-  if (saveInProgress) {
-    pendingSave = true;
-    return;
-  }
-  saveInProgress = true;
-  try {
-    const tmpFile = CUSTOMERS_DB + ".tmp";
-    await fsp.writeFile(tmpFile, JSON.stringify(customers, null, 2));
-    await fsp.rename(tmpFile, CUSTOMERS_DB);
-    logDebug("Saved customers.json");
-  } catch (err) {
-    console.error("Failed to save customers.json:", err.message);
-  } finally {
-    saveInProgress = false;
-    if (pendingSave) {
-      pendingSave = false;
-      await saveCustomers(customers);
-    }
-  }
-}
-
 // ====================== EXTRACT PHONE ======================
 function extractPhone(data) {
   if (DEBUG)
@@ -143,27 +100,70 @@ function extractPhone(data) {
 }
 
 // ====================== GET OR CREATE CUSTOMER ======================
-function getOrCreateCustomer(phone, customers) {
-  let cust = customers.find((c) => c.phone === phone);
-  if (!cust) {
+async function getOrCreateCustomer(phone) {
+  const db = getDb();
+  
+  // Try to find existing customer
+  let customer = await db.get('SELECT * FROM customers WHERE phone = ?', phone);
+  
+  if (!customer) {
     console.log("NEW CUSTOMER:", phone);
-    cust = {
-      phone,
-      postcode: null,
-      address: null,
-      distance: null,
-      postcodeData: null,
-      firstCall: new Date().toISOString(),
-      lastCall: new Date().toISOString(),
-      callCount: 1,
-    };
-    customers.push(cust);
+    const now = new Date().toISOString();
+    
+    // Insert new customer
+    await db.run(
+      `INSERT INTO customers 
+        (phone, postcode, address, houseNumber, street, town, distance, postcodeData, firstCall, lastCall, callCount) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      phone, null, null, null, null, null, null, null, now, now, 1
+    );
+    
+    // Fetch the newly created customer
+    customer = await db.get('SELECT * FROM customers WHERE phone = ?', phone);
   } else {
     console.log("EXISTING CUSTOMER:", phone);
-    cust.lastCall = new Date().toISOString();
-    cust.callCount++;
+    const now = new Date().toISOString();
+    
+    // Increment call count and update lastCall
+    await db.run(
+      'UPDATE customers SET callCount = callCount + 1, lastCall = ? WHERE phone = ?',
+      now, phone
+    );
+    
+    // Fetch updated customer
+    customer = await db.get('SELECT * FROM customers WHERE phone = ?', phone);
   }
-  return cust;
+  
+  // Deserialize JSON fields
+  if (customer.distance) {
+    try {
+      customer.distance = JSON.parse(customer.distance);
+    } catch (e) {
+      customer.distance = null;
+    }
+  }
+  
+  if (customer.postcodeData) {
+    try {
+      customer.postcodeData = JSON.parse(customer.postcodeData);
+      // Restore to cache
+      if (customer.postcode) {
+        postcodeCache.set(normalizePostcode(customer.postcode), customer.postcodeData);
+      }
+    } catch (e) {
+      customer.postcodeData = null;
+    }
+  }
+  
+  if (customer.addresses) {
+    try {
+      customer.addresses = JSON.parse(customer.addresses);
+    } catch (e) {
+      customer.addresses = null;
+    }
+  }
+  
+  return customer;
 }
 
 // ====================== API LOOKUP FUNCTIONS ======================
@@ -330,10 +330,13 @@ export async function lookupAddresses(postcode) {
 async function handleCall(phone, onCallHandled) {
   console.log("\n=== INCOMING CALL ===");
   console.log("PHONE:", phone);
-  const customers = await loadCustomers();
-  const customer = getOrCreateCustomer(phone, customers);
-  let addressData = null,
-    distance = null;
+  
+  const db = getDb();
+  const customer = await getOrCreateCustomer(phone);
+  
+  let addressData = null;
+  let distance = null;
+  
   if (customer.postcode) {
     if (customer.postcodeData && isAddressDataComplete(customer.postcodeData)) {
       console.log(
@@ -342,20 +345,36 @@ async function handleCall(phone, onCallHandled) {
       addressData = customer.postcodeData;
     } else {
       addressData = await lookupAddresses(customer.postcode);
-      if (addressData)
-        customer.postcodeData = JSON.parse(JSON.stringify(addressData));
+      if (addressData) {
+        // Update postcodeData in database
+        await db.run(
+          'UPDATE customers SET postcodeData = ? WHERE phone = ?',
+          JSON.stringify(addressData),
+          phone
+        );
+        customer.postcodeData = addressData;
+      }
     }
+    
     if (addressData && STORE_POSTCODE) {
       if (!customer.distance) {
         distance = await calculateDistance(STORE_POSTCODE, customer.postcode);
-        if (distance) customer.distance = distance;
+        if (distance) {
+          // Update distance in database
+          await db.run(
+            'UPDATE customers SET distance = ? WHERE phone = ?',
+            JSON.stringify(distance),
+            phone
+          );
+          customer.distance = distance;
+        }
       } else {
         distance = customer.distance;
         console.log(`DISTANCE: ${distance.miles} miles (cached)`);
       }
     }
   }
-  await saveCustomers(customers);
+  
   await onCallHandled(customer, addressData, distance);
   console.log("=== CALL HANDLED ===\n");
 }
