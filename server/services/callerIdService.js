@@ -6,6 +6,7 @@ import path from "path";
 import { HID } from "node-hid";
 import fetch from "node-fetch";
 import { LRUCache } from "lru-cache";
+import Database from "better-sqlite3";
 
 // ====================== AUTO-DETECT JD-2000S ======================
 function findJD2000S() {
@@ -47,11 +48,7 @@ function findJD2000S() {
 // ====================== CONFIG ======================
 const DEVICE_PATH = findJD2000S() || "/dev/hidraw0";
 const CUSTOMERS_DB = path.join(process.cwd(), "data", "customers.json");
-const POSTCODES_VALIDATOR_PATH = path.join(
-  process.cwd(),
-  "data",
-  "postcodes_detailed.json"
-);
+const POSTCODES_DB_PATH = path.join(process.cwd(), "data", "postcodes.db");
 const GETADDRESS_API_KEY = ""; //change
 const STORE_POSTCODE = "NG9 8GF";
 const DEBUG = process.env.DEBUG === "true";
@@ -62,7 +59,15 @@ const activeCallTimers = new Map();
 let saveInProgress = false;
 let pendingSave = false;
 const postcodeCache = new LRUCache({ max: 5000 });
-const localPostcodeDB = new Map();
+let postcodeDb;
+
+// Init SQLite DB
+try {
+  postcodeDb = new Database(POSTCODES_DB_PATH, { readonly: true });
+  console.log("VALIDATOR: Connected to postcodes.db SQLite database.");
+} catch (err) {
+  console.warn("VALIDATOR: Could not connect to postcodes.db. Proceeding without fast validation.", err.message);
+}
 
 // ====================== UTILITIES ======================
 function logDebug(msg) {
@@ -74,24 +79,6 @@ function normalizePostcode(postcode) {
   const match = cleaned.match(/^([A-Z]{1,2}\d{1,2}[A-Z]?)(\d[A-Z]{2})$/);
   if (match) return `${match[1]} ${match[2]}`;
   return cleaned;
-}
-
-// ====================== LOAD POSTCODE VALIDATOR ======================
-let postcodeValidator = {};
-async function loadPostcodeValidator() {
-  try {
-    const data = await fsp.readFile(POSTCODES_VALIDATOR_PATH, "utf8");
-    postcodeValidator = JSON.parse(data);
-    console.log(
-      `✅ VALIDATOR: Loaded ${
-        Object.keys(postcodeValidator).length
-      } postcodes for validation.`
-    );
-  } catch (err) {
-    console.warn(
-      "⚠️ VALIDATOR: Could not load postcodes_detailed.json. Proceeding without fast validation."
-    );
-  }
 }
 
 // ====================== CUSTOMERS ======================
@@ -303,14 +290,22 @@ function isAddressDataComplete(addressData) {
 export async function lookupAddresses(postcode) {
   const normalized = normalizePostcode(postcode);
   if (!normalized) return null;
+  
+  // SQLite Validation
   const validatorKey = normalized.replace(/\s/g, "").toUpperCase();
-  if (
-    Object.keys(postcodeValidator).length > 0 &&
-    !postcodeValidator[validatorKey]
-  ) {
-    console.log(`🔴 INVALID: ${normalized} not found in local validator.`);
-    return { postcode: normalized, addresses: [], source: "invalid_postcode" };
+  if (postcodeDb) {
+    try {
+      const stmt = postcodeDb.prepare("SELECT 1 FROM postcodes WHERE postcode = ?");
+      const exists = stmt.get(validatorKey);
+      if (!exists) {
+        console.log(`INVALID: ${normalized} not found in local validator.`);
+        return { postcode: normalized, addresses: [], source: "invalid_postcode" };
+      }
+    } catch (err) {
+      console.error("Database lookup failed:", err.message);
+    }
   }
+
   const key = normalized.replace(/\s/g, "");
   if (postcodeCache.has(normalized)) {
     console.log(`CACHE HIT: Using cached addresses for ${normalized}`);
@@ -378,7 +373,7 @@ export async function startCallerIdService(onCallHandledCallback) {
     console.log("Configuration:");
     console.log("  Device:", DEVICE_PATH);
     console.log("  Customer DB:", CUSTOMERS_DB);
-    console.log("  Validator DB:", POSTCODES_VALIDATOR_PATH);
+    console.log("  Validator DB:", POSTCODES_DB_PATH);
     console.log(
       "  API Key:",
       GETADDRESS_API_KEY.startsWith("YOUR") ? "NOT SET" : "Configured"
@@ -388,8 +383,9 @@ export async function startCallerIdService(onCallHandledCallback) {
     console.log("");
     device = new HID(DEVICE_PATH);
     console.log("✓ Connected to JD-2000S\n");
-    await loadPostcodeValidator();
-    // await loadLocalAddressDB();
+    
+    // loadPostcodeValidator() call removed -> Now using SQLite DB
+    
     if (GETADDRESS_API_KEY.startsWith("YOUR")) {
       console.log("WARNING: API key not set - API fallback disabled\n");
     }
