@@ -19,6 +19,52 @@ export async function initializeDatabase() {
     driver: sqlite3.Database
   });
 
+  // Enable Query Logging
+  const originalGet = db.get.bind(db);
+  const originalAll = db.all.bind(db);
+  const originalRun = db.run.bind(db);
+  const originalExec = db.exec.bind(db);
+
+  db.get = async (sql, ...params) => {
+    console.log(`[SQLite DEBUG] GET: ${sql} | Params: ${JSON.stringify(params)}`);
+    try {
+      return await originalGet(sql, ...params);
+    } catch (e) {
+      console.error(`[SQLite ERROR] GET: ${sql} | Error: ${e.message}`);
+      throw e;
+    }
+  };
+
+  db.all = async (sql, ...params) => {
+    console.log(`[SQLite DEBUG] ALL: ${sql} | Params: ${JSON.stringify(params)}`);
+    try {
+      return await originalAll(sql, ...params);
+    } catch (e) {
+      console.error(`[SQLite ERROR] ALL: ${sql} | Error: ${e.message}`);
+      throw e;
+    }
+  };
+
+  db.run = async (sql, ...params) => {
+    console.log(`[SQLite DEBUG] RUN: ${sql} | Params: ${JSON.stringify(params)}`);
+    try {
+      return await originalRun(sql, ...params);
+    } catch (e) {
+      console.error(`[SQLite ERROR] RUN: ${sql} | Error: ${e.message}`);
+      throw e;
+    }
+  };
+
+  db.exec = async (sql) => {
+    console.log(`[SQLite DEBUG] EXEC: ${sql.trim().substring(0, 50)}...`); // Truncate long execs
+    try {
+      return await originalExec(sql);
+    } catch (e) {
+      console.error(`[SQLite ERROR] EXEC: ${sql} | Error: ${e.message}`);
+      throw e;
+    }
+  };
+
   await db.exec('PRAGMA journal_mode = WAL;');
   
   await db.exec(`

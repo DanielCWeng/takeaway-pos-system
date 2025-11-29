@@ -49,6 +49,7 @@ function findJD2000S() {
 // ====================== CONFIG ======================
 const DEVICE_PATH = findJD2000S() || "/dev/hidraw0";
 const POSTCODES_DB_PATH = path.join(process.cwd(), "data", "postcodes.db");
+const CUSTOMERS_DB = path.join(process.cwd(), "data", "orders.db");
 const GETADDRESS_API_KEY = ""; //change
 const STORE_POSTCODE = "NG9 8GF";
 const DEBUG = process.env.DEBUG === "true";
@@ -61,7 +62,10 @@ let postcodeDb;
 
 // Init SQLite DB
 try {
-  postcodeDb = new Database(POSTCODES_DB_PATH, { readonly: true });
+  postcodeDb = new Database(POSTCODES_DB_PATH, { 
+    readonly: true,
+    verbose: (msg) => console.log(`[PostcodeDB DEBUG] ${msg}`)
+  });
   console.log("VALIDATOR: Connected to postcodes.db SQLite database.");
 } catch (err) {
   console.warn("VALIDATOR: Could not connect to postcodes.db. Proceeding without fast validation.", err.message);
