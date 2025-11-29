@@ -49,7 +49,6 @@ function findJD2000S() {
 // ====================== CONFIG ======================
 const DEVICE_PATH = findJD2000S() || "/dev/hidraw0";
 const POSTCODES_DB_PATH = path.join(process.cwd(), "data", "postcodes.db");
-const CUSTOMERS_DB = path.join(process.cwd(), "data", "orders.db");
 const GETADDRESS_API_KEY = ""; //change
 const STORE_POSTCODE = "NG9 8GF";
 const DEBUG = process.env.DEBUG === "true";
@@ -395,7 +394,6 @@ export async function startCallerIdService(onCallHandledCallback) {
     console.log("╚════════════════════════════════════════════════╝\n");
     console.log("Configuration:");
     console.log("  Device:", DEVICE_PATH);
-    console.log("  Customer DB:", CUSTOMERS_DB);
     console.log("  Validator DB:", POSTCODES_DB_PATH);
     console.log(
       "  API Key:",
