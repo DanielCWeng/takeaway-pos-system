@@ -56,12 +56,14 @@ async function migrate() {
     insertMany(entries);
     
     console.log('Creating index...');
-    // Primary key automatically creates an index, but we can verify or add others if needed.
-    // Since we only look up by postcode, the PK index is sufficient.
+    db.close();
+
+    const backupPath = JSON_PATH + '.bak';
+    fs.renameSync(JSON_PATH, backupPath);
+    console.log(`Renamed JSON file to ${backupPath}`);
 
     console.log('Migration complete!');
-    db.close();
-    
+
   } catch (err) {
     console.error('Migration failed:', err);
     process.exit(1);
