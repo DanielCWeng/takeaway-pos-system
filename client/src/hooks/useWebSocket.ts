@@ -13,21 +13,31 @@ export function useWebSocket<T>(url: string) {
     null
   );
   const [isConnected, setIsConnected] = useState(false);
+  
   const ws = useRef<WebSocket | null>(null);
   const reconnectTimeout = useRef<NodeJS.Timeout | null>(null);
+  const heartbeatInterval = useRef<NodeJS.Timeout | null>(null);
+  const serverTimeout = useRef<NodeJS.Timeout | null>(null);
+  const retryCount = useRef(0);
   const shouldReconnect = useRef(true);
+  const lastPongTime = useRef<number>(Date.now());
+
+  const clearTimers = () => {
+    if (reconnectTimeout.current) clearTimeout(reconnectTimeout.current);
+    if (heartbeatInterval.current) clearInterval(heartbeatInterval.current);
+    if (serverTimeout.current) clearTimeout(serverTimeout.current);
+    reconnectTimeout.current = null;
+    heartbeatInterval.current = null;
+    serverTimeout.current = null;
+  };
 
   const connect = () => {
-    // Clear any pending reconnection attempts
-    if (reconnectTimeout.current) {
-      clearTimeout(reconnectTimeout.current);
-      reconnectTimeout.current = null;
-    }
-
-    // Don't create a new connection if one already exists
-    if (ws.current?.readyState === WebSocket.OPEN) {
+    // Prevent multiple connections
+    if (ws.current?.readyState === WebSocket.OPEN || ws.current?.readyState === WebSocket.CONNECTING) {
       return;
     }
+
+    clearTimers();
 
     try {
       ws.current = new WebSocket(url);
@@ -35,12 +45,37 @@ export function useWebSocket<T>(url: string) {
       ws.current.onopen = () => {
         console.log("WebSocket connection established");
         setIsConnected(true);
+        retryCount.current = 0; // Reset retry count on successful connection
+        lastPongTime.current = Date.now();
+
+        // Start Heartbeat
+        heartbeatInterval.current = setInterval(() => {
+          if (ws.current?.readyState === WebSocket.OPEN) {
+            ws.current.send(JSON.stringify({ type: "ping" }));
+            
+            // Check for liveness
+            if (Date.now() - lastPongTime.current > 30000) {
+              console.warn("Server unresponsive, closing connection...");
+              ws.current.close();
+            }
+          }
+        }, 20000); // Send ping every 20s
       };
 
       ws.current.onmessage = (event) => {
         try {
           const message = JSON.parse(event.data);
-          setLastMessage(message);
+          
+          if (message.type === "pong") {
+            lastPongTime.current = Date.now();
+            return; // Don't expose pong to consumers
+          }
+
+          if (message && message.type && message.payload !== undefined) {
+             setLastMessage(message);
+          } else {
+             console.warn("Received malformed WebSocket message:", message);
+          }
         } catch (error) {
           console.error("Failed to parse WebSocket message:", error);
         }
@@ -50,42 +85,56 @@ export function useWebSocket<T>(url: string) {
         console.log("WebSocket connection closed");
         setIsConnected(false);
         ws.current = null;
+        clearTimers();
 
-        // Auto-reconnect after 3 seconds if we should reconnect
         if (shouldReconnect.current) {
-          console.log("Reconnecting in 3 seconds...");
+          const delay = Math.min(1000 * Math.pow(2, retryCount.current), 30000);
+          console.log(`Reconnecting in ${delay}ms... (Attempt ${retryCount.current + 1})`);
+          
           reconnectTimeout.current = setTimeout(() => {
+            retryCount.current += 1;
             connect();
-          }, 3000);
+          }, delay);
         }
       };
 
       ws.current.onerror = (error) => {
         console.error("WebSocket error:", error);
-        // The onclose handler will trigger reconnection
+        // onclose will handle reconnection
       };
     } catch (error) {
       console.error("Failed to create WebSocket:", error);
-      // Try reconnecting after an error
       if (shouldReconnect.current) {
+        const delay = Math.min(1000 * Math.pow(2, retryCount.current), 30000);
         reconnectTimeout.current = setTimeout(() => {
-          connect();
-        }, 3000);
+           retryCount.current += 1;
+           connect();
+        }, delay);
       }
     }
   };
 
   useEffect(() => {
-    // Start the connection
     shouldReconnect.current = true;
     connect();
 
-    // Clean up when component unmounts
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        // If tab wakes up and we are disconnected, reconnect immediately
+        if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
+          console.log("Tab visible, checking connection...");
+          retryCount.current = 0; // Reset retry count for immediate attempt
+          connect();
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     return () => {
       shouldReconnect.current = false;
-      if (reconnectTimeout.current) {
-        clearTimeout(reconnectTimeout.current);
-      }
+      clearTimers();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       if (ws.current) {
         ws.current.close();
         ws.current = null;

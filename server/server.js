@@ -30,6 +30,18 @@ let activeClients = [];
 wss.on("connection", (ws) => {
   console.log("🔌 WebSocket client connected");
   activeClients.push(ws);
+
+  ws.on("message", (message) => {
+    try {
+      const parsed = JSON.parse(message);
+      if (parsed.type === "ping") {
+        ws.send(JSON.stringify({ type: "pong" }));
+      }
+    } catch (e) {
+      // Ignore malformed messages
+    }
+  });
+
   ws.on("close", () => {
     console.log("🔌 WebSocket client disconnected");
     activeClients = activeClients.filter((client) => client !== ws);
