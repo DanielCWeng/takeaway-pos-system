@@ -5,97 +5,99 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Takeaway POS System</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
         theme: {
           extend: {
             fontFamily: {
-              sans: ['Inter', 'sans-serif'],
+              sans: ["Inter", "sans-serif"],
             },
             colors: {
               gray: {
-                50: '#F8FAFC',
-                100: '#F1F5F9',
-                200: '#E2E8F0',
-                300: '#DAE0E7', // Lighter and cooler than standard Slate 300
-                400: '#94A3B8',
-                500: '#64748B',
-                600: '#475569',
-                700: '#334155',
-                800: '#1E293B',
-                900: '#0F172A',
+                50: "#F8FAFC",
+                100: "#F1F5F9",
+                200: "#E2E8F0",
+                300: "#DAE0E7", // Lighter and cooler than standard Slate 300
+                400: "#94A3B8",
+                500: "#64748B",
+                600: "#475569",
+                700: "#334155",
+                800: "#1E293B",
+                900: "#0F172A",
               },
               blue: {
-                50: '#EFF8FF',
-                100: '#D1E9FF',
-                200: '#B2DDFF',
-                300: '#84CAFF',
-                400: '#53B1FD',
-                500: '#2E90FA', // Vibrant Sky Blue
-                600: '#1570EF', // Strong Primary Blue
-                700: '#175CD3',
-                800: '#1849A9',
-                900: '#194185',
+                50: "#EFF8FF",
+                100: "#D1E9FF",
+                200: "#B2DDFF",
+                300: "#84CAFF",
+                400: "#53B1FD",
+                500: "#2E90FA", // Vibrant Sky Blue
+                600: "#1570EF", // Strong Primary Blue
+                700: "#175CD3",
+                800: "#1849A9",
+                900: "#194185",
               },
               red: {
-                50: '#FEF3F2',
-                100: '#FEE4E2',
-                200: '#FECDCA',
-                300: '#FDA29B',
-                400: '#F97066',
-                500: '#F04438', // Bright Alert Red
-                600: '#D92D20',
-                700: '#B42318',
-                800: '#912018',
-                900: '#7A271A',
+                50: "#FEF3F2",
+                100: "#FEE4E2",
+                200: "#FECDCA",
+                300: "#FDA29B",
+                400: "#F97066",
+                500: "#F04438", // Bright Alert Red
+                600: "#D92D20",
+                700: "#B42318",
+                800: "#912018",
+                900: "#7A271A",
               },
               green: {
-                 50: '#ECFDF3',
-                 100: '#D1FADF',
-                 200: '#A6F4C5',
-                 300: '#6CE9A6',
-                 400: '#32D583',
-                 500: '#12B76A', // Fresh Success Green
-                 600: '#039855',
-                 700: '#027A48',
-                 800: '#05603A',
-                 900: '#054F31',
+                50: "#ECFDF3",
+                100: "#D1FADF",
+                200: "#A6F4C5",
+                300: "#6CE9A6",
+                400: "#32D583",
+                500: "#12B76A", // Fresh Success Green
+                600: "#039855",
+                700: "#027A48",
+                800: "#05603A",
+                900: "#054F31",
               },
-               purple: {
-                50: '#F9F5FF',
-                100: '#F4EBFF',
-                200: '#E9D7FE',
-                300: '#D6BBFB',
-                400: '#B692F6',
-                500: '#9E77ED', // Modern Purple
-                600: '#7F56D9',
-                700: '#6941C6',
-                800: '#53389E',
-                900: '#42307D',
-              }
-            }
-          }
+              purple: {
+                50: "#F9F5FF",
+                100: "#F4EBFF",
+                200: "#E9D7FE",
+                300: "#D6BBFB",
+                400: "#B692F6",
+                500: "#9E77ED", // Modern Purple
+                600: "#7F56D9",
+                700: "#6941C6",
+                800: "#53389E",
+                900: "#42307D",
+              },
+            },
+          },
+        },
+      };
+    </script>
+    <script type="importmap">
+      {
+        "imports": {
+          "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+          "react": "https://aistudiocdn.com/react@^19.2.0",
+          "react/": "https://aistudiocdn.com/react@^19.2.0/"
         }
       }
     </script>
-  <script type="importmap">
-{
-  "imports": {
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/"
-  }
-}
-</script>
-<link rel="stylesheet" href="/index.css">
-</head>
+    <!-- <link rel="stylesheet" href="/index.css"> -->
+  </head>
   <body class="bg-gray-50 text-gray-900">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-
   </body>
 </html>

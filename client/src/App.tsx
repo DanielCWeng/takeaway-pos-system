@@ -27,7 +27,6 @@ import menuData from "./menu.json";
 import { OrderItem, MenuItem, OrderType, CustomerInfo } from "./types";
 import { useCallerId } from "./context/CallerIDContext";
 
-
 interface Order {
   id: number;
   items: OrderItem[];
@@ -133,12 +132,21 @@ export default function App() {
 
       const timer = setTimeout(() => setShowNotification(false), 8000);
 
-      console.log(`[CALL START] Processing call from ${callData.phone}. Timestamp: ${callData.timestamp}`);
+      console.log(
+        `[CALL START] Processing call from ${callData.phone}. Timestamp: ${callData.timestamp}`
+      );
       console.log(`[CALL STATE] Active Order Index: ${activeOrderIndex}`);
       console.log(`[CALL STATE] Active Order ID: ${activeOrder.id}`);
-      console.log(`[CALL STATE] Active Order Items Count: ${activeOrder.items.length}`);
-      console.log(`[CALL STATE] Active Order Has Phone? ${!!activeOrder.customerInfo.phone}`);
-      console.log(`[CALL STATE] Is Populating Lock? ${isPopulatingActiveOrder.current}`);
+      console.log(
+        `[CALL STATE] Active Order Items Count: ${activeOrder.items.length}`
+      );
+      console.log(
+        `[CALL STATE] Active Order Has Phone? ${!!activeOrder.customerInfo
+          .phone}`
+      );
+      console.log(
+        `[CALL STATE] Is Populating Lock? ${isPopulatingActiveOrder.current}`
+      );
 
       // Logic to decide if we should auto-populate the order
       // We only auto-populate if the active order is effectively empty AND we aren't already populating it
@@ -147,14 +155,18 @@ export default function App() {
         activeOrder &&
         activeOrder.items.length === 0 &&
         !activeOrder.customerInfo.phone;
-      
-      console.log(`[CALL DECISION] Should Auto Populate? ${shouldAutoPopulate}`);
+
+      console.log(
+        `[CALL DECISION] Should Auto Populate? ${shouldAutoPopulate}`
+      );
 
       if (shouldAutoPopulate) {
-         console.log("[CALL DECISION] Decided to AUTO-POPULATE active order. Acquiring lock.");
-         isPopulatingActiveOrder.current = true;
+        console.log(
+          "[CALL DECISION] Decided to AUTO-POPULATE active order. Acquiring lock."
+        );
+        isPopulatingActiveOrder.current = true;
       } else {
-         console.log("[CALL DECISION] Decided to create BACKGROUND order.");
+        console.log("[CALL DECISION] Decided to create BACKGROUND order.");
       }
 
       if (!shouldAutoPopulate) {
@@ -171,7 +183,7 @@ export default function App() {
         const response = await fetch(
           `${API_BASE_URL}/api/customer/${callData.phone}`
         );
-        
+
         let customerDataToApply: CustomerInfo = {};
 
         if (response.ok) {
@@ -180,8 +192,8 @@ export default function App() {
 
           if (customer.addresses && Array.isArray(customer.addresses)) {
             if (customer.addresses.length > 1) {
-               const singleAddress = customer.addresses[0];
-               customerDataToApply = {
+              const singleAddress = customer.addresses[0];
+              customerDataToApply = {
                 phone: customer.phone,
                 name: customer.name,
                 postcode: singleAddress.postcode,
@@ -189,18 +201,20 @@ export default function App() {
                 street: singleAddress.street,
                 town: singleAddress.town,
                 distance: callData.distance,
-               };
-               // If it's the ACTIVE order, we can show modal.
-               if (shouldAutoPopulate) {
-                  console.log("[EFFECT] Opening address selection modal for active order.");
-                  setCustomerForSelection(customer);
-                  setIsAddressSelectionModalOpen(true);
-                  isPopulatingActiveOrder.current = false; 
-                  return () => clearTimeout(timer); 
-               }
+              };
+              // If it's the ACTIVE order, we can show modal.
+              if (shouldAutoPopulate) {
+                console.log(
+                  "[EFFECT] Opening address selection modal for active order."
+                );
+                setCustomerForSelection(customer);
+                setIsAddressSelectionModalOpen(true);
+                isPopulatingActiveOrder.current = false;
+                return () => clearTimeout(timer);
+              }
             } else if (customer.addresses.length === 1) {
-               const singleAddress = customer.addresses[0];
-               customerDataToApply = {
+              const singleAddress = customer.addresses[0];
+              customerDataToApply = {
                 phone: customer.phone,
                 name: customer.name,
                 postcode: singleAddress.postcode,
@@ -208,12 +222,12 @@ export default function App() {
                 street: singleAddress.street,
                 town: singleAddress.town,
                 distance: callData.distance,
-               };
+              };
             } else {
-               customerDataToApply = {
+              customerDataToApply = {
                 phone: customer.phone,
                 name: customer.name || "",
-               };
+              };
             }
           } else if (customer.postcode) {
             customerDataToApply = {
@@ -242,32 +256,37 @@ export default function App() {
 
         // NOW apply to state
         setOrders((prevOrders) => {
-           const newOrders = [...prevOrders];
-           
-           if (shouldAutoPopulate) {
-              console.log("[UPDATE STATE] Populating ACTIVE order index:", activeOrderIndex);
-              newOrders[activeOrderIndex] = {
-                 ...newOrders[activeOrderIndex],
-                 customerInfo: customerDataToApply
-              };
-           } else {
-              console.log("[UPDATE STATE] Creating BACKGROUND order.");
-              // Create background order
-              const nextId = newOrders.length > 0 ? Math.max(...newOrders.map((o) => o.id)) + 1 : 1;
-              const newOrder = createNewOrder(nextId, true, true);
-              newOrder.customerInfo = customerDataToApply;
-              newOrders.push(newOrder);
-           }
-           return newOrders;
-        });
+          const newOrders = [...prevOrders];
 
+          if (shouldAutoPopulate) {
+            console.log(
+              "[UPDATE STATE] Populating ACTIVE order index:",
+              activeOrderIndex
+            );
+            newOrders[activeOrderIndex] = {
+              ...newOrders[activeOrderIndex],
+              customerInfo: customerDataToApply,
+            };
+          } else {
+            console.log("[UPDATE STATE] Creating BACKGROUND order.");
+            // Create background order
+            const nextId =
+              newOrders.length > 0
+                ? Math.max(...newOrders.map((o) => o.id)) + 1
+                : 1;
+            const newOrder = createNewOrder(nextId, true, true);
+            newOrder.customerInfo = customerDataToApply;
+            newOrders.push(newOrder);
+          }
+          return newOrders;
+        });
       } catch (error) {
         console.error("[EFFECT] Error fetching customer data:", error);
       } finally {
         // Always release the lock when done
         if (shouldAutoPopulate) {
-           console.log("[LOCK] Releasing populating lock.");
-           isPopulatingActiveOrder.current = false;
+          console.log("[LOCK] Releasing populating lock.");
+          isPopulatingActiveOrder.current = false;
         }
       }
 
@@ -276,7 +295,11 @@ export default function App() {
 
     // Check if we have a call and if it's a NEW call (different timestamp or phone)
     // We check phone too in case timestamps collide (e.g. rapid calls)
-    if (lastCall && (lastCall.timestamp !== lastProcessedCallTime.current || lastCall.phone !== lastProcessedCallPhone.current)) {
+    if (
+      lastCall &&
+      (lastCall.timestamp !== lastProcessedCallTime.current ||
+        lastCall.phone !== lastProcessedCallPhone.current)
+    ) {
       console.log("[PROCESSING CALL] New call detected:", lastCall);
       lastProcessedCallTime.current = lastCall.timestamp;
       lastProcessedCallPhone.current = lastCall.phone;
@@ -286,46 +309,51 @@ export default function App() {
 
   // 5-minute timeout for auto-created orders
   React.useEffect(() => {
-    const interval = setInterval(() => {
+    const hasAutoOrders = orders.some((o) => o.autoCreated);
+    if (!hasAutoOrders) return;
+
+    const cleanupExpiredOrders = () => {
       setOrders((prevOrders) => {
         const now = Date.now();
         const ordersKeep = prevOrders.filter((order) => {
           if (order.autoCreated && order.items.length === 0) {
-             // Check if 5 minutes passed
-             if (order.createdAt && (now - order.createdAt > 5 * 60 * 1000)) {
-                return false; // Remove
-             }
+            // Check if 5 minutes passed
+            if (order.createdAt && now - order.createdAt > 5 * 60 * 1000) {
+              return false; // Remove
+            }
           }
           return true;
         });
-        
+
         if (ordersKeep.length !== prevOrders.length) {
-           // If we removed orders, we must ensure activeOrderIndex is still valid
-           setActiveOrderIndex(prevIndex => {
-              if (prevIndex >= ordersKeep.length) {
-                 return Math.max(0, ordersKeep.length - 1);
-              }
-              return prevIndex;
-           });
-           return ordersKeep;
+          // If we removed orders, we must ensure activeOrderIndex is still valid
+          setActiveOrderIndex((prevIndex) => {
+            if (prevIndex >= ordersKeep.length) {
+              return Math.max(0, ordersKeep.length - 1);
+            }
+            return prevIndex;
+          });
+          return ordersKeep;
         }
         return prevOrders;
       });
-    }, 60 * 1000); // Check every minute
+    };
+
+    const interval = setInterval(cleanupExpiredOrders, 60 * 1000); // Check every minute
 
     return () => clearInterval(interval);
-  }, []);
+  }, [orders]);
 
   const handleSetActiveOrder = (index: number) => {
     if (index >= 0 && index < orders.length) {
       setActiveOrderIndex(index);
       // Clear unread status
-      setOrders(prev => {
-         const newOrders = [...prev];
-         if (newOrders[index] && newOrders[index].hasUnreadChanges) {
-            newOrders[index] = { ...newOrders[index], hasUnreadChanges: false };
-         }
-         return newOrders;
+      setOrders((prev) => {
+        const newOrders = [...prev];
+        if (newOrders[index] && newOrders[index].hasUnreadChanges) {
+          newOrders[index] = { ...newOrders[index], hasUnreadChanges: false };
+        }
+        return newOrders;
       });
     }
   };
@@ -569,9 +597,9 @@ export default function App() {
 
   // Safety check: if activeOrder is undefined (e.g. due to race condition), fallback to loading or reset
   if (!activeOrder && orders.length > 0) {
-     // Try to recover by setting index to 0
-     if (activeOrderIndex !== 0) setActiveOrderIndex(0);
-     return <div>Recovering state...</div>;
+    // Try to recover by setting index to 0
+    if (activeOrderIndex !== 0) setActiveOrderIndex(0);
+    return <div>Recovering state...</div>;
   }
 
   if (!activeOrder) return <div>Loading...</div>;
