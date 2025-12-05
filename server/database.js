@@ -164,20 +164,56 @@ async function migrateCustomers() {
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
       
+      let migratedCount = 0;
+      
       for (const customer of customers) {
+        // Handle two different data formats:
+        // Format 1: Has 'addresses' array (newer format)
+        // Format 2: Has individual fields like 'postcode', 'address', etc. (older format)
+        
+        let postcode = null;
+        let address = null;
+        let houseNumber = null;
+        let street = null;
+        let town = null;
+        let addressesStr = null;
+        
+        if (customer.addresses && Array.isArray(customer.addresses) && customer.addresses.length > 0) {
+          // Format 1: Extract from addresses array
+          const firstAddr = customer.addresses[0];
+          postcode = firstAddr.postcode || null;
+          address = firstAddr.fullAddress || null;
+          houseNumber = firstAddr.houseNumber || null;
+          street = firstAddr.street || null;
+          town = firstAddr.town || null;
+          
+          // Store the entire addresses array for future use
+          addressesStr = JSON.stringify(customer.addresses);
+          
+          console.log(`  Migrating ${customer.phone} (Format 1: addresses array, ${customer.addresses.length} address(es))`);
+        } else {
+          // Format 2: Use individual fields
+          postcode = customer.postcode || null;
+          address = customer.address || null;
+          houseNumber = customer.houseNumber || null;
+          street = customer.street || null;
+          town = customer.town || null;
+          
+          console.log(`  Migrating ${customer.phone} (Format 2: individual fields)`);
+        }
+        
         // Serialize complex objects to JSON strings
         const distanceStr = customer.distance ? JSON.stringify(customer.distance) : null;
         const postcodeDataStr = customer.postcodeData ? JSON.stringify(customer.postcodeData) : null;
-        const addressesStr = customer.addresses ? JSON.stringify(customer.addresses) : null;
         
         await stmt.run(
           customer.phone,
           customer.name || null,
-          customer.postcode || null,
-          customer.address || null,
-          customer.houseNumber || null,
-          customer.street || null,
-          customer.town || null,
+          postcode,
+          address,
+          houseNumber,
+          street,
+          town,
           distanceStr,
           postcodeDataStr,
           customer.firstCall || null,
@@ -185,10 +221,12 @@ async function migrateCustomers() {
           customer.callCount || 1,
           addressesStr
         );
+        
+        migratedCount++;
       }
       
       await stmt.finalize();
-      console.log(`✅ Migrated ${customers.length} customers to SQLite.`);
+      console.log(`✅ Migrated ${migratedCount} customers to SQLite.`);
     }
 
     // Rename the file to .bak
