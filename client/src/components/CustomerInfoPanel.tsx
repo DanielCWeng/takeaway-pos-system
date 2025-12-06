@@ -84,8 +84,20 @@ const CustomerInfoPanel: React.FC<{
       </div>
 
       <div className="col-span-3 grid grid-cols-2 gap-2 mt-1">
-          <div>Time 时间</div>
-          <div>距离</div>
+        <div className="bg-gray-300 border-2 border-t-gray-600 border-l-gray-600 border-b-gray-100 border-r-gray-100 p-1">
+          <InfoRow 
+            label="Time" 
+            value={customerInfo.deliveryTime || '--:--'} 
+            subLabel="时间" 
+          />
+        </div>
+        <div className="bg-gray-300 border-2 border-t-gray-600 border-l-gray-600 border-b-gray-100 border-r-gray-100 p-1">
+          <InfoRow 
+            label="Dist" 
+            value={customerInfo.distance ? `${customerInfo.distance} mi` : ''} 
+            subLabel="距离" 
+          />
+        </div>
       </div>
     </div>
   );
