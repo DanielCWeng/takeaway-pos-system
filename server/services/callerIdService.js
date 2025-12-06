@@ -12,63 +12,36 @@ import { getDb } from "../database.js";
 // ====================== AUTO-DETECT JD-2000S ======================
 function findJD2000S() {
   try {
-    console.log("Scanning for JD-2000S device...");
     const devices = HID.devices();
-    
-    // Log all HID devices for debugging
-    console.log(`Found ${devices.length} HID devices total`);
-    devices.forEach((d, idx) => {
-      console.log(`  [${idx}] VID:PID ${d.vendorId?.toString(16)}:${d.productId?.toString(16)} - ${d.manufacturer || 'Unknown'} ${d.product || 'Unknown'} - Path: ${d.path}`);
-    });
-    
-    // Find the JD-2000S device
     const match = devices.find(
       (d) =>
         (d.product && d.product.includes("JD-2000S")) ||
         (d.manufacturer && d.manufacturer.includes("KOSEN")) ||
         (d.vendorId === 0x0483 && d.productId === 0x5750)
     );
-    
     if (!match) {
-      console.warn("⚠️  JD-2000S not found in HID devices (looking for VID:0483 PID:5750)");
-      console.warn("⚠️  Available devices listed above. Please check if device is connected.");
+      console.warn("JD-2000S not found in HID devices");
       return null;
     }
-    
-    console.log(`✓ Found JD-2000S: ${match.manufacturer || 'Unknown'} ${match.product || 'Unknown'}`);
-    console.log(`  VID:PID = ${match.vendorId?.toString(16)}:${match.productId?.toString(16)}`);
-    console.log(`  Initial path from node-hid: ${match.path}`);
-    
-    // Try to find the correct /dev/hidraw* path on Linux
     if (fs.existsSync("/sys/class/hidraw")) {
       const sysPath = "/sys/class/hidraw";
-      console.log("🔍 Checking /sys/class/hidraw for device mapping...");
-      
       for (const name of fs.readdirSync(sysPath)) {
         try {
           const ueventPath = `${sysPath}/${name}/device/uevent`;
           if (fs.existsSync(ueventPath)) {
             const uevent = fs.readFileSync(ueventPath, "utf8");
-            // Check for vendor/product ID in hex format
             if (uevent.includes("0483") && uevent.includes("5750")) {
-              const devicePath = `/dev/${name}`;
-              console.log(`✓ Mapped to ${devicePath}`);
-              return devicePath;
+              return `/dev/${name}`;
             }
           }
         } catch (err) {
-          // Skip devices we can't read
           continue;
         }
       }
-      console.warn("⚠️  Could not map to /dev/hidraw* path, using node-hid path");
     }
-    
-    // Fallback to the path provided by node-hid
-    console.log(`Using fallback path: ${match.path}`);
     return match.path;
   } catch (err) {
-    console.error("❌ Error detecting JD-2000S:", err.message);
+    console.error("Error detecting JD-2000S:", err.message);
     return null;
   }
 }
