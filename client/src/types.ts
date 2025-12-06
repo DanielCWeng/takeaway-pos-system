@@ -68,6 +68,7 @@ export interface CustomerInfo {
   distance?: number;
   deliveryInstructions?: string;
   status?: "COMPLETE" | "NEEDS_ADDRESS";
+  deliveryTime?: string;
 }
 
 // Represents an order.

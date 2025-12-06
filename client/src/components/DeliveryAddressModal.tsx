@@ -331,6 +331,7 @@ const DeliveryAddressModal: React.FC<DeliveryAddressModalProps> = ({
       postcode: formState.postcode,
       distance: distance, // Add the distance
       deliveryInstructions: formState.instructions,
+      deliveryTime: formatTime(deliveryDateTime),
     };
 
     try {

@@ -417,6 +417,19 @@ function printReceipt(orderData) {
         receiptParts.push(Buffer.from(`${orderData.customerInfo.phone}\n`));
       }
 
+      if (orderData.customerInfo.deliveryTime) {
+        receiptParts.push(Buffer.from("\n"));
+        receiptParts.push(
+          Buffer.from([ESC, 0x61, 0x01, GS, 0x21, 0x11, ESC, 0x45, 0x01])
+        ); // Center, Double size, Bold
+        receiptParts.push(
+          Buffer.from(`Time: ${orderData.customerInfo.deliveryTime}\n`)
+        );
+        receiptParts.push(
+          Buffer.from([ESC, 0x61, 0x00, GS, 0x21, 0x00, ESC, 0x45, 0x00])
+        ); // Reset
+      }
+
       receiptParts.push(Buffer.from("\n")); // Gap
 
       // ---- Payment status (centered) ----
