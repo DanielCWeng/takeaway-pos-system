@@ -270,7 +270,7 @@ async function calculateDistance(fromPostcode, toPostcode) {
     console.log(`DISTANCE: ${miles} miles (${km} km)`);
     return {
       metres: data.metres,
-      miles: parseFloat(miles),
+      miles: miles,
       km: parseFloat(km),
     };
   } catch (err) {
@@ -378,7 +378,9 @@ async function handleCall(phone, onCallHandled) {
     }
   }
   
-  await onCallHandled(customer, addressData, distance);
+  // Pass only the miles value (string or number) to the callback
+  const distanceMiles = distance ? distance.miles : null;
+  await onCallHandled(customer, addressData, distanceMiles);
   console.log("=== CALL HANDLED ===\n");
 }
 

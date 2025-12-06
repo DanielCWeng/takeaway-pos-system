@@ -117,6 +117,7 @@ const DeliveryAddressModal: React.FC<DeliveryAddressModalProps> = ({
   > | null>(null);
   const [distance, setDistance] = useState<number>(0);
   const [isCaps, setIsCaps] = useState(false);
+  const [isTimeModified, setIsTimeModified] = useState(false);
   const [deliveryDateTime, setDeliveryDateTime] = useState(new Date());
 
   const [isSaving, setIsSaving] = useState(false);
@@ -272,6 +273,7 @@ const DeliveryAddressModal: React.FC<DeliveryAddressModalProps> = ({
     const newTime = new Date();
     newTime.setMinutes(newTime.getMinutes() + minutes);
     setDeliveryDateTime(newTime);
+    setIsTimeModified(true);
   };
   const handleAdjustTime = (minutes: number) => {
     setDeliveryDateTime((prevTime) => {
@@ -279,6 +281,7 @@ const DeliveryAddressModal: React.FC<DeliveryAddressModalProps> = ({
       newTime.setMinutes(newTime.getMinutes() + minutes);
       return newTime;
     });
+    setIsTimeModified(true);
   };
   const formatTime = (date: Date) => {
     const hours = date.getHours().toString().padStart(2, "0");
@@ -331,7 +334,7 @@ const DeliveryAddressModal: React.FC<DeliveryAddressModalProps> = ({
       postcode: formState.postcode,
       distance: distance, // Add the distance
       deliveryInstructions: formState.instructions,
-      deliveryTime: formatTime(deliveryDateTime),
+      deliveryTime: isTimeModified ? formatTime(deliveryDateTime) : undefined,
     };
 
     try {
