@@ -11,12 +11,24 @@ interface OrderSummaryProps {
   subtotal: number;
   total: number;
   deliveryCharge: number;
+  onEditDeliveryCharge: () => void;
   orderType: OrderType;
   discount: number;
 }
 
-const TotalRow: React.FC<{ label: string; value: string; isBold?: boolean }> = ({ label, value, isBold = false }) => (
-    <div className={`flex justify-between items-center ${isBold ? 'font-bold text-lg' : 'text-sm'}`}>
+interface TotalRowProps {
+  label: string;
+  value: string;
+  isBold?: boolean;
+  onClick?: () => void;
+  className?: string;
+}
+
+const TotalRow: React.FC<TotalRowProps> = ({ label, value, isBold = false, onClick, className = "" }) => (
+    <div 
+      className={`flex justify-between items-center ${isBold ? 'font-bold text-lg' : 'text-sm'} ${className}`}
+      onClick={onClick}
+    >
         <span>{label}</span>
         <span className="font-mono">{value}</span>
     </div>
@@ -30,6 +42,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
   subtotal,
   total,
   deliveryCharge,
+  onEditDeliveryCharge,
   orderType,
   discount,
 }) => {
@@ -58,7 +71,14 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
        {/* --- MODIFIED: This entire container is restyled to match your image --- */}
        <div className="flex-shrink-0 flex flex-col gap-y-1 mt-2 bg-gray-200 p-2 border-2 border-t-gray-400 border-l-gray-400 border-b-white border-r-white">
             <TotalRow label="Subtotal" value={`£${subtotal.toFixed(2)}`} />
-            {orderType === OrderType.Delivery && <TotalRow label="Delivery" value={`£${deliveryCharge.toFixed(2)}`} />}
+            {orderType === OrderType.Delivery && (
+               <TotalRow 
+                  label="Delivery" 
+                  value={`£${deliveryCharge.toFixed(2)}`} 
+                  onClick={onEditDeliveryCharge}
+                  className="cursor-pointer hover:bg-gray-300 rounded px-1 -mx-1 select-none"
+               />
+            )}
             {discount > 0 && <TotalRow label="Discount" value={`-£${discount.toFixed(2)}`} />}
             <div className="border-t border-gray-400 my-1"></div>
             <TotalRow label="Total" value={`£${total.toFixed(2)}`} isBold={true} />

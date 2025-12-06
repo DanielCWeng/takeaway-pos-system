@@ -24,6 +24,7 @@ interface LeftPanelProps {
   subtotal: number;
   total: number;
   deliveryCharge: number;
+  onEditDeliveryCharge: () => void;
   onOpenCustomerModal: (focus: 'postcode' | 'name') => void;
   onNewOrder: () => void;
   onSetActiveOrder: (index: number) => void;
@@ -76,6 +77,7 @@ const LeftPanel: React.FC<LeftPanelProps> = ({
   subtotal,
   total,
   deliveryCharge,
+  onEditDeliveryCharge,
   onOpenCustomerModal,
   onNewOrder,
   onSetActiveOrder,
@@ -116,6 +118,7 @@ const LeftPanel: React.FC<LeftPanelProps> = ({
         subtotal={subtotal}
         total={total}
         deliveryCharge={deliveryCharge}
+        onEditDeliveryCharge={onEditDeliveryCharge}
         orderType={activeOrder.orderType}
         discount={activeOrder.discount}
       />

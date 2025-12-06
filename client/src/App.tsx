@@ -23,6 +23,7 @@ import MenuRefModal from "./components/MenuRefModal";
 import AdminPage from "./components/AdminPage";
 import ConfirmationModal from "./components/ConfirmationModal";
 import AddressSelectionModal from "./components/AddressSelectionModal";
+import NumpadInputModal from "./components/NumpadInputModal";
 import menuData from "./menu.json";
 import { OrderItem, MenuItem, OrderType, CustomerInfo } from "./types";
 import { useCallerId } from "./context/CallerIDContext";
@@ -36,6 +37,7 @@ interface Order {
   autoCreated?: boolean;
   createdAt?: number;
   hasUnreadChanges?: boolean;
+  deliveryCharge?: number;
 }
 
 const createNewOrder = (
@@ -51,6 +53,7 @@ const createNewOrder = (
   autoCreated,
   createdAt: autoCreated ? Date.now() : undefined,
   hasUnreadChanges,
+  deliveryCharge: DELIVERY_CHARGE,
 });
 
 type PosButtonProps = ComponentProps<"button">;
@@ -92,6 +95,7 @@ export default function App() {
   const [customerForSelection, setCustomerForSelection] = useState<any | null>(
     null
   );
+  const [isDeliveryPriceModalOpen, setIsDeliveryPriceModalOpen] = useState(false);
 
   const activeOrder = useMemo(
     () => orders[activeOrderIndex],
@@ -386,9 +390,18 @@ export default function App() {
   const total = useMemo(() => {
     if (!activeOrder) return 0;
     const delivery =
-      activeOrder.orderType === OrderType.Delivery ? DELIVERY_CHARGE : 0;
+      activeOrder.orderType === OrderType.Delivery
+        ? (activeOrder.deliveryCharge ?? DELIVERY_CHARGE)
+        : 0;
     return subtotal + delivery - activeOrder.discount;
   }, [subtotal, activeOrder]);
+
+  const handleUpdateDeliveryCharge = useCallback(
+    (newCharge: number) => {
+      updateOrder(activeOrderIndex, { deliveryCharge: newCharge });
+    },
+    [activeOrderIndex, updateOrder]
+  );
 
   const handleOpenCustomerModal = useCallback((focus: "postcode" | "name") => {
     setInitialFocusField(focus);
@@ -568,7 +581,7 @@ export default function App() {
         ...orderToPrint,
         subtotal: finalSubtotal,
         total: finalTotal,
-        deliveryCharge: DELIVERY_CHARGE,
+        deliveryCharge: orderToPrint.deliveryCharge ?? DELIVERY_CHARGE,
         paymentDetails,
       };
       fetch(`${API_BASE_URL}/api/print`, {
@@ -673,7 +686,8 @@ export default function App() {
           }
           subtotal={subtotal}
           total={total}
-          deliveryCharge={DELIVERY_CHARGE}
+          deliveryCharge={activeOrder.deliveryCharge ?? DELIVERY_CHARGE}
+          onEditDeliveryCharge={() => setIsDeliveryPriceModalOpen(true)}
           onOpenCustomerModal={handleOpenCustomerModal}
           onNewOrder={handleNewOrder}
           onSetActiveOrder={handleSetActiveOrder}
@@ -727,6 +741,14 @@ export default function App() {
           customer={customerForSelection}
           onClose={() => setIsAddressSelectionModalOpen(false)}
           onSelect={handleSelectAddress}
+        />
+      )}
+      {isDeliveryPriceModalOpen && (
+        <NumpadInputModal
+          title="Update Delivery Charge"
+          initialValue={activeOrder.deliveryCharge ?? DELIVERY_CHARGE}
+          onClose={() => setIsDeliveryPriceModalOpen(false)}
+          onConfirm={(val) => handleUpdateDeliveryCharge(val)}
         />
       )}
     </div>
