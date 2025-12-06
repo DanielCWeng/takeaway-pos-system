@@ -3,7 +3,7 @@
 import fs from "fs";
 import fsp from "fs/promises";
 import path from "path";
-import { HID } from "node-hid";
+import HID from "node-hid";
 import fetch from "node-fetch";
 import { LRUCache } from "lru-cache";
 import Database from "better-sqlite3";
@@ -404,7 +404,7 @@ export async function startCallerIdService(onCallHandledCallback) {
     console.log("  Store PC:", STORE_POSTCODE);
     console.log("  Debug:", DEBUG ? "ON" : "OFF");
     console.log("");
-    device = new HID(DEVICE_PATH);
+    device = new HID.HID(DEVICE_PATH);
     console.log("✓ Connected to JD-2000S\n");
     
     // loadPostcodeValidator() call removed -> Now using SQLite DB
