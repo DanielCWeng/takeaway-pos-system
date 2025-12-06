@@ -15,7 +15,7 @@ const FunctionButton: React.FC<{
     onClick={onClick}
     className={`w-full h-full text-center p-1 border-2 flex items-center justify-center flex-col
       ${ isActive
-        ? 'bg-yellow-200 border-r-gray-500 border-b-gray-500 border-l-gray-100 border-t-gray-100'
+        ? 'bg-yellow-400 border-l-gray-600 border-t-gray-600 border-r-white border-b-white'
         : 'bg-gray-300 border-r-gray-500 border-b-gray-500 border-l-gray-100 border-t-gray-100'
       } ${className}`}
   >
