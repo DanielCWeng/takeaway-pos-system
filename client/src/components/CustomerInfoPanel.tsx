@@ -94,7 +94,7 @@ const CustomerInfoPanel: React.FC<{
         <div className="bg-gray-300 border-2 border-t-gray-600 border-l-gray-600 border-b-gray-100 border-r-gray-100 p-1">
           <InfoRow 
             label="Dist" 
-            value={customerInfo.distance ? `${customerInfo.distance} mi` : ''} 
+            value={customerInfo.distance ? `${customerInfo.distance.toFixed(2)} mi` : ''} 
             subLabel="距离" 
           />
         </div>
