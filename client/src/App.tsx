@@ -19,6 +19,7 @@ import LeftPanel from "./components/LeftPanel";
 import RightPanel from "./components/RightPanel";
 import ItemModificationModal from "./components/ItemModificationModal";
 import DeliveryAddressModal from "./components/DeliveryAddressModal";
+import DeliveryValidationModal from "./components/DeliveryValidationModal";
 import MenuRefModal from "./components/MenuRefModal";
 import AdminPage from "./components/AdminPage";
 import ConfirmationModal from "./components/ConfirmationModal";
@@ -96,6 +97,7 @@ export default function App() {
     null
   );
   const [isDeliveryPriceModalOpen, setIsDeliveryPriceModalOpen] = useState(false);
+  const [isDeliveryValidationModalOpen, setIsDeliveryValidationModalOpen] = useState(false);
 
   const activeOrder = useMemo(
     () => orders[activeOrderIndex],
@@ -553,6 +555,18 @@ export default function App() {
       alert("Cannot accept an empty order.");
       return;
     }
+
+    // Check if delivery is selected but no address is entered
+    const isDelivery = activeOrder.orderType === OrderType.Delivery;
+    const hasName = activeOrder.customerInfo?.name;
+    const hasAddress = activeOrder.customerInfo?.address && activeOrder.customerInfo.address.trim() !== "";
+    
+    if (isDelivery && hasName && !hasAddress) {
+      // Show validation modal to confirm delivery or switch to collection
+      setIsDeliveryValidationModalOpen(true);
+      return;
+    }
+
     setOrderToConfirm(activeOrder);
     setIsConfirmationModalOpen(true);
   }, [activeOrder]);
@@ -607,6 +621,22 @@ export default function App() {
     },
     [orderToConfirm, orders, subtotal, total]
   );
+
+  const handleConfirmDelivery = useCallback(() => {
+    setIsDeliveryValidationModalOpen(false);
+    // Open the customer modal to enter the address
+    handleOpenCustomerModal("postcode");
+  }, [handleOpenCustomerModal]);
+
+  const handleSwitchToCollection = useCallback(() => {
+    setIsDeliveryValidationModalOpen(false);
+    // Change order type to Collection
+    updateOrder(activeOrderIndex, { orderType: OrderType.Collection });
+    // Proceed to confirmation
+    setOrderToConfirm(activeOrder);
+    setIsConfirmationModalOpen(true);
+  }, [activeOrder, activeOrderIndex, updateOrder]);
+
 
   // Safety check: if activeOrder is undefined (e.g. due to race condition), fallback to loading or reset
   if (!activeOrder && orders.length > 0) {
@@ -741,6 +771,14 @@ export default function App() {
           customer={customerForSelection}
           onClose={() => setIsAddressSelectionModalOpen(false)}
           onSelect={handleSelectAddress}
+        />
+      )}
+      {isDeliveryValidationModalOpen && (
+        <DeliveryValidationModal
+          customerName={activeOrder.customerInfo?.name || "Customer"}
+          onConfirmDelivery={handleConfirmDelivery}
+          onSwitchToCollection={handleSwitchToCollection}
+          onClose={() => setIsDeliveryValidationModalOpen(false)}
         />
       )}
       {isDeliveryPriceModalOpen && (
