@@ -182,7 +182,7 @@
     "id": "12",
     "name": { "en": "Spring Rolls (2)", "zh": "春卷 (2个)" },
     "price": 4.4,
-    "primaryCategory": "Special",
+    "primaryCategory": "Veg",
     "secondaryCategory": "Starter"
   },
   {
@@ -1915,7 +1915,8 @@
     "secondaryCategory": "English",
     "options": [
       { "name": "Small", "price": 2.6 },
-      { "name": "Large", "price": 3.4 }
+      { "name": "Large", "price": 3.4 },
+      { "name": "Few", "price": 0.7 }
     ]
   },
   {
@@ -1932,7 +1933,7 @@
     "id": "236",
     "name": { "en": "Sausage & Chips", "zh": "香肠薯条" },
     "price": 4.5,
-    "primaryCategories": ["Btn 1", "Chips", "Pork"],
+    "primaryCategories": ["Btn 1", "Chips"],
     "secondaryCategory": "English"
   },
   {
@@ -1940,8 +1941,14 @@
     "name": { "en": "Chicken Nuggets (10)", "zh": "炸鸡块 (10个)" },
     "price": 4.5,
     "primaryCategories": ["Btn 1", "Chicken"],
-    "secondaryCategory": "English",
-    "options": [{ "name": "Nuggets Only" }, { "name": "Nuggets & Chips" }]
+    "secondaryCategory": "English"
+  },
+  {
+    "id": "237a",
+    "name": { "en": "Chicken Nuggets & Chips", "zh": "炸鸡块 & 薯条" },
+    "price": 4.5,
+    "primaryCategories": ["Btn 1", "Chicken", "Chips"],
+    "secondaryCategory": "English"
   },
   {
     "id": "238",
@@ -1957,7 +1964,8 @@
     "secondaryCategory": "Starter",
     "options": [
       { "name": "Small", "price": 1.5 },
-      { "name": "Large", "price": 2.0 }
+      { "name": "Large", "price": 2.0 },
+      { "name": "Don't Want", "price": 0.0 }
     ]
   },
   {

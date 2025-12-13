@@ -80,6 +80,7 @@ export default function App() {
   const [selectedOrderItemId, setSelectedOrderItemId] = useState<string | null>(
     null
   );
+  const [completedOrdersSessionCount, setCompletedOrdersSessionCount] = useState(0);
 
   const [isZeroPriceMode, setIsZeroPriceMode] = useState(false);
   const [isSwapMode, setIsSwapMode] = useState(false);
@@ -774,6 +775,17 @@ export default function App() {
           console.log(
             `Print job for order ${orderToPrint.id} sent successfully.`
           );
+
+          // Auto-refresh after 3 completed orders
+          setCompletedOrdersSessionCount((prev) => {
+            const newCount = prev + 1;
+            if (newCount >= 3) {
+              console.log("3 orders completed. Refreshing page...");
+              setTimeout(() => window.location.reload(), 500);
+              return 0;
+            }
+            return newCount;
+          });
         })
         .catch((error) => {
           console.error("Background Printing Error:", error);
