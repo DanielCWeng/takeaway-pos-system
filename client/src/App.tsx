@@ -14,7 +14,7 @@ if (!crypto.randomUUID) {
 }
 
 import React, { useState, useCallback, useMemo, ComponentProps } from "react";
-import { DELIVERY_CHARGE, API_BASE_URL } from "./constants";
+import { DELIVERY_CHARGE, API_BASE_URL, calculateDeliveryCharge } from "./constants";
 import LeftPanel from "./components/LeftPanel";
 import RightPanel from "./components/RightPanel";
 import ItemModificationModal from "./components/ItemModificationModal";
@@ -269,9 +269,12 @@ export default function App() {
               "[UPDATE STATE] Populating ACTIVE order index:",
               activeOrderIndex
             );
+            // Calculate delivery charge based on distance
+            const deliveryCharge = calculateDeliveryCharge(customerDataToApply.distance);
             newOrders[activeOrderIndex] = {
               ...newOrders[activeOrderIndex],
               customerInfo: customerDataToApply,
+              deliveryCharge: deliveryCharge,
             };
           } else {
             console.log("[UPDATE STATE] Creating BACKGROUND order.");
@@ -282,6 +285,8 @@ export default function App() {
                 : 1;
             const newOrder = createNewOrder(nextId, true, true);
             newOrder.customerInfo = customerDataToApply;
+            // Calculate delivery charge based on distance
+            newOrder.deliveryCharge = calculateDeliveryCharge(customerDataToApply.distance);
             newOrders.push(newOrder);
           }
           return newOrders;
@@ -366,6 +371,8 @@ export default function App() {
 
   const handleSelectAddress = (selectedAddress: any) => {
     if (!customerForSelection) return;
+    // Preserve distance from the current order's customer info
+    const currentDistance = activeOrder.customerInfo?.distance;
     const newCustomerInfo = {
       phone: customerForSelection.phone,
       name: customerForSelection.name,
@@ -374,8 +381,14 @@ export default function App() {
       street: selectedAddress.street,
       town: selectedAddress.town,
       address: selectedAddress.fullAddress,
+      distance: currentDistance,
     };
-    updateOrder(activeOrderIndex, { customerInfo: newCustomerInfo });
+    // Recalculate delivery charge based on distance
+    const newDeliveryCharge = calculateDeliveryCharge(currentDistance);
+    updateOrder(activeOrderIndex, { 
+      customerInfo: newCustomerInfo,
+      deliveryCharge: newDeliveryCharge 
+    });
     setIsAddressSelectionModalOpen(false);
     setCustomerForSelection(null);
   };
@@ -512,7 +525,12 @@ export default function App() {
 
   const handleSaveCustomerInfo = useCallback(
     (info: CustomerInfo) => {
-      updateOrder(activeOrderIndex, { customerInfo: info });
+      // Calculate delivery charge based on distance
+      const newDeliveryCharge = calculateDeliveryCharge(info.distance);
+      updateOrder(activeOrderIndex, { 
+        customerInfo: info,
+        deliveryCharge: newDeliveryCharge 
+      });
       setIsCustomerModalOpen(false);
     },
     [activeOrderIndex, updateOrder]

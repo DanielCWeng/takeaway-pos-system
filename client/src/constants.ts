@@ -119,4 +119,22 @@ export const CATEGORIES: MenuItem['category'][] = ['Chicken', 'Beef', 'Vegetable
 
 export const DELIVERY_CHARGE = 2.00;
 
+/**
+ * Calculate delivery charge based on distance
+ * - Base charge (0-2 miles): £2.00
+ * - Over 2 miles: £2.50
+ * - Over 3 miles: £3.00
+ * - And continues at £0.50 increments per mile
+ */
+export function calculateDeliveryCharge(distanceInMiles?: number): number {
+  if (!distanceInMiles || distanceInMiles <= 2) {
+    return 2.00;
+  }
+  
+  // For distances over 2 miles, calculate charge
+  // £2.00 + £0.50 for each mile over 2
+  const milesOver2 = Math.floor(distanceInMiles - 2);
+  return 2.00 + (milesOver2 * 0.50);
+}
+
 export const API_BASE_URL = "http://" + window.location.hostname + ":4000";
