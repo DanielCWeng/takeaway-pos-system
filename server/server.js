@@ -242,6 +242,10 @@ function printReceipt(orderData) {
         // Print English name with price (bold)
         const itemRef = item.menuItem.id || "";
         let englishName = `(${itemRef}) ${item.menuItem.name.en}`;
+        
+        if (item.isSwapped) {
+          englishName += " (SWAP)";
+        }
 
         // --- MODIFIER LOGIC ---
         const commandTranslations = {
