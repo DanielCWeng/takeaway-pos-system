@@ -47,6 +47,11 @@ export interface OrderItem {
   customInstructions?: string;
   customName?: string;
   selections?: { [key: string]: string | string[] };
+  hideQuantity?: boolean;
+  hidePrice?: boolean;
+  isPartOfSet?: boolean;
+  setMealId?: string;
+  isSwapped?: boolean;
 }
 
 // The type of the current order.

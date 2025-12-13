@@ -60,10 +60,17 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
               }`}
             >
               <div className="flex items-center">
-                <span className="font-bold mr-2">{item.quantity}x</span>
-                <span>{item.displayName}</span>
+                <span className="font-bold mr-2 w-8 text-right inline-block">
+                   {item.hideQuantity ? '' : `${item.quantity}x`}
+                </span>
+                <span>
+                    {item.displayName}
+                    {item.isSwapped && <span className="ml-1 text-yellow-300" title="Swapped">🔄</span>}
+                </span>
               </div>
-              <span className="font-semibold">£{item.finalPrice.toFixed(2)}</span>
+              <span className="font-semibold">
+                  {item.hidePrice ? '' : `£${item.finalPrice.toFixed(2)}`}
+              </span>
             </div>
           ))}
       </div>

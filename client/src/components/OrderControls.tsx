@@ -12,6 +12,10 @@ interface OrderControlsProps {
   isZeroPriceMode: boolean;
   onToggleZeroPriceMode: () => void;
   onDeleteOrder: () => void;
+  isSwapMode: boolean;
+  onToggleSwapMode: () => void;
+  isHappyMealSelected: boolean;
+  isSetMealItemSelected: boolean;
 }
 
 const ControlButton = ({ children, className = '', ...props }: { children?: React.ReactNode, className?: string, [key: string]: any }) => (
@@ -39,6 +43,10 @@ const OrderControls: React.FC<OrderControlsProps> = ({
   isZeroPriceMode,
   onToggleZeroPriceMode,
   onDeleteOrder,
+  isSwapMode,
+  onToggleSwapMode,
+  isHappyMealSelected,
+  isSetMealItemSelected,
 }) => {
   return (
     <div className="grid grid-cols-5 grid-rows-2 gap-1 h-20">
@@ -60,7 +68,15 @@ const OrderControls: React.FC<OrderControlsProps> = ({
 
       <TextButton topText="Modify" bottomText="修改" onClick={onModifyItem} disabled={!isItemSelected} />
       <TextButton topText="Delete" bottomText="删除" onClick={onDeleteOrder} className="text-red-400 font-semibold" />
-      <TextButton topText="Swap" bottomText="换餐" disabled={true}/>
+      <ControlButton
+        onClick={onToggleSwapMode}
+        className={`text-xl flex-col ${isSwapMode ? 'bg-yellow-300' : ''}`}
+        disabled={!isSwapMode && !isHappyMealSelected && !isSetMealItemSelected}
+      >
+         <span className="text-sm">Swap</span>
+         <span className="text-xs">换餐</span>
+      </ControlButton>
+
 
     </div>
   );

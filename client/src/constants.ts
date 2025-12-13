@@ -11,6 +11,11 @@ export const SET_MEALS = [
     { id: '1c', name: 'Whole Aromatic Duck', size: '全甲', price: 36.00 },
 ];
 
+export const SET_MEAL_COMPONENTS: { [key: string]: string[] } = {
+  'SET2': ['3', '42', '100', '232', '239'], // Spare Ribs, S&S Chicken HK, Beef Green Pepper, Egg Fried Rice, Prawn Crackers
+  // Add other sets here as needed
+};
+
 export const DISH_GRID_ITEMS = [
   // Row 1
   ['Show All', 'Starter', 'Spare Rib', 'Chicken Wing', 'Soup', 'Salt & Pepper'],

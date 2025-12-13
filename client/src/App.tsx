@@ -14,7 +14,7 @@ if (!crypto.randomUUID) {
 }
 
 import React, { useState, useCallback, useMemo, ComponentProps } from "react";
-import { DELIVERY_CHARGE, API_BASE_URL, calculateDeliveryCharge } from "./constants";
+import { DELIVERY_CHARGE, API_BASE_URL, calculateDeliveryCharge, SET_MEAL_COMPONENTS } from "./constants";
 import LeftPanel from "./components/LeftPanel";
 import RightPanel from "./components/RightPanel";
 import ItemModificationModal from "./components/ItemModificationModal";
@@ -82,6 +82,7 @@ export default function App() {
   );
 
   const [isZeroPriceMode, setIsZeroPriceMode] = useState(false);
+  const [isSwapMode, setIsSwapMode] = useState(false);
 
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [initialFocusField, setInitialFocusField] = useState<
@@ -443,6 +444,99 @@ export default function App() {
 
   const handleAddItem = useCallback(
     (item: MenuItem) => {
+      // --- 1. SET MEAL LOGIC: Auto-add components ---
+      if (SET_MEAL_COMPONENTS[item.id]) {
+        const componentIds = SET_MEAL_COMPONENTS[item.id];
+        
+        // Base Set Meal Item
+        const setMealItem: OrderItem = {
+          id: crypto.randomUUID(),
+          menuItem: { ...item },
+          displayName: item.name.en,
+          modifiers: [],
+          quantity: 1,
+          finalPrice: item.price || 0,
+          selections: (item as any).selections,
+        };
+
+        // Component Items
+        const componentItems = componentIds.map(compId => {
+          const compMenuItem = menuItems.find(m => m.id === compId);
+          if (!compMenuItem) return null;
+          return {
+            id: crypto.randomUUID(),
+            menuItem: { ...compMenuItem },
+            displayName: compMenuItem.name.en,
+            modifiers: [],
+            quantity: 1,
+            finalPrice: 0,
+            hideQuantity: true,
+            hidePrice: true,
+            isPartOfSet: true,
+            setMealId: setMealItem.id,
+            selections: (compMenuItem as any).selections,
+          } as OrderItem;
+        }).filter((i): i is OrderItem => i !== null);
+
+        const newOrderItems = [...currentOrderItems, setMealItem, ...componentItems];
+        updateOrder(activeOrderIndex, { items: newOrderItems, lastActivityTime: Date.now() });
+        setSelectedOrderItemId(setMealItem.id);
+        return;
+      }
+
+      // --- 2. SWAP MODE LOGIC ---
+      if (isSwapMode) {
+        // Option A: Replacing an item in a Set Meal
+        if (selectedOrderItemId) {
+           const selectedIndex = currentOrderItems.findIndex(i => i.id === selectedOrderItemId);
+           const selectedItem = currentOrderItems[selectedIndex];
+
+           if (selectedItem && selectedItem.isPartOfSet) {
+             // Perform Replacement
+             const newItem: OrderItem = {
+               ...selectedItem,
+               menuItem: { ...item },
+               displayName: item.name.en,
+               selections: (item as any).selections,
+               modifiers: [], // Reset modifiers
+               // Inherit specific flags
+               finalPrice: 0,
+               hideQuantity: true,
+               hidePrice: true,
+               isSwapped: true,
+               // Keep isPartOfSet, setMealId, id, quantity logic
+             };
+             
+             const newItems = [...currentOrderItems];
+             newItems[selectedIndex] = newItem;
+             updateOrder(activeOrderIndex, { items: newItems, lastActivityTime: Date.now() });
+             
+             // Turn off swap mode after a single specific replacement (UX choice)
+             setIsSwapMode(false);
+             return;
+           }
+        }
+
+        // Option B: Happy Meal "Add as Free" logic
+        // "Any items added after this point... Must have no price... blank in UI"
+        const newItem: OrderItem = {
+          id: crypto.randomUUID(),
+          menuItem: { ...item },
+          displayName: item.name.en,
+          modifiers: [],
+          quantity: 1,
+          finalPrice: 0,
+          hideQuantity: true,
+          hidePrice: true,
+          selections: (item as any).selections,
+        };
+        const newOrderItems = [...currentOrderItems, newItem];
+        updateOrder(activeOrderIndex, { items: newOrderItems, lastActivityTime: Date.now() });
+        setSelectedOrderItemId(newItem.id);
+        return;
+      }
+
+      // --- 3. NORMAL ADD LOGIC ---
       const newOrderItem: OrderItem = {
         id: crypto.randomUUID(),
         menuItem: { ...item },
@@ -462,7 +556,7 @@ export default function App() {
       updateOrder(activeOrderIndex, { items: newOrderItems, lastActivityTime: Date.now() });
       setSelectedOrderItemId(newOrderItem.id);
     },
-    [currentOrderItems, isZeroPriceMode, activeOrderIndex, updateOrder]
+    [currentOrderItems, isZeroPriceMode, activeOrderIndex, updateOrder, isSwapMode, selectedOrderItemId, menuItems]
   );
 
   const handleRemoveItem = useCallback(() => {
@@ -473,9 +567,25 @@ export default function App() {
     if (itemIndex === -1) return;
 
     const itemToRemove = currentOrderItems[itemIndex];
+
+    // --- CASCADE DELETE LOGIC ---
+    // If we are removing a Set Meal Parent, we must remove all its children (components)
+    // We identify children by checking if their setMealId matches the removed item's id
+    const setMealChildrenIds = currentOrderItems
+        .filter(i => i.setMealId === itemToRemove.id)
+        .map(i => i.id);
+    
+    // Combine IDs to remove: the selected item + any children
+    const idsToRemove = new Set([itemToRemove.id, ...setMealChildrenIds]);
+
     let newItems: OrderItem[];
 
-    if (itemToRemove.quantity > 1) {
+    if (itemToRemove.quantity > 1 && setMealChildrenIds.length === 0) {
+       // Only allow decrement if it's NOT a complex set meal parent 
+       // (Simple decrement logic doesn't handle sets elegantly yet, so treating sets as atomic block for now is safer, 
+       // but user asked for "remove", typically meaning DELETE from list. 
+       // If quantity > 1, usually we decrement. But for Set Meals, if we decrement parent, do we decrement children? 
+       // For "Set Dinner", usually quantity is 1 anyway. Let's keep simple decrement for non-sets.)
       newItems = currentOrderItems.map((item) =>
         item.id === selectedOrderItemId
           ? { ...item, quantity: item.quantity - 1 }
@@ -483,11 +593,13 @@ export default function App() {
       );
       updateOrder(activeOrderIndex, { items: newItems, lastActivityTime: Date.now() });
     } else {
+      // Remove the item(s) completely
       newItems = currentOrderItems.filter(
-        (item) => item.id !== selectedOrderItemId
+        (item) => !idsToRemove.has(item.id)
       );
       let newSelectedItemId: string | null = null;
       if (newItems.length > 0) {
+        // Try to keep selection index stable or select nearest
         const newIndexToSelect = Math.min(itemIndex, newItems.length - 1);
         newSelectedItemId = newItems[newIndexToSelect].id;
       }
@@ -777,6 +889,8 @@ export default function App() {
           onFocItem={handleFocItem}
           onAcceptOrder={handleAcceptOrder}
           onDeleteOrder={handleDeleteOrder}
+          isSwapMode={isSwapMode}
+          onToggleSwapMode={() => setIsSwapMode(prev => !prev)}
         />
         <RightPanel
           menuItems={menuItems}

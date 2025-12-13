@@ -125,7 +125,13 @@ const ItemModificationModal: React.FC<ItemModificationModalProps> = ({ item, onC
     };
 
     const handleSave = () => {
-        const basePrice = customPrice ? parseFloat(customPrice) : (item.menuItem.price || 0);
+        let defaultPrice = item.menuItem.price || 0;
+        // Check if item is effectively free (Happy Meal item, Set Component, Swapped item)
+        if (item.hidePrice || item.isPartOfSet || item.isSwapped) {
+            defaultPrice = 0;
+        }
+
+        const basePrice = customPrice ? parseFloat(customPrice) : defaultPrice;
         const priceFromModifiers = modifiers.reduce((sum, mod) => sum + (mod.ingredient.price || 0), 0);
         
         // --- NEW: Translations for commands ---

@@ -33,6 +33,8 @@ interface LeftPanelProps {
   onFocItem: () => void;
   onAcceptOrder: () => void;
   onDeleteOrder: () => void;
+  isSwapMode: boolean;
+  onToggleSwapMode: () => void;
 }
 // --- END: MODIFIED PROPS ---
 
@@ -87,7 +89,15 @@ const LeftPanel: React.FC<LeftPanelProps> = ({
   onFocItem,
   onAcceptOrder,
   onDeleteOrder,
+  isSwapMode,
+  onToggleSwapMode,
 }) => {
+  const selectedItem = orderItems.find(i => i.id === selectedOrderItemId);
+  // HM1 is Happy Meal. 
+  // We also enable swap if the selected item is part of a set.
+  const isHappyMealSelected = selectedItem?.menuItem.id === 'HM1';
+  const isSetMealItemSelected = !!selectedItem?.isPartOfSet;
+
   return (
     <div className="w-[38%] bg-gray-300 flex flex-col gap-2">
       <div className="flex-shrink-0 flex gap-1">
@@ -111,6 +121,10 @@ const LeftPanel: React.FC<LeftPanelProps> = ({
         isZeroPriceMode={isZeroPriceMode}
         onToggleZeroPriceMode={onToggleZeroPriceMode}
         onDeleteOrder={onDeleteOrder}
+        isSwapMode={isSwapMode}
+        onToggleSwapMode={onToggleSwapMode}
+        isHappyMealSelected={isHappyMealSelected}
+        isSetMealItemSelected={isSetMealItemSelected}
       />
 
       <OrderSummary

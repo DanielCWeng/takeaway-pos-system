@@ -234,7 +234,7 @@ function printReceipt(orderData) {
       // ---- Items ----
       orderData.items.forEach((item) => {
         console.log(
-          `Rendering: ${item.quantity} ${
+          `Rendering: ${item.hideQuantity ? '' : item.quantity} ${
             item.menuItem.name.zh || item.menuItem.name.en
           }`
         );
@@ -275,16 +275,22 @@ function printReceipt(orderData) {
         // ---------------------
 
         const itemTotal = item.finalPrice * item.quantity;
+        const priceDisplay = item.hidePrice ? "" : itemTotal;
 
         receiptParts.push(
           Buffer.from([ESC, 0x45, 0x01]), // Bold on
-          Buffer.from(rightAlign(englishName, itemTotal)),
+          Buffer.from(rightAlign(englishName, priceDisplay)),
           Buffer.from([ESC, 0x45, 0x00]) // Bold off
         );
 
         // Print Chinese name as bitmap (large, bold)
         if (item.menuItem.name.zh) {
-          let chineseText = `${item.quantity} ${item.menuItem.name.zh}`;
+          // If hidden quantity, use spaces to maintain roughly same offset? 
+          // Or just standard " " separation.
+          // "1 " takes up space. "  " might be close.
+          const quantityPrefix = item.hideQuantity ? "  " : `${item.quantity} `;
+          let chineseText = `${quantityPrefix}${item.menuItem.name.zh}`;
+          
           if (chineseModifierString) {
             chineseText += ` ${chineseModifierString}`;
           }
