@@ -32,6 +32,7 @@ interface LeftPanelProps {
   onToggleZeroPriceMode: () => void;
   onFocItem: () => void;
   onAcceptOrder: () => void;
+  onDeleteOrder: () => void;
 }
 // --- END: MODIFIED PROPS ---
 
@@ -85,6 +86,7 @@ const LeftPanel: React.FC<LeftPanelProps> = ({
   onToggleZeroPriceMode,
   onFocItem,
   onAcceptOrder,
+  onDeleteOrder,
 }) => {
   return (
     <div className="w-[38%] bg-gray-300 flex flex-col gap-2">
@@ -108,6 +110,7 @@ const LeftPanel: React.FC<LeftPanelProps> = ({
         onFocItem={onFocItem}
         isZeroPriceMode={isZeroPriceMode}
         onToggleZeroPriceMode={onToggleZeroPriceMode}
+        onDeleteOrder={onDeleteOrder}
       />
 
       <OrderSummary

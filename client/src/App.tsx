@@ -39,6 +39,7 @@ interface Order {
   createdAt?: number;
   hasUnreadChanges?: boolean;
   deliveryCharge?: number;
+  lastActivityTime?: number;
 }
 
 const createNewOrder = (
@@ -55,6 +56,7 @@ const createNewOrder = (
   createdAt: autoCreated ? Date.now() : undefined,
   hasUnreadChanges,
   deliveryCharge: DELIVERY_CHARGE,
+  lastActivityTime: Date.now(),
 });
 
 type PosButtonProps = ComponentProps<"button">;
@@ -318,18 +320,18 @@ export default function App() {
     }
   }, [lastCall, activeOrderIndex, orders]); // Added orders to ensure activeOrder is fresh in closure
 
-  // 5-minute timeout for auto-created orders
+  // 5-minute timeout for inactive orders (includes both auto-created and manual orders)
   React.useEffect(() => {
-    const hasAutoOrders = orders.some((o) => o.autoCreated);
-    if (!hasAutoOrders) return;
-
     const cleanupExpiredOrders = () => {
       setOrders((prevOrders) => {
         const now = Date.now();
         const ordersKeep = prevOrders.filter((order) => {
-          if (order.autoCreated && order.items.length === 0) {
-            // Check if 5 minutes passed
-            if (order.createdAt && now - order.createdAt > 5 * 60 * 1000) {
+          // Remove orders that:
+          // 1. Have no items
+          // 2. Have been inactive for more than 5 minutes
+          if (order.items.length === 0 && order.lastActivityTime) {
+            if (now - order.lastActivityTime > 5 * 60 * 1000) {
+              console.log(`[AUTO-DELETE] Removing order ${order.id} due to 5 minutes of inactivity`);
               return false; // Remove
             }
           }
@@ -337,14 +339,18 @@ export default function App() {
         });
 
         if (ordersKeep.length !== prevOrders.length) {
-          // If we removed orders, we must ensure activeOrderIndex is still valid
+          // If we removed orders, ensure we have at least one order
+          const finalOrders = ordersKeep.length > 0 ? ordersKeep : [createNewOrder(1)];
+          
+          // Adjust activeOrderIndex if needed
           setActiveOrderIndex((prevIndex) => {
-            if (prevIndex >= ordersKeep.length) {
-              return Math.max(0, ordersKeep.length - 1);
+            if (prevIndex >= finalOrders.length) {
+              return Math.max(0, finalOrders.length - 1);
             }
             return prevIndex;
           });
-          return ordersKeep;
+          
+          return finalOrders;
         }
         return prevOrders;
       });
@@ -453,7 +459,7 @@ export default function App() {
       }
 
       const newOrderItems = [...currentOrderItems, newOrderItem];
-      updateOrder(activeOrderIndex, { items: newOrderItems });
+      updateOrder(activeOrderIndex, { items: newOrderItems, lastActivityTime: Date.now() });
       setSelectedOrderItemId(newOrderItem.id);
     },
     [currentOrderItems, isZeroPriceMode, activeOrderIndex, updateOrder]
@@ -475,7 +481,7 @@ export default function App() {
           ? { ...item, quantity: item.quantity - 1 }
           : item
       );
-      updateOrder(activeOrderIndex, { items: newItems });
+      updateOrder(activeOrderIndex, { items: newItems, lastActivityTime: Date.now() });
     } else {
       newItems = currentOrderItems.filter(
         (item) => item.id !== selectedOrderItemId
@@ -485,7 +491,7 @@ export default function App() {
         const newIndexToSelect = Math.min(itemIndex, newItems.length - 1);
         newSelectedItemId = newItems[newIndexToSelect].id;
       }
-      updateOrder(activeOrderIndex, { items: newItems });
+      updateOrder(activeOrderIndex, { items: newItems, lastActivityTime: Date.now() });
       setSelectedOrderItemId(newSelectedItemId);
     }
   }, [selectedOrderItemId, currentOrderItems, activeOrderIndex, updateOrder]);
@@ -497,7 +503,7 @@ export default function App() {
         ? { ...item, quantity: item.quantity + 1 }
         : item
     );
-    updateOrder(activeOrderIndex, { items: newItems });
+    updateOrder(activeOrderIndex, { items: newItems, lastActivityTime: Date.now() });
   }, [selectedOrderItemId, currentOrderItems, activeOrderIndex, updateOrder]);
 
   const handleOpenModificationModal = useCallback(
@@ -516,7 +522,7 @@ export default function App() {
       const newItems = currentOrderItems.map((item) =>
         item.id === updatedItem.id ? updatedItem : item
       );
-      updateOrder(activeOrderIndex, { items: newItems });
+      updateOrder(activeOrderIndex, { items: newItems, lastActivityTime: Date.now() });
       setIsModificationModalOpen(false);
       setItemToModify(null);
     },
@@ -529,7 +535,8 @@ export default function App() {
       const newDeliveryCharge = calculateDeliveryCharge(info.distance);
       updateOrder(activeOrderIndex, { 
         customerInfo: info,
-        deliveryCharge: newDeliveryCharge 
+        deliveryCharge: newDeliveryCharge,
+        lastActivityTime: Date.now()
       });
       setIsCustomerModalOpen(false);
     },
@@ -552,8 +559,34 @@ export default function App() {
         ? { ...item, finalPrice: 0, displayName: `${item.displayName} (FOC)` }
         : item
     );
-    updateOrder(activeOrderIndex, { items: newItems });
+    updateOrder(activeOrderIndex, { items: newItems, lastActivityTime: Date.now() });
   }, [selectedOrderItemId, currentOrderItems, activeOrderIndex, updateOrder]);
+
+  const handleDeleteOrder = useCallback(() => {
+    // Confirm before deletion
+    if (!confirm('Are you sure you want to delete this order?')) {
+      return;
+    }
+
+    const currentOrderCount = orders.length;
+    const removingIndex = activeOrderIndex;
+
+    setOrders((prevOrders) => {
+      const newOrders = prevOrders.filter((_, index) => index !== removingIndex);
+      // If no orders left, create a new one
+      return newOrders.length > 0 ? newOrders : [createNewOrder(1)];
+    });
+
+    // Adjust active order index
+    if (currentOrderCount === 1) {
+      setActiveOrderIndex(0);
+    } else {
+      const newIndex = Math.min(removingIndex, currentOrderCount - 2);
+      setActiveOrderIndex(newIndex < 0 ? 0 : newIndex);
+    }
+
+    setSelectedOrderItemId(null);
+  }, [activeOrderIndex, orders]);
 
   const handleNewOrder = useCallback(() => {
     if (orders.length >= 9) {
@@ -743,6 +776,7 @@ export default function App() {
           onToggleZeroPriceMode={() => setIsZeroPriceMode((prev) => !prev)}
           onFocItem={handleFocItem}
           onAcceptOrder={handleAcceptOrder}
+          onDeleteOrder={handleDeleteOrder}
         />
         <RightPanel
           menuItems={menuItems}

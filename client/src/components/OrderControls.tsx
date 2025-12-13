@@ -11,6 +11,7 @@ interface OrderControlsProps {
   isItemSelected: boolean;
   isZeroPriceMode: boolean;
   onToggleZeroPriceMode: () => void;
+  onDeleteOrder: () => void;
 }
 
 const ControlButton = ({ children, className = '', ...props }: { children?: React.ReactNode, className?: string, [key: string]: any }) => (
@@ -22,8 +23,8 @@ const ControlButton = ({ children, className = '', ...props }: { children?: Reac
   </button>
 );
 
-const TextButton = ({ topText, bottomText, ...props }: {topText: string, bottomText: string, [key: string]: any}) => (
-    <button className="h-full w-full bg-gray-300 border-2 border-r-gray-500 border-b-gray-500 border-l-gray-100 border-t-gray-100 active:border-l-gray-500 active:border-t-gray-500 active:border-r-gray-100 active:border-b-gray-100 flex flex-col items-center justify-center disabled:text-gray-400 disabled:cursor-not-allowed" {...props}>
+const TextButton = ({ topText, bottomText, className = '', ...props }: {topText: string, bottomText: string, className?: string, [key: string]: any}) => (
+    <button className={`h-full w-full bg-gray-300 border-2 border-r-gray-500 border-b-gray-500 border-l-gray-100 border-t-gray-100 active:border-l-gray-500 active:border-t-gray-500 active:border-r-gray-100 active:border-b-gray-100 flex flex-col items-center justify-center disabled:text-gray-400 disabled:cursor-not-allowed ${className}`} {...props}>
         <span className="text-sm">{topText}</span>
         <span className="text-xs">{bottomText}</span>
     </button>
@@ -37,6 +38,7 @@ const OrderControls: React.FC<OrderControlsProps> = ({
   isItemSelected,
   isZeroPriceMode,
   onToggleZeroPriceMode,
+  onDeleteOrder,
 }) => {
   return (
     <div className="grid grid-cols-5 grid-rows-2 gap-1 h-20">
@@ -57,8 +59,7 @@ const OrderControls: React.FC<OrderControlsProps> = ({
       </ControlButton>
 
       <TextButton topText="Modify" bottomText="修改" onClick={onModifyItem} disabled={!isItemSelected} />
-      {/* Note: 'Clear' now disabled as its function is covered by '-' button for single items. */}
-      <TextButton topText="Clear" bottomText="清单" disabled={true} />
+      <TextButton topText="Delete" bottomText="删除" onClick={onDeleteOrder} className="text-red-400 font-semibold" />
       <TextButton topText="Swap" bottomText="换餐" disabled={true}/>
 
     </div>
