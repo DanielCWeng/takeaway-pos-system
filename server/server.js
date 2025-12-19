@@ -599,6 +599,26 @@ app.post("/api/print", async (req, res) => {
   let newOrderId;
 
   try {
+    // Logic to handle Delivery orders without address
+    if (orderDataFromFrontend.orderType === "Delivery") {
+      const { customerInfo } = orderDataFromFrontend;
+      const hasAddress =
+        customerInfo &&
+        (customerInfo.address ||
+          (customerInfo.houseNumber && customerInfo.street));
+
+      if (!hasAddress) {
+        console.log(
+          "[API] Delivery order missing address - enforcing Collection type."
+        );
+        orderDataFromFrontend.orderType = "Collection";
+        if (orderDataFromFrontend.deliveryCharge) {
+          orderDataFromFrontend.total -= orderDataFromFrontend.deliveryCharge;
+          orderDataFromFrontend.deliveryCharge = 0;
+        }
+      }
+    }
+
     // --- Part 1: CRITICAL - SAVE THE ORDER ---
     const db = getDb();
     
