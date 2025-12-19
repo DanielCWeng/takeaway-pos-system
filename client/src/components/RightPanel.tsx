@@ -380,46 +380,49 @@ const RightPanel: React.FC<RightPanelProps> = ({
           onClose={() => setItemForModal(null)}
         />
       )}
-      <div className="h-[40%] bg-yellow-100 border-2 border-t-gray-600 border-l-gray-600 border-b-gray-100 border-r-gray-100 p-1 flex flex-col overflow-hidden">
+      <div className="h-[46%] bg-yellow-100 border-2 border-t-gray-600 border-l-gray-600 border-b-gray-100 border-r-gray-100 p-1 flex flex-col overflow-hidden">
         {/* 3. ATTACH THE REF */}
         <div ref={scrollContainerRef} className="flex-grow overflow-y-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="sticky top-0 bg-yellow-200">
-              <tr>
-                <th className="p-1 w-16">ID</th>
-                <th className="p-1">Name</th>
-                <th className="p-1">H/M</th>
-                <th className="p-1 w-24 text-right">Price</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredResults.map((item) => (
-                <tr
-                  key={item.id}
-                  data-id={item.id} // 4. TAG THE ROW
-                  onClick={() => handleAttemptAddItem(item)}
-                  className={`cursor-pointer ${
-                    selectedResultId === item.id
-                      ? "bg-blue-600 text-white"
-                      : "hover:bg-yellow-200"
-                  }`}
-                >
-                  <td className="p-1 font-mono">{item.id}</td>
-                  <td className="p-1">{item.name.en}</td>
-                  <td className="p-1">{item.name.zh}</td>
-                  <td className="p-1 font-mono text-right">
-                    {item.price != null
-                      ? `£${item.price.toFixed(2)}`
-                      : item.options || item.contents
-                      ? "See options"
-                      : "£0.00"}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          {/* Header Row */}
+          <div className="sticky top-0 z-10 grid grid-cols-[3rem_1fr_4rem_5rem] gap-2 bg-yellow-200 p-1 font-bold text-sm border-b-2 border-yellow-400 mb-1">
+            <div>ID</div>
+            <div>Name</div>
+            <div>H/M</div>
+            <div className="text-right">Price</div>
+          </div>
+          <div className="flex flex-col gap-1 p-1 pb-16">
+            {filteredResults.map((item) => (
+              <div
+                key={item.id}
+                data-id={item.id}
+                onClick={() => handleAttemptAddItem(item)}
+                className={`grid grid-cols-[3rem_1fr_4rem_5rem] gap-2 p-2 items-center text-sm rounded cursor-pointer border-b border-gray-400 border-opacity-40 ${
+                  selectedResultId === item.id
+                    ? "bg-blue-600 text-white"
+                    : "hover:bg-yellow-200 text-black"
+                }`}
+              >
+                <div className="font-mono font-bold">{item.id}</div>
+                <div className="truncate">{item.name.en}</div>
+                <div className="truncate">{item.name.zh}</div>
+                <div className="text-right font-mono">
+                  {item.price != null
+                    ? `£${item.price.toFixed(2)}`
+                    : item.options || item.contents
+                    ? "OPTS"
+                    : "£0.00"}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
         <div className="flex-shrink-0 mt-1 flex gap-1">
+          <button
+            onClick={onOpenMenuRef}
+            className="px-2 font-bold bg-gray-300 border-2 border-r-gray-500 border-b-gray-500 border-l-gray-100 border-t-gray-100 active:border-l-gray-500 active:border-t-gray-500"
+          >
+            Ref 餐号
+          </button>
           <button
             onClick={() => selectedItem && handleAttemptAddItem(selectedItem)}
             disabled={!selectedItem}
@@ -442,17 +445,6 @@ const RightPanel: React.FC<RightPanelProps> = ({
         </div>
       </div>
       <div className="flex-grow flex flex-col">
-        <div className="flex-shrink-0 flex gap-2 h-8 mb-2">
-          <button className="bg-gray-300 border-2 border-r-gray-500 border-b-gray-500 border-l-gray-100 border-t-gray-100 px-2">
-            F8 - Dish Type 餐款入单
-          </button>
-          <button
-            onClick={onOpenMenuRef}
-            className="bg-gray-300 border-2 border-r-gray-500 border-b-gray-500 border-l-gray-100 border-t-gray-100 px-2"
-          >
-            Menu Ref 餐号入单
-          </button>
-        </div>
         <div className="flex flex-nowrap gap-1 h-14 mb-2 items-center justify-start overflow-x-auto">
           {PRIMARY_CATEGORIES_ICONS.map((cat) => (
             <PrimaryHorizontalButton
