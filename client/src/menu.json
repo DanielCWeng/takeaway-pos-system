@@ -615,7 +615,7 @@
     "id": "66",
     "name": { "en": "Mushroom Curry", "zh": "咖喱蘑菇" },
     "price": 5.5,
-    "primaryCategory": "Veg",
+    "primaryCategory": "Mushroom",
     "secondaryCategory": "Curry"
   },
   {
@@ -790,7 +790,7 @@
     "id": "74",
     "name": { "en": "Mushroom Foo Yung", "zh": "蘑菇芙蓉" },
     "price": 5.5,
-    "primaryCategory": "Veg",
+    "primaryCategory": "Mushroom",
     "secondaryCategory": "Foo Yung"
   },
   {
@@ -1850,7 +1850,7 @@
     "id": "228",
     "name": { "en": "Fried Mushrooms", "zh": "炒蘑菇" },
     "price": 5.5,
-    "primaryCategory": "Veg",
+    "primaryCategory": "Mushroom",
     "secondaryCategory": "Mushroom"
   },
   {
