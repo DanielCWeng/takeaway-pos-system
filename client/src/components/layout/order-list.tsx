@@ -1,3 +1,4 @@
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { OrderItem } from '../../types';
 import { formatCurrency } from '../../lib/format';
@@ -12,7 +13,7 @@ interface OrderListProps {
   isShortMode?: boolean;
 }
 
-export function OrderList({ items, selectedIndex, onSelect, isShortMode }: OrderListProps) {
+export const OrderList = React.memo(function OrderList({ items, selectedIndex, onSelect, isShortMode }: OrderListProps) {
 
 
   return (
@@ -99,4 +100,4 @@ export function OrderList({ items, selectedIndex, onSelect, isShortMode }: Order
       </ScrollArea>
     </div>
   );
-}
+});

@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from "react";
+import { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { MenuItem, OrderItem, MenuContent } from "../../types";
 import { useOrder } from "../../context/OrderContext";
@@ -174,7 +174,7 @@ export function PosDashboard() {
 
   const generateId = () => Math.random().toString(36).substring(2, 11);
 
-  const handleAddItem = (item: MenuItem) => {
+  const handleAddItem = useCallback((item: MenuItem) => {
     let parentId =
       isIncMode && selectedOrderIndex !== null
         ? order.items[selectedOrderIndex].uniqueId
@@ -250,7 +250,7 @@ export function PosDashboard() {
         },
       );
     }
-  };
+  }, [isIncMode, selectedOrderIndex, order.items, addItem]);
 
   const handleSetMealChoiceConfirm = (selections: string[]) => {
     if (!pendingSetMeal) return;
@@ -279,7 +279,7 @@ export function PosDashboard() {
     }
   };
 
-  const handleFinishConfiguration = (finalized: {
+  const handleFinishConfiguration = useCallback((finalized: {
     name: string | { en: string; zh: string };
     price: number;
   }) => {
@@ -299,55 +299,55 @@ export function PosDashboard() {
       },
     );
     setConfiguringItem(null);
-  };
+  }, [addItem, configuringItem?.id, isIncMode, selectedOrderIndex, order.items]);
 
-  const handleModifyItem = () => {
+  const handleModifyItem = useCallback(() => {
     if (selectedOrderIndex !== null) {
       setModifyingItem({
         item: order.items[selectedOrderIndex],
         index: selectedOrderIndex,
       });
     }
-  };
+  }, [selectedOrderIndex, order.items]);
 
-  const handleUpdateItem = (updated: OrderItem) => {
+  const handleUpdateItem = useCallback((updated: OrderItem) => {
     if (modifyingItem) {
       updateItem(modifyingItem.index, () => updated);
       setModifyingItem(null);
     }
-  };
+  }, [modifyingItem, updateItem]);
 
-  const handleRemoveSelected = () => {
+  const handleRemoveSelected = useCallback(() => {
     if (selectedOrderIndex === null) return;
     removeItem(selectedOrderIndex);
     setSelectedOrderIndex(null);
-  };
+  }, [selectedOrderIndex, removeItem]);
 
-  const handleDuplicateItem = () => {
+  const handleDuplicateItem = useCallback(() => {
     if (selectedOrderIndex !== null) duplicateItem(selectedOrderIndex);
-  };
+  }, [selectedOrderIndex, duplicateItem]);
 
-  const handleFocItem = () => {
+  const handleFocItem = useCallback(() => {
     if (selectedOrderIndex !== null) setFocItem(selectedOrderIndex);
-  };
+  }, [selectedOrderIndex, setFocItem]);
 
-  const handleToggleZeroPriceMode = () => setIsZeroPriceMode((p) => !p);
-  const handleToggleSwapMode = () => {
+  const isHappyMealSelected =
+    selectedOrderIndex !== null &&
+    order.items[selectedOrderIndex]?.id?.startsWith("HM");
+
+  const isSetMealItemSelected =
+    selectedOrderIndex !== null &&
+    order.items[selectedOrderIndex]?.id?.startsWith("SET");
+
+  const handleToggleZeroPriceMode = useCallback(() => setIsZeroPriceMode((p) => !p), [setIsZeroPriceMode]);
+  const handleToggleSwapMode = useCallback(() => {
     if (isHappyMealSelected) {
       setIsIncMode((p) => !p);
     } else {
       setIsSwapMode((p) => !p);
     }
-  };
-  const handleToggleShortMode = () => setIsShortMode((p) => !p);
-
-  const isHappyMealSelected =
-    selectedOrderIndex !== null &&
-    order.items[selectedOrderIndex].id?.startsWith("HM");
-
-  const isSetMealItemSelected =
-    selectedOrderIndex !== null &&
-    order.items[selectedOrderIndex].id?.startsWith("SET");
+  }, [isHappyMealSelected, setIsIncMode, setIsSwapMode]);
+  const handleToggleShortMode = useCallback(() => setIsShortMode((p) => !p), [setIsShortMode]);
 
   return (
     <div className="h-screen">

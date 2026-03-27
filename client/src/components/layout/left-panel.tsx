@@ -1,3 +1,4 @@
+import React from 'react';
 import type { CustomerInfo, OrderItem, OrderType } from '../../types';
 import { motion } from 'framer-motion';
 import { Button } from '../ui/button';
@@ -45,7 +46,7 @@ interface LeftPanelProps {
   onOpenAdmin: () => void;
 }
 
-export function LeftPanel({
+export const LeftPanel = React.memo(function LeftPanel({
   orders,
   activeOrderIndex,
   onSelectOrder,
@@ -171,4 +172,4 @@ export function LeftPanel({
       </div>
     </div>
   );
-}
+});

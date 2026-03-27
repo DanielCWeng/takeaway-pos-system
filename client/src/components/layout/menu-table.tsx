@@ -1,3 +1,4 @@
+import React from 'react';
 import type { MenuItem } from '../../types';
 import { ChevronDown, ChevronUp, Plus, BookOpen } from 'lucide-react';
 import { formatCurrency } from '../../lib/format';
@@ -16,7 +17,7 @@ interface MenuTableProps {
   className?: string;
 }
 
-export function MenuTable({
+export const MenuTable = React.memo(function MenuTable({
   items,
   selectedId,
   onSelect,
@@ -131,4 +132,4 @@ export function MenuTable({
       </div>
     </div>
   );
-}
+});
