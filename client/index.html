@@ -8,14 +8,24 @@
     <script>
       (() => {
         const STORAGE_KEY = 'pos-theme';
+        const root = document.documentElement;
+        
+        // Performance detection: manually enabled via ?perf=high-speed 
+        // or automatically if memory is low (Pi detection)
+        const isPi = navigator.userAgent.includes('Arm') || navigator.deviceMemory < 4;
+        const forceInstant = window.location.search.includes('perf=instant') || isPi;
+        
+        if (forceInstant) {
+          root.classList.add('instant-ui');
+          console.log('[POS] Instant-UI mode activated (No Animations)');
+        }
+
         try {
           const stored = localStorage.getItem(STORAGE_KEY);
           const theme = stored === 'light' || stored === 'dark' ? stored : 'dark';
-          const root = document.documentElement;
           root.classList.toggle('dark', theme === 'dark');
           root.style.colorScheme = theme;
         } catch {
-          const root = document.documentElement;
           root.classList.add('dark');
           root.style.colorScheme = 'dark';
         }

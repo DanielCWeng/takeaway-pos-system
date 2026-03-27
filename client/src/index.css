@@ -236,3 +236,21 @@
     animation-iteration-count: 1 !important;
   }
 }
+
+/* 
+ * PI-MODE / INSTANT-UI 
+ * Forces the browser to snap every layout change instantly. 
+ * This bypasses Framer Motion logic and CSS transitions entirely.
+ */
+.instant-ui, .instant-ui * {
+  transition-duration: 0ms !important;
+  transition-delay: 0ms !important;
+  animation-duration: 0ms !important;
+  animation-delay: 0ms !important;
+  animation-iteration-count: 1 !important;
+  scroll-behavior: auto !important;
+}
+
+.instant-ui .framer-motion-proxy {
+  display: none !important;
+}
