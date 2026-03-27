@@ -6,6 +6,8 @@ import { LeftPanel } from "./left-panel";
 import { RightPanel } from "./right-panel";
 import { PrintQueueBanner } from "./print-queue-banner";
 import { LoaderSplash } from "../ui/loader-splash";
+import { useCallHandler } from "../../hooks/useCallHandler";
+import { useUI } from "../../context/UIContext";
 
 const ItemOptionsModal = lazy(() =>
   import("../modals/item-options-modal").then((m) => ({
@@ -37,6 +39,11 @@ const SetMealChoiceModal = lazy(() =>
 );
 const AdminPage = lazy(() =>
   import("./admin-page").then((m) => ({ default: m.AdminPage })),
+);
+const AddressSelectionModal = lazy(() =>
+  import("../modals/address-selection-modal").then((m) => ({
+    default: m.AddressSelectionModal,
+  })),
 );
 
 const loaderSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" width="100%" height="100%">
@@ -119,6 +126,9 @@ export function PosDashboard() {
     setIsSwapMode,
     setIsShortMode,
   } = useOrder();
+  const { activeModal, openModal, closeModal } = useUI();
+  const { pendingCall, addressOptions, selectAddress, clearCall } = useCallHandler();
+  
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [isMenuLoading, setIsMenuLoading] = useState(true);
   const [selectedOrderIndex, setSelectedOrderIndex] = useState<number | null>(
@@ -380,7 +390,7 @@ export function PosDashboard() {
               orderType={order.orderType}
               onChangeOrderType={setOrderType}
               customerInfo={order.customerInfo}
-              onCustomerInfoClick={() => setIsAddressModalOpen(true)}
+              onCustomerInfoClick={() => openModal("customer")}
               onDuplicateItem={handleDuplicateItem}
               onModifyItem={handleModifyItem}
               onFocItem={handleFocItem}
@@ -456,15 +466,28 @@ export function PosDashboard() {
             />
           )}
 
-          {isAddressModalOpen && (
+          {(isAddressModalOpen || activeModal === "customer") && (
             <DeliveryAddressModal
               key="address-modal"
               customerInfo={order.customerInfo || {}}
               onSave={(info) => {
                 setCustomerInfo(info);
                 setIsAddressModalOpen(false);
+                closeModal();
               }}
-              onClose={() => setIsAddressModalOpen(false)}
+              onClose={() => {
+                setIsAddressModalOpen(false);
+                closeModal();
+              }}
+            />
+          )}
+
+          {activeModal === "address-selection" && (
+            <AddressSelectionModal
+              key="address-selection-modal"
+              addresses={addressOptions}
+              onSelect={selectAddress}
+              onClose={clearCall}
             />
           )}
 
