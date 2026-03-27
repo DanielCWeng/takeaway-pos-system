@@ -10,14 +10,16 @@
         const STORAGE_KEY = 'pos-theme';
         const root = document.documentElement;
         
-        // Performance detection: manually enabled via ?perf=high-speed 
-        // or automatically if memory is low (Pi detection)
-        const isPi = navigator.userAgent.includes('Arm') || navigator.deviceMemory < 4;
-        const forceInstant = window.location.search.includes('perf=instant') || isPi;
+        // Detection for low-end ARM hardware (e.g. Raspberry Pi)
+        const isPi = navigator.userAgent.includes('Arm') || (navigator.platform && navigator.platform.includes('arm'));
+        const isLowMem = navigator.deviceMemory && navigator.deviceMemory < 4;
+        
+        const forceInstant = window.location.search.includes('perf=instant') || isPi || isLowMem;
         
         if (forceInstant) {
           root.classList.add('instant-ui');
-          console.log('[POS] Instant-UI mode activated (No Animations)');
+          window.__POS_PERF_MODE__ = 'instant';
+          console.info('[POS] Performance Mode: INSTANT (Animations Disabled)');
         }
 
         try {
@@ -25,7 +27,7 @@
           const theme = stored === 'light' || stored === 'dark' ? stored : 'dark';
           root.classList.toggle('dark', theme === 'dark');
           root.style.colorScheme = theme;
-        } catch {
+        } catch (err) {
           root.classList.add('dark');
           root.style.colorScheme = 'dark';
         }
@@ -33,6 +35,8 @@
     </script>
   </head>
   <body>
+    <!-- Performance Indicator (Only visible in instant-ui mode) -->
+    <div id="perf-dot" title="Performance Mode Active">⚡</div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
