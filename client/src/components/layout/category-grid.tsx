@@ -1,3 +1,4 @@
+import React from 'react';
 import { SECONDARY_CATEGORY_PAGES } from '../../constants/menu-categories';
 import { cn } from '../../lib/utils';
 
@@ -8,7 +9,7 @@ interface CategoryGridProps {
   onChangePage: (nextPage: number) => void;
 }
 
-export function CategoryGrid({
+export const CategoryGrid = React.memo(function CategoryGrid({
   page,
   selectedSecondary,
   onSelectSecondary,
@@ -61,4 +62,4 @@ export function CategoryGrid({
       })}
     </div>
   );
-}
+});

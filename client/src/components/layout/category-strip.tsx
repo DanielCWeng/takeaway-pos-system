@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { PRIMARY_CATEGORIES } from '../../constants/menu-categories';
 import { cn } from '../../lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
@@ -48,7 +48,7 @@ interface CategoryStripProps {
   onSelectPrimary: (category: string) => void;
 }
 
-export function CategoryStrip({ selectedPrimary, onSelectPrimary }: CategoryStripProps) {
+export const CategoryStrip = React.memo(function CategoryStrip({ selectedPrimary, onSelectPrimary }: CategoryStripProps) {
   const [animationKeys, setAnimationKeys] = useState<Record<string, number>>({});
   const animationTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -138,4 +138,4 @@ export function CategoryStrip({ selectedPrimary, onSelectPrimary }: CategoryStri
       </div>
     </TooltipProvider>
   );
-}
+});
