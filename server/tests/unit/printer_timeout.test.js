@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { printReceipt } from '../../src/hardware/printer.js';
-import { config } from '../../src/config/index.js';
 import { HardwareError } from '../../src/shared/errors.js';
 
 // Mock the usb module

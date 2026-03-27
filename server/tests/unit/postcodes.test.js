@@ -1,8 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import * as postcodes from '../../src/shared/postcodes.js';
-import { openDb, closeDb } from '../../src/infrastructure/db.js';
-import path from 'path';
 import fs from 'fs';
+import Database from 'better-sqlite3';
 
 describe('Postcodes Module (Address Granularity)', () => {
   // Use a fixed path relative to the test runner or /tmp/ for tests
@@ -26,7 +25,7 @@ describe('Postcodes Module (Address Granularity)', () => {
   afterEach(() => {
     postcodes.closePostcodeDb();
     if (fs.existsSync(testDbPath)) {
-      try { fs.unlinkSync(testDbPath); } catch {}
+      try { fs.unlinkSync(testDbPath); } catch (err) { /* ignore */ }
     }
     vi.resetAllMocks();
   });
@@ -49,7 +48,6 @@ describe('Postcodes Module (Address Granularity)', () => {
 
   it('falls back to legacy street column if JSON data is missing', () => {
     // Manually insert a legacy row into the DB
-    const Database = require('better-sqlite3');
     const db = new Database(testDbPath);
     db.exec(`
       CREATE TABLE addresses (

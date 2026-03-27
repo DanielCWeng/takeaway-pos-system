@@ -28,11 +28,6 @@ let _db = null;
 /** @type {import('better-sqlite3').Statement | null} */
 let _stmtIsValid = null;
 
-/** @type {import('better-sqlite3').Statement | null} */
-let _stmtFind = null;
-
-/** @type {import('better-sqlite3').Statement | null} */
-let _stmtSave = null;
 
 /**
  * Return the open postcodes database connection.
@@ -73,25 +68,6 @@ function getIsValidStmt() {
   return (_stmtIsValid ??= getPostcodeDb().prepare('SELECT 1 FROM addresses WHERE postcode = ?'));
 }
 
-/**
- * Return (and lazily compile) the find prepared statement.
- * @returns {import('better-sqlite3').Statement}
- */
-function getFindStmt() {
-  return (_stmtFind ??= getPostcodeDb().prepare(
-    'SELECT postcode, street, latitude, longitude, source FROM addresses WHERE postcode = ?',
-  ));
-}
-
-/**
- * Return (and lazily compile) the save prepared statement.
- * @returns {import('better-sqlite3').Statement}
- */
-function getSaveStmt() {
-  return (_stmtSave ??= getPostcodeDb().prepare(
-    'INSERT OR REPLACE INTO addresses (postcode, street, latitude, longitude, source) VALUES (?, ?, ?, ?, ?)',
-  ));
-}
 
 // ---------------------------------------------------------------------------
 // UK postcode regex (uppercase, space already inserted)
@@ -231,8 +207,6 @@ export function closePostcodeDb() {
     _db.close();
     _db = null;
     _stmtIsValid = null;
-    _stmtFind = null;
-    _stmtSave = null;
     logger.info('Postcodes database closed');
   }
 }
