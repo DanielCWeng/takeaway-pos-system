@@ -10,9 +10,10 @@ export function BackendConnectionBanner() {
 
   useEffect(() => {
     if (status === "connected") return;
-    setNow(Date.now());
+    const syncTimer = window.setTimeout(() => setNow(Date.now()), 0);
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
     return () => {
+      window.clearTimeout(syncTimer);
       window.clearInterval(timer);
     };
   }, [status]);

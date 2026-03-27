@@ -66,10 +66,12 @@ export function CategoryStrip({ selectedPrimary, onSelectPrimary }: CategoryStri
     }
 
     // Ensure the selected category has a counter entry so the key flips when it becomes active.
-    setAnimationKeys(prev => ({
-      ...prev,
-      [selectedPrimary]: prev[selectedPrimary] ?? 0,
-    }));
+    const initTimer = setTimeout(() => {
+      setAnimationKeys(prev => ({
+        ...prev,
+        [selectedPrimary]: prev[selectedPrimary] ?? 0,
+      }));
+    }, 0);
 
     const cycleMs =
       (ICON_DURATION_MS[selectedPrimary] ?? DEFAULT_ANIMATION_DURATION_MS) +
@@ -86,6 +88,7 @@ export function CategoryStrip({ selectedPrimary, onSelectPrimary }: CategoryStri
     animationTimer.current = setTimeout(scheduleNext, cycleMs);
 
     return () => {
+      clearTimeout(initTimer);
       if (animationTimer.current) {
         clearTimeout(animationTimer.current);
         animationTimer.current = null;

@@ -83,12 +83,13 @@ export function BackendConnectionIndicator() {
   useEffect(() => {
     if (status === "connected") return;
 
-    setNow(Date.now());
+    const syncTimer = window.setTimeout(() => setNow(Date.now()), 0);
     const interval = window.setInterval(() => {
       setNow(Date.now());
     }, 1000);
 
     return () => {
+      window.clearTimeout(syncTimer);
       window.clearInterval(interval);
     };
   }, [status]);
@@ -117,7 +118,6 @@ export function BackendConnectionIndicator() {
     offlineSeconds,
     hasFailedRetry,
     isAttemptingNow,
-    isEscalatedOutage,
     retryAttempt,
     retryInSeconds,
     status,
