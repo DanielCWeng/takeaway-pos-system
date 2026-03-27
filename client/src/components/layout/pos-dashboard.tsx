@@ -127,7 +127,7 @@ export function PosDashboard() {
     setIsShortMode,
   } = useOrder();
   const { activeModal, openModal, closeModal } = useUI();
-  const { pendingCall, addressOptions, selectAddress, clearCall } = useCallHandler();
+  const { addressOptions, selectAddress, clearCall } = useCallHandler();
   
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [isMenuLoading, setIsMenuLoading] = useState(true);
