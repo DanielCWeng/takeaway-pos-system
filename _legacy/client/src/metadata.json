@@ -1,0 +1,5 @@
+{
+  "name": "Takeaway POS System",
+  "description": "A functional Point of Sale (POS) interface for a takeaway restaurant with features for order management, menu customization, and customer information handling.",
+  "requestFramePermissions": []
+}

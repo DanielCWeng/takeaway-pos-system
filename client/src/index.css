@@ -1,0 +1,238 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 20% 95%;
+    --foreground: 220 20% 15%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 20% 15%;
+    --muted: 210 15% 90%;
+    --muted-foreground: 215 15% 45%;
+    --border: 214 20% 85%;
+    --primary: 220 80% 50%;
+    --primary-foreground: 0 0% 100%;
+    --accent: 145 75% 40%;
+    --accent-foreground: 0 0% 100%;
+    --ring: 220 80% 50%;
+    --radius: 6px;
+    color-scheme: light;
+  }
+
+  .dark {
+    /* Tactile, functional dark mode for Physical POS */
+    --background: 220 13% 8%;
+    --foreground: 210 15% 95%;
+    --card: 220 13% 14%;
+    --card-foreground: 210 15% 95%;
+    /* Richer, slightly lighter elements to contrast with background */
+    --muted: 220 11% 20%;
+    --muted-foreground: 215 15% 65%;
+    --border: 220 11% 26%;
+    /* Functional, easily identifiable primary/accent */
+    --primary: 215 85% 55%;
+    --primary-foreground: 0 0% 100%;
+    --accent: 145 70% 45%; /* A very distinct green, common in POS systems */
+    --accent-foreground: 0 0% 100%;
+    --ring: 215 85% 55%;
+    color-scheme: dark;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased transition-colors duration-300;
+    font-family: 'Outfit', sans-serif;
+    min-height: 100vh;
+    margin: 0;
+    /* Engineered machine grid background */
+    background-image: 
+      linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+    background-size: 24px 24px;
+    background-position: center center;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-sans font-semibold text-foreground;
+  }
+}
+
+#root {
+  min-height: 100vh;
+}
+
+@layer base {
+  /* Touch-first tweaks when a coarse pointer (tablet) is detected */
+  html.touch-ui {
+    --radius: 10px;
+  }
+
+  html.touch-ui body {
+    font-size: 17px;
+    line-height: 1.5;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html.touch-ui button,
+  html.touch-ui [role='button'],
+  html.touch-ui input[type='button'],
+  html.touch-ui input[type='submit'],
+  html.touch-ui input[type='reset'] {
+    min-height: 48px;
+    min-width: 48px;
+    padding: 12px 16px;
+    touch-action: manipulation;
+  }
+
+  html.touch-ui ::-webkit-scrollbar {
+    height: 12px;
+    width: 12px;
+  }
+
+  html.touch-ui ::-webkit-scrollbar-thumb {
+    border-width: 3px;
+  }
+}
+
+@layer components {
+  /* Replace the ambient blurred glass with a sturdy, tactile panel */
+  .pos-panel {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--radius);
+    @apply bg-card text-card-foreground border border-border shadow-md transition-all duration-300;
+    /* Soft linear gradient to give a slight 3D "machined" surface feel */
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0) 100%);
+    box-shadow: 
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.05),
+      0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  .pos-btn-tactile {
+    @apply border shadow-sm transition-all duration-150 bg-muted;
+    background-image: linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 100%);
+    box-shadow: inset 0 1px 1px 0 rgba(255,255,255,0.08);
+  }
+  
+  .pos-btn-tactile:active {
+    @apply translate-y-[1px];
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.5) !important;
+    background-image: none !important;
+  }
+  
+  .pos-btn-tactile-primary {
+    @apply bg-primary text-primary-foreground border border-primary/50 shadow-sm transition-all duration-150;
+    background-image: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 100%);
+    box-shadow: inset 0 1px 1px 0 rgba(255,255,255,0.2), 0 2px 4px rgba(0,0,0,0.2);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.4); /* Text depth */
+  }
+
+  .pos-btn-tactile-primary:active {
+    @apply translate-y-[1px];
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.5) !important;
+    background-image: none !important;
+  }
+
+  .pos-kicker {
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+    font-weight: 600;
+  }
+
+  .pos-value {
+    font-variant-numeric: tabular-nums;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Touch density overrides */
+  html.touch-ui .pos-menu-row,
+  html.touch-ui .pos-order-row {
+    min-height: 56px;
+    padding-block: 12px !important;
+    font-size: 0.95rem !important;
+    line-height: 1.2;
+  }
+
+  html.touch-ui .pos-order-tab {
+    min-height: 48px;
+    min-width: 54px;
+    font-size: 1rem !important;
+  }
+
+  html.touch-ui .pos-order-controls {
+    min-height: 6rem;
+  }
+
+  html.touch-ui .pos-menu-action {
+    height: 3.25rem;
+    min-width: 3.25rem;
+    font-size: 0.95rem !important;
+  }
+
+  html.touch-ui .pos-category-pill {
+    height: 3.25rem;
+    width: 3.25rem;
+    gap: 0.35rem;
+  }
+
+  html.touch-ui .pos-category-label {
+    display: block !important;
+    font-size: 0.75rem;
+    line-height: 1;
+    color: hsl(var(--muted-foreground));
+  }
+
+  html.touch-ui .pos-grid-btn {
+    font-size: 0.95rem !important;
+    letter-spacing: 0.01em;
+  }
+}
+
+::-webkit-scrollbar {
+  height: 8px; /* Slightly thicker for tactile hit areas */
+  width: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.4);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.6);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::selection {
+  background: hsl(var(--primary) / 0.3);
+  color: hsl(var(--foreground));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto !important;
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

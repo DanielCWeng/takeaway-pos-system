@@ -1,0 +1,215 @@
+/**
+ * domains/customers/customers.service.js
+ *
+ * Customer business rules. No Express types. No DB access. No hardware calls.
+ *
+ * Phase 1 implements:
+ *  - getOrCreateCustomer(phone) — lookup or create, increment call count
+ *  - updateCustomerAddress(phone, addressData) — validate and persist address fields
+ *
+ * Phase 2 stubs (require address API):
+ *  - enrichCustomerAddress(phone, postcode)
+ */
+
+import * as repo from './customers.repo.js';
+import * as postcodes from '../../shared/postcodes.js';
+import * as addressClient from '../callerIdService/addressClient.js';
+import { haversineInMiles } from '../../shared/haversine.js';
+import { config } from '../../config/index.js';
+import { logger } from '../../infrastructure/logger.js';
+import { ValidationError, NotFoundError } from '../../shared/errors.js';
+
+// ---------------------------------------------------------------------------
+// Internal helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Validate that a phone string looks like a plausible UK number.
+ * This is a basic sanity check, not a full E.164 validator.
+ * The old system accepted any string — we require at least 10 digits here.
+ *
+ * @param {string} phone
+ * @throws {ValidationError}
+ */
+function validatePhone(phone) {
+  if (!phone || typeof phone !== 'string') {
+    throw new ValidationError('Phone must be a non-empty string', { field: 'phone' });
+  }
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length < 10 || digits.length > 13) {
+    throw new ValidationError('Phone number must contain between 10 and 13 digits', {
+      field: 'phone',
+      received: phone,
+    });
+  }
+  return digits;
+}
+
+// ---------------------------------------------------------------------------
+// Business logic
+// ---------------------------------------------------------------------------
+
+export function getOrCreateCustomer(phone) {
+  const normPhone = validatePhone(phone);
+  return repo.upsertAndIncrementCallCount(normPhone, {});
+}
+
+/**
+ * Update address fields for an existing customer.
+ *
+ * @param {string} phone
+ * @param {object} addressData
+ * @returns {object} Updated customer record
+ * @throws {ValidationError} if phone is invalid
+ * @throws {NotFoundError} if customer does not exist
+ */
+export function updateCustomerAddress(phone, addressData) {
+  const normPhone = validatePhone(phone);
+
+  const existing = repo.findByPhone(normPhone);
+  if (!existing) {
+    throw new NotFoundError(`Customer with phone ${phone} not found`, { phone });
+  }
+
+  repo.updateAddress(normPhone, addressData);
+  return repo.findByPhone(normPhone);
+}
+
+/**
+ * Find a customer by phone.
+ *
+ * @param {string} phone
+ * @returns {object}
+ * @throws {NotFoundError}
+ */
+export function getCustomerByPhone(phone) {
+  const normPhone = validatePhone(phone);
+  const customer = repo.findByPhone(normPhone);
+  if (!customer) {
+    throw new NotFoundError(`Customer with phone ${phone} not found`, { phone });
+  }
+  return customer;
+}
+
+// ---------------------------------------------------------------------------
+// Phase 2 stubs (require address API / postcode DB)
+// ---------------------------------------------------------------------------
+
+/**
+ * Enrich a customer's address data using the local database and API fallback.
+ *
+ * Steps:
+ *  1. Look up postcode in local DB.
+ *  2. If not found, look up via getaddress.io API.
+ *  3. If API succeeds, save results to local DB for future use.
+ *  4. Calculate delivery distance from store to customer coordinates.
+ *  5. Update the customer's cached distance and coordinate fields.
+ *
+ * @param {string} phone
+ * @param {string} postcode
+ * @returns {Promise<{ customer: object, addresses: Array<object> }>}
+ */
+export async function enrichCustomerAddress(phone, postcode) {
+  const normPhone = validatePhone(phone);
+  const normPostcode = postcodes.normalisePostcode(postcode);
+
+  const customer = repo.findByPhone(normPhone);
+  if (!customer) {
+    throw new NotFoundError(`Customer with phone ${phone} not found`, { phone });
+  }
+
+  const addressRecords = postcodes.findAddressesLocally(normPostcode);
+  let addressData = null;
+  let addresses = [];
+
+  // If found locally, take the first one
+  if (addressRecords && addressRecords.length > 0) {
+    const first = addressRecords[0];
+    addressData = {
+      postcode: normPostcode,
+      street: first.line1 || first.street || '',
+      latitude: first.latitude,
+      longitude: first.longitude,
+    };
+    addresses = addressRecords.map((row) => ({
+      line1: row.line1 || row.street || '',
+      line2: row.line2 || '',
+      town: row.town || '',
+      postcode: row.postcode,
+      latitude: row.latitude,
+      longitude: row.longitude,
+      source: row.source ?? 'local_db',
+    }));
+  }
+
+  // If not in local DB, hit the API
+  if (!addressData) {
+    const apiResults = await addressClient.findAddressesFromApi(normPostcode);
+
+    if (apiResults && apiResults.length > 0) {
+      // For now, we just use the first result to get lat/lng and a sample street
+      // the UI handles specific house number selection later.
+      const first = apiResults[0];
+      addressData = {
+        postcode: normPostcode,
+        street: first.line1 || '', // matches AddressRecord typedef
+        latitude: first.latitude,
+        longitude: first.longitude,
+      };
+
+      addresses = apiResults.map((addr) => ({
+        line1: addr.line1 || '',
+        line2: addr.line2 || '',
+        town: addr.town || '',
+        postcode: normPostcode,
+        latitude: addr.latitude,
+        longitude: addr.longitude,
+        source: 'api',
+      }));
+
+      // Save to local DB so we never pay for this postcode again
+      postcodes.saveAddresses(
+        normPostcode,
+        {
+          street: addressData.street,
+          latitude: addressData.latitude,
+          longitude: addressData.longitude,
+        },
+        apiResults,
+      );
+    }
+  }
+
+  if (addressData) {
+    // Calculate distance
+    const dist = haversineInMiles(
+      config.address.storeLatitude,
+      config.address.storeLongitude,
+      addressData.latitude,
+      addressData.longitude,
+    );
+
+    // Update customer record
+    const updatedData = {
+      postcode: normPostcode,
+      street: addressData.street,
+      latitude: addressData.latitude,
+      longitude: addressData.longitude,
+      distance: parseFloat(dist.toFixed(2)),
+    };
+
+    repo.updateAddress(normPhone, updatedData);
+    logger.debug('Customer address enriched', {
+      phone: normPhone,
+      postcode: normPostcode,
+      distance: updatedData.distance,
+    });
+  } else {
+    logger.info('Address enrichment failed: no data found', {
+      phone: normPhone,
+      postcode: normPostcode,
+    });
+  }
+
+  return { customer: repo.findByPhone(normPhone), addresses };
+}
