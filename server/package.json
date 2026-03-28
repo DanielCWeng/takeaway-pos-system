@@ -14,7 +14,8 @@
     "lint:fix": "eslint src/ tests/ scripts/ --fix",
     "format": "prettier --write src/ tests/ scripts/",
     "format:check": "prettier --check src/ tests/ scripts/",
-    "migrate": "node scripts/migrate.js"
+    "migrate": "node scripts/migrate.js",
+    "db:seed-postcodes": "node scripts/seedPostcodes.js"
   },
   "dependencies": {
     "better-sqlite3": "^12.6.2",
@@ -22,6 +23,7 @@
     "dotenv": "^16.4.5",
     "express": "^5.1.0",
     "lru-cache": "^11.2.7",
+    "proj4": "^2.20.4",
     "ws": "^8.19.0",
     "zod": "^3.23.8"
   },
