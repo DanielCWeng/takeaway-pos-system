@@ -58,18 +58,18 @@ export const OrderList = React.memo(function OrderList({ items, selectedIndex, o
                   <motion.button
                     onClick={() => onSelect(index)}
                     className={cn(
-                      'group relative flex w-full items-center justify-between rounded-lg border px-2 py-2 text-left text-xs transition-all duration-200 pos-order-row',
+                      'group relative flex w-full items-center justify-between rounded-lg border px-3 py-2.5 text-left text-xs transition-all duration-200 pos-order-row',
                       isSelected
-                        ? 'border-primary/50 bg-primary/20 text-foreground font-semibold shadow-[0_0_15px_0_hsl(var(--primary)/0.15)] ring-1 ring-primary/30'
-                        : 'border-white/5 bg-white/5 text-foreground hover:bg-white/10 hover:border-white/10 hover:shadow-sm',
-                      isChild && 'ml-4 w-[calc(100%-1rem)] border-dashed border-white/10 bg-white/[0.02]'
+                        ? 'border-primary/40 bg-primary/10 text-foreground font-semibold shadow-sm'
+                        : 'border-border/40 bg-transparent text-foreground hover:bg-muted/50 hover:border-border/60',
+                      isChild && 'ml-4 w-[calc(100%-1rem)] border-dashed border-border/30 bg-muted/20'
                     )}
                   >
                     <span
                       className={cn(
-                        'absolute left-0 top-1.5 h-[calc(100%-0.75rem)] w-[3px] rounded-full opacity-0 transition-opacity',
-                        isSelected ? 'bg-accent opacity-100' : 'bg-primary group-hover:opacity-40',
-                        isChild && 'left-[-4px] w-[2px] h-[calc(100%+8px)] top-[-4px] rounded-none opacity-20 bg-white/40' // Connector for children
+                        'absolute left-0 top-2 h-[calc(100%-1rem)] w-[4px] rounded-full opacity-0 transition-all',
+                        isSelected ? 'bg-primary opacity-100 scale-y-100' : 'bg-primary/30 group-hover:opacity-40 scale-y-50',
+                        isChild && 'left-[-4px] w-[2px] h-[calc(100%+8px)] top-[-4px] rounded-none opacity-10 bg-foreground/20'
                       )}
                     />
                     <div className="min-w-0 pr-2">

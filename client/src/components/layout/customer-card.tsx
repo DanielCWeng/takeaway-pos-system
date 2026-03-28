@@ -25,7 +25,7 @@ export function CustomerCard({ orderType, onChangeOrderType, customerInfo }: Cus
             Details
           </span>
         </div>
-        <Button variant="outline" size="sm" className="h-9 px-3 text-xs">
+        <Button variant="info" size="sm" className="h-9 px-3 text-xs">
           Add
         </Button>
       </div>
@@ -35,11 +35,11 @@ export function CustomerCard({ orderType, onChangeOrderType, customerInfo }: Cus
         onValueChange={value => onChangeOrderType(value as OrderType)}
         className="mt-2"
       >
-        <TabsList className="h-11 w-full">
-          <TabsTrigger className="flex-1 text-sm tracking-[0.05em]" value="collection">
+        <TabsList className="h-11 w-full pos-tabs-list">
+          <TabsTrigger className="flex-1 text-sm tracking-[0.05em] pos-tabs-trigger" value="collection">
             Collection
           </TabsTrigger>
-          <TabsTrigger className="flex-1 text-sm tracking-[0.05em]" value="delivery">
+          <TabsTrigger className="flex-1 text-sm tracking-[0.05em] pos-tabs-trigger" value="delivery">
             Delivery
           </TabsTrigger>
         </TabsList>

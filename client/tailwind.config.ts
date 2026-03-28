@@ -22,6 +22,10 @@ const config: Config = {
         'primary-foreground': 'hsl(var(--primary-foreground))',
         accent: 'hsl(var(--accent))',
         'accent-foreground': 'hsl(var(--accent-foreground))',
+        destructive: 'hsl(var(--destructive))',
+        positive: 'hsl(var(--positive))',
+        info: 'hsl(var(--info))',
+        'order-type-active': 'hsl(var(--order-type-active))',
         ring: 'hsl(var(--ring))',
       },
       borderRadius: {

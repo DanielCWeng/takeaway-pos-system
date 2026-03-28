@@ -34,7 +34,7 @@ export function OrderSummary({ subtotal, deliveryFee, total, onAccept }: OrderSu
           <span className="pos-value font-mono text-foreground">{formatCurrency(deliveryFee)}</span>
         </div>
       </div>
-      <Button className="mt-auto h-11 w-full text-sm tracking-[0.14em] pos-menu-action" onClick={onAccept}>
+      <Button variant="positive" className="mt-auto h-11 w-full text-sm tracking-[0.14em] pos-menu-action uppercase shadow-md" onClick={onAccept}>
         Accept Order
       </Button>
     </div>

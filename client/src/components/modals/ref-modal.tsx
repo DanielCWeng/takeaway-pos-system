@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { X, Search } from 'lucide-react';
 import { Button } from '../ui/button';
+import { cn } from '../../lib/utils';
 import type { MenuItem } from '../../types';
 
 interface RefModalProps {
@@ -37,7 +38,7 @@ export function RefModal({ menuItems, onSelect, onClose }: RefModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 10 }}
         animate={{ 
@@ -51,16 +52,16 @@ export function RefModal({ menuItems, onSelect, onClose }: RefModalProps) {
           duration: 0.2,
           x: { duration: 0.4, ease: "easeInOut" }
         }}
-        className="w-full max-w-md overflow-hidden rounded-2xl border border-white/10 bg-[#1a1a1a] shadow-2xl shadow-black/50"
+        className="w-full max-w-md overflow-hidden rounded-2xl border border-border bg-card shadow-2xl"
       >
-        <div className="flex items-center justify-between border-b border-white/5 px-4 py-3 bg-white/[0.02]">
-          <div className="flex items-center gap-2 text-white/90">
+        <div className="flex items-center justify-between border-b border-border/60 px-4 py-3 bg-muted/30">
+          <div className="flex items-center gap-2 text-foreground/90">
             <Search className="h-4 w-4 text-primary" />
             <h2 className="text-sm font-semibold uppercase tracking-wider">Item Lookup (REF)</h2>
           </div>
           <button
             onClick={onClose}
-            className="rounded-full p-1 text-white/40 hover:bg-white/5 hover:text-white/70 transition-colors"
+            className="rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
           >
             <X className="h-5 w-5" />
           </button>
@@ -78,12 +79,13 @@ export function RefModal({ menuItems, onSelect, onClose }: RefModalProps) {
                   setError(false);
                 }}
                 placeholder="Enter ID (e.g. 12, 12A, HM1)"
-                className={`w-full h-14 bg-white/[0.03] border ${
-                  error ? 'border-red-500/50 ring-2 ring-red-500/10' : 'border-white/10'
-                } rounded-xl px-4 text-2xl font-mono text-center text-white placeholder:text-white/20 focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all uppercase`}
+                className={cn(
+                  "w-full h-14 bg-muted/20 border rounded-xl px-4 text-2xl font-mono text-center text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all uppercase",
+                  error ? 'border-destructive/50 ring-2 ring-destructive/10' : 'border-border'
+                )}
               />
               {error && (
-                <p className="absolute -bottom-6 left-0 w-full text-center text-xs font-medium text-red-500/80 animate-pulse">
+                <p className="absolute -bottom-6 left-0 w-full text-center text-xs font-medium text-destructive/80 animate-pulse">
                   Invalid Reference ID
                 </p>
               )}
@@ -92,15 +94,16 @@ export function RefModal({ menuItems, onSelect, onClose }: RefModalProps) {
             <div className="grid grid-cols-2 gap-3 pt-4">
               <Button
                 type="button"
-                variant="secondary"
+                variant="outline"
                 onClick={onClose}
-                className="h-12 border-white/5 bg-white/[0.05] hover:bg-white/[0.1] text-white/70"
+                className="h-12"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                className="h-12 bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                variant="default"
+                className="h-12 shadow-md"
               >
                 Add Item
               </Button>

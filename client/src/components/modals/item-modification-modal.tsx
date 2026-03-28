@@ -113,7 +113,7 @@ export function ItemModificationModal({
           </Button>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 border-b border-border/40 bg-accent/5 px-6 py-4">
+        <div className="grid grid-cols-2 gap-4 border-b border-border/40 bg-muted/20 px-6 py-4">
           <div className="space-y-1.5">
             <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">
               Custom Name
@@ -121,7 +121,7 @@ export function ItemModificationModal({
             <Input 
               value={customName} 
               onChange={(e) => setCustomName(e.target.value)}
-              className="h-11 bg-background/50 font-semibold"
+              className="h-11 bg-card font-semibold border-border/60"
             />
           </div>
           <div className="space-y-1.5">
@@ -134,7 +134,7 @@ export function ItemModificationModal({
                 type="number"
                 value={customPrice} 
                 onChange={(e) => setCustomPrice(e.target.value)}
-                className="h-11 bg-background/50 pl-7 font-mono font-bold text-accent"
+                className="h-11 bg-card pl-7 font-mono font-bold text-foreground border-border/60"
               />
             </div>
           </div>
@@ -142,7 +142,7 @@ export function ItemModificationModal({
 
         <div className="flex flex-1 overflow-hidden">
           <div className="flex-1 flex flex-col border-r border-border/40 lg:flex-[2]">
-            <div className="grid grid-cols-5 gap-2 border-b border-border/40 p-4 bg-muted/20">
+            <div className="grid grid-cols-5 gap-2 border-b border-border/40 p-4 bg-muted/10">
               {(Object.keys(COMMAND_TRANSLATIONS) as ModifierCommand[]).map((cmd) => (
                 <button
                   key={cmd}
@@ -151,7 +151,7 @@ export function ItemModificationModal({
                     'flex flex-col items-center justify-center gap-0.5 rounded-lg border h-14 transition-all',
                     activeCommand === cmd
                       ? 'pos-btn-tactile-primary'
-                      : 'pos-btn-tactile hover:bg-white/5'
+                      : 'pos-btn-tactile hover:bg-muted/50'
                   )}
                 >
                   <span className="text-[10px] font-black uppercase tracking-tighter opacity-70">
@@ -168,18 +168,18 @@ export function ItemModificationModal({
               <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
                 {CATEGORIES.map((cat) => (
                   <div key={cat} className="space-y-3">
-                    <h4 className="pos-kicker text-[9px] border-b border-white/5 pb-1">{cat}</h4>
+                    <h4 className="pos-kicker text-[9px] border-b border-border/20 pb-1">{cat}</h4>
                     <div className="grid gap-2">
-                      {INGREDIENTS.filter(i => i.category === cat).map((ing) => (
-                        <button
-                          key={ing.name}
-                          onClick={() => handleIngredientClick(ing)}
-                          className="flex flex-col items-start gap-0 rounded-lg border border-white/5 bg-white/5 p-2 text-left transition hover:bg-white/10 hover:border-white/10"
-                        >
-                          <span className="text-[11px] font-semibold">{ing.name}</span>
-                          <span className="text-[10px] text-muted-foreground">{ing.zh}</span>
-                        </button>
-                      ))}
+                       {INGREDIENTS.filter(i => i.category === cat).map((ing) => (
+                         <button
+                           key={ing.name}
+                           onClick={() => handleIngredientClick(ing)}
+                           className="flex flex-col items-start gap-0 rounded-lg border border-border/40 bg-muted/20 p-2 text-left transition hover:bg-muted/50 hover:border-border/60"
+                         >
+                           <span className="text-[11px] font-semibold">{ing.name}</span>
+                           <span className="text-[10px] text-muted-foreground">{ing.zh}</span>
+                         </button>
+                       ))}
                     </div>
                   </div>
                 ))}

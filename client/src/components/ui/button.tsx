@@ -11,9 +11,13 @@ const buttonVariants = cva(
       variant: {
         default: 'pos-btn-tactile-primary font-semibold',
         secondary: 'pos-btn-tactile font-semibold',
-        outline: 'border-2 border-white/10 bg-transparent text-foreground hover:bg-white/5',
-        ghost: 'text-foreground hover:bg-white/5',
-        destructive: 'bg-red-500 text-white border border-red-600 shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_2px_4px_rgba(0,0,0,0.2)] hover:bg-red-600',
+        outline: 'border-2 border-zinc-200 dark:border-white/10 bg-transparent text-foreground hover:bg-zinc-100 dark:hover:bg-white/5',
+        ghost: 'text-foreground hover:bg-zinc-100 dark:hover:bg-white/5',
+        positive: 'pos-btn-positive font-semibold',
+        info: 'pos-btn-info font-semibold',
+        destructive: 'pos-btn-destructive font-semibold',
+        'destructive-solid': 'pos-btn-destructive-solid font-semibold',
+        utility: 'pos-btn-utility font-semibold',
       },
       size: {
         default: 'h-10 px-4 py-2',

@@ -98,7 +98,7 @@ export function ItemOptionsModal({ item, onConfirm, onClose }: ItemOptionsModalP
                         'flex h-20 flex-col items-center justify-center gap-1 rounded-xl border transition-all',
                         selections['main'] === opt.name
                           ? 'pos-btn-tactile-primary'
-                          : 'pos-btn-tactile hover:bg-white/5'
+                          : 'pos-btn-tactile hover:bg-muted/50'
                       )}
                     >
                       <span className="text-sm font-semibold">{opt.name}</span>
@@ -116,7 +116,7 @@ export function ItemOptionsModal({ item, onConfirm, onClose }: ItemOptionsModalP
             {item.contents?.map((content, index) => {
               if (content.type === 'item') {
                 return (
-                  <div key={index} className="rounded-lg bg-accent/5 p-3 text-sm text-muted-foreground border border-white/5">
+                  <div key={index} className="rounded-lg bg-primary/5 p-3 text-sm text-muted-foreground border border-border/40">
                     Includes: <span className="text-foreground font-medium">{content.item}</span>
                   </div>
                 );
@@ -136,7 +136,7 @@ export function ItemOptionsModal({ item, onConfirm, onClose }: ItemOptionsModalP
                             'flex h-16 items-center justify-center px-3 rounded-xl border transition-all text-sm font-medium',
                             selections[content.description!] === opt
                               ? 'pos-btn-tactile-primary'
-                              : 'pos-btn-tactile hover:bg-white/5'
+                              : 'pos-btn-tactile hover:bg-muted/50'
                           )}
                         >
                           {opt}
@@ -151,11 +151,11 @@ export function ItemOptionsModal({ item, onConfirm, onClose }: ItemOptionsModalP
           </div>
         </ScrollArea>
 
-        <div className="flex gap-3 border-t border-border/60 bg-accent/5 p-6">
+        <div className="flex gap-3 border-t border-border/60 bg-muted/20 p-6">
           <Button variant="outline" className="flex-1 h-12 text-base" onClick={onClose}>
             Cancel
           </Button>
-          <Button className="flex-1 h-12 text-base font-bold shadow-lg shadow-primary/20" onClick={handleConfirm}>
+          <Button className="flex-1 h-12 text-base font-bold shadow-lg shadow-primary/20" variant="default" onClick={handleConfirm}>
             Confirm & Add
           </Button>
         </div>

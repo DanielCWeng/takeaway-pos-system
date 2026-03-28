@@ -152,9 +152,9 @@ export function DeliveryAddressModal({
         transition={{ type: 'spring', duration: 0.4, bounce: 0.1 }}
         className="pos-panel flex h-[90vh] w-full max-w-5xl flex-col shadow-2xl overflow-hidden"
       >
-        <div className="flex items-center justify-between border-b border-border/60 px-6 py-4 bg-primary/5">
+        <div className="flex items-center justify-between border-b border-border/60 px-6 py-4 bg-muted/20">
           <div className="flex items-center gap-3">
-            <div className="bg-primary/20 p-2 rounded-lg">
+            <div className="bg-primary/10 p-2 rounded-lg border border-primary/20">
                 <MapPin className="h-6 w-6 text-primary" />
             </div>
             <div className="flex flex-col">
@@ -275,7 +275,7 @@ export function DeliveryAddressModal({
                             </Button>
                         ))}
                     </div>
-                    <div className="flex items-center gap-4 bg-accent/20 p-4 rounded-xl border border-primary/10">
+                    <div className="flex items-center gap-4 bg-muted/40 p-4 rounded-xl border border-border/60">
                         <span className="text-xl font-mono font-black text-primary">
                             {formData.deliveryTime || '--:--'}
                         </span>
@@ -300,12 +300,12 @@ export function DeliveryAddressModal({
             </div>
           </ScrollArea>
 
-          <div className="w-full md:w-80 bg-muted/20 p-6 flex flex-col gap-6">
+          <div className="w-full md:w-80 bg-muted/10 p-6 flex flex-col gap-6">
              <div className="space-y-4">
                 <span className="pos-kicker flex items-center gap-2">
                     <MapPin className="h-3 w-3" /> Location Summary
                 </span>
-                <div className="space-y-2 rounded-xl border border-border/40 bg-background p-4 shadow-sm">
+                <div className="space-y-2 rounded-xl border border-border/60 bg-card p-4 shadow-sm">
                     <div className="flex justify-between items-center text-xs">
                         <span className="text-muted-foreground">Distance:</span>
                         <span className="font-mono font-bold text-accent">

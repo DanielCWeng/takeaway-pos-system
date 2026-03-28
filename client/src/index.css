@@ -6,19 +6,25 @@
 
 @layer base {
   :root {
-    --background: 210 20% 95%;
-    --foreground: 220 20% 15%;
+    --background: 210 20% 98%;
+    --foreground: 215 28% 17%;
     --card: 0 0% 100%;
-    --card-foreground: 220 20% 15%;
-    --muted: 210 15% 90%;
-    --muted-foreground: 215 15% 45%;
-    --border: 214 20% 85%;
-    --primary: 220 80% 50%;
+    --card-foreground: 215 28% 17%;
+    --muted: 210 20% 96%;
+    --muted-foreground: 215 14% 34%;
+    --border: 214 32% 91%;
+    --primary: 239 84% 67%;
     --primary-foreground: 0 0% 100%;
-    --accent: 145 75% 40%;
+    --accent: 158 82% 39%;
     --accent-foreground: 0 0% 100%;
-    --ring: 220 80% 50%;
-    --radius: 6px;
+    
+    --positive: 158 82% 39%;
+    --info: 217 91% 60%;
+    --destructive: 0 84% 60%;
+    
+    --ring: 239 84% 67%;
+    --radius: 8px;
+    --order-type-active: 217 91% 60%; /* Solid Blue for active side */
     color-scheme: light;
   }
 
@@ -38,6 +44,7 @@
     --accent: 145 70% 45%; /* A very distinct green, common in POS systems */
     --accent-foreground: 0 0% 100%;
     --ring: 215 85% 55%;
+    --order-type-active: 217 91% 60%; /* Solid Blue for active side */
     color-scheme: dark;
   }
 }
@@ -111,37 +118,105 @@
     position: relative;
     overflow: hidden;
     border-radius: var(--radius);
-    @apply bg-card text-card-foreground border border-border shadow-md transition-all duration-300;
-    /* Soft linear gradient to give a slight 3D "machined" surface feel */
+    @apply bg-card text-card-foreground border border-border shadow-soft transition-all duration-300;
+  }
+
+  .dark .pos-panel {
+    /* Richer, slightly lighter elements to contrast with background in dark mode */
     background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0) 100%);
     box-shadow: 
       inset 0 1px 0 0 rgba(255, 255, 255, 0.05),
       0 4px 12px rgba(0, 0, 0, 0.3);
   }
 
+  /* Standard Category & Item Buttons */
   .pos-btn-tactile {
-    @apply border shadow-sm transition-all duration-150 bg-muted;
-    background-image: linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 100%);
-    box-shadow: inset 0 1px 1px 0 rgba(255,255,255,0.08);
+    @apply border border-zinc-200 shadow-sm transition-all duration-150 bg-white text-foreground;
+  }
+
+  .pos-btn-tactile:hover {
+    @apply bg-muted;
+  }
+
+  .pos-btn-tactile:active, .pos-btn-tactile.active {
+    @apply bg-primary text-primary-foreground border-primary shadow-inner brightness-100;
+  }
+
+  .dark .pos-btn-tactile {
+    @apply border border-zinc-800 bg-zinc-900/50 shadow-sm text-foreground;
+  }
+
+  .dark .pos-btn-tactile:hover {
+    @apply bg-zinc-800;
   }
   
-  .pos-btn-tactile:active {
-    @apply translate-y-[1px];
-    box-shadow: inset 0 2px 6px rgba(0,0,0,0.5) !important;
-    background-image: none !important;
+  /* Semantic Action Buttons */
+  .pos-btn-positive {
+    background-color: hsl(var(--positive));
+    @apply text-white border border-transparent shadow-sm transition-all duration-150;
   }
+  .pos-btn-positive:active { @apply brightness-90 translate-y-px; }
+
+  .pos-btn-info {
+    background-color: hsl(var(--info));
+    @apply text-white border border-transparent shadow-sm transition-all duration-150;
+  }
+  .pos-btn-info:active { @apply brightness-90 translate-y-px; }
+
+  .pos-btn-destructive {
+    @apply bg-white dark:bg-zinc-900/50 text-destructive border-2 border-destructive/30 shadow-none transition-all duration-150;
+  }
+  .pos-btn-destructive:hover { @apply bg-destructive/5 border-destructive/50; }
+  .pos-btn-destructive:active { @apply brightness-105; }
+
+  .pos-btn-destructive-solid {
+    background-color: hsl(var(--destructive));
+    @apply text-white border border-transparent shadow-sm transition-all duration-150;
+  }
+  .pos-btn-destructive-solid:active { @apply brightness-90 translate-y-px; }
+
+  /* Utility Buttons */
+  .pos-btn-utility {
+    @apply bg-muted text-foreground border-transparent shadow-none transition-all duration-150;
+  }
+  .pos-btn-utility:active { @apply bg-border translate-y-px; }
   
   .pos-btn-tactile-primary {
     @apply bg-primary text-primary-foreground border border-primary/50 shadow-sm transition-all duration-150;
+    box-shadow: inset 0 1px 1px 0 rgba(255,255,255,0.2), 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  .dark .pos-btn-tactile-primary {
     background-image: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 100%);
     box-shadow: inset 0 1px 1px 0 rgba(255,255,255,0.2), 0 2px 4px rgba(0,0,0,0.2);
-    text-shadow: 0 1px 2px rgba(0,0,0,0.4); /* Text depth */
+    text-shadow: 0 1px 2px rgba(0,0,0,0.4);
   }
 
   .pos-btn-tactile-primary:active {
-    @apply translate-y-[1px];
+    @apply translate-y-[1px] brightness-90;
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.2) !important;
+  }
+  
+  .dark .pos-btn-tactile-primary:active {
     box-shadow: inset 0 2px 6px rgba(0,0,0,0.5) !important;
-    background-image: none !important;
+  }
+
+  /* Tabs / Segmented Controls */
+  .pos-tabs-list {
+    @apply bg-zinc-100 dark:bg-zinc-900 p-1 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-inner;
+  }
+
+  .pos-tabs-trigger {
+    @apply text-muted-foreground transition-all duration-200 font-bold uppercase tracking-widest text-[10px] rounded-md;
+  }
+
+  .pos-tabs-trigger[data-state='active'] {
+    background-color: hsl(var(--order-type-active));
+    @apply text-white shadow-md scale-[1.02];
+  }
+
+  .dark .pos-tabs-trigger[data-state='active'] {
+    @apply shadow-[0_0_15px_rgba(37,99,235,0.3)];
   }
 
   .pos-kicker {

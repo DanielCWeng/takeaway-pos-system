@@ -81,10 +81,10 @@ export function ConfirmationModal({
 
         <div className="flex flex-col gap-6 p-6">
           {/* Totals Display */}
-          <div className="space-y-3 rounded-xl bg-accent p-4 shadow-inner">
+          <div className="space-y-3 rounded-xl bg-muted/40 p-4 border border-border/40 shadow-inner">
             <div className="flex justify-between items-center opacity-70">
-              <span className="text-xs font-bold uppercase tracking-widest">Total Due</span>
-              <span className="font-mono text-lg font-bold">{formatCurrency(orderTotal)}</span>
+              <span className="text-xs font-bold uppercase tracking-widest text-foreground">Total Due</span>
+              <span className="font-mono text-lg font-bold text-foreground">{formatCurrency(orderTotal)}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-xs font-bold uppercase tracking-widest text-primary">Cash Received</span>
@@ -93,9 +93,9 @@ export function ConfirmationModal({
               </span>
             </div>
             <div className="h-px bg-border/20 my-1" />
-            <div className="flex justify-between items-center text-accent-foreground">
+            <div className="flex justify-between items-center text-foreground">
               <span className="text-xs font-bold uppercase tracking-widest">Change Due</span>
-              <span className="font-mono text-3xl font-black text-success">
+              <span className="font-mono text-3xl font-black text-emerald-600 dark:text-emerald-400">
                 {formatCurrency(changeDue)}
               </span>
             </div>
@@ -128,7 +128,7 @@ export function ConfirmationModal({
                   'h-14 rounded-xl border text-xl font-bold transition-all',
                   key === 'C' 
                     ? 'border-destructive/20 text-destructive hover:bg-destructive/10' 
-                    : 'pos-btn-tactile hover:bg-white/5 active:bg-white/10'
+                    : 'pos-btn-tactile hover:bg-muted/50 active:bg-muted'
                 )}
               >
                 {key}

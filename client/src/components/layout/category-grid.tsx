@@ -43,14 +43,14 @@ export const CategoryGrid = React.memo(function CategoryGrid({
             className={cn(
               'relative flex h-full w-full flex-col items-center justify-center rounded-md px-1 text-center text-[11px] font-semibold transition pos-grid-btn',
               isEmpty
-                ? 'cursor-not-allowed opacity-30 border-white/5 bg-white/5'
+                ? 'cursor-not-allowed opacity-20 bg-muted'
                 : isSelected
                 ? 'pos-btn-tactile-primary'
                 : isPager
-                ? 'pos-btn-tactile text-muted-foreground opacity-80 hover:opacity-100 hover:bg-white/10'
+                ? 'pos-btn-tactile text-muted-foreground opacity-80 hover:opacity-100 hover:bg-muted'
                 : category.en === 'Show All'
                 ? 'pos-btn-tactile text-primary'
-                : 'pos-btn-tactile hover:bg-white/5 text-foreground',
+                : 'pos-btn-tactile text-foreground',
             )}
           >
             <span className="font-display text-sm tracking-tight">{category.zh}</span>

@@ -41,7 +41,7 @@ export function AddressSelectionModal({ addresses, onSelect, onClose }: AddressS
               <button
                 key={idx}
                 onClick={() => onSelect(addr)}
-                className="flex flex-col items-start gap-1 rounded-xl border border-border/40 bg-background p-4 text-left transition-all hover:bg-primary/5 hover:border-primary/30 group active:scale-[0.98]"
+                className="flex flex-col items-start gap-1 p-4 text-left transition-all pos-btn-tactile hover:bg-muted/50 group active:scale-[0.98]"
               >
                 <span className="text-sm font-bold group-hover:text-primary transition-colors">
                   {addr.line1}
@@ -59,7 +59,7 @@ export function AddressSelectionModal({ addresses, onSelect, onClose }: AddressS
           </div>
         </ScrollArea>
 
-        <div className="border-t border-border/60 p-4 bg-muted/20">
+        <div className="border-t border-border/60 p-4 bg-muted/10">
           <Button variant="outline" className="w-full h-12 text-base" onClick={onClose}>
             None of these
           </Button>
