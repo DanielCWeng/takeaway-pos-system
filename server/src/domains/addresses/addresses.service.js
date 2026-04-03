@@ -44,15 +44,12 @@ function normaliseAndValidatePostcode(postcode) {
  * @returns {{ line1: string, line2: string, town: string, postcode: string, latitude: number, longitude: number }}
  */
 function localRowToAddress(row) {
-  // If it's already in the target shape (from JSON 'data' column), return as is
-  if (row.line1 !== undefined) return row;
-
-  // Legacy fallback for rows missing the JSON 'data' blob
+  // Handle both API-style rows (line1/town) and legacy rows (street/ward).
   return {
-    line1: row.street || '',
-    line2: '',
-    town: '',
-    postcode: row.postcode,
+    line1: row.line1 || row.street || '',
+    line2: row.line2 || '',
+    town: row.town || row.ward || '',
+    postcode: row.postcode || '',
     latitude: row.latitude,
     longitude: row.longitude,
   };
@@ -123,6 +120,18 @@ export async function lookupPostcode(postcode) {
  * @returns {object} Updated customer
  */
 export function verifyAddress(phone, addressData) {
+  let effectivePhone = phone;
+
+  // If no phone or placeholder '0000' or otherwise invalid numeric phone, generate an UNKNOWN- identifier
+  const isInvalidNumeric = !effectivePhone || effectivePhone === '0000' || (!effectivePhone.startsWith('UNKNOWN-') && effectivePhone.length < 10);
+  
+  if (isInvalidNumeric) {
+    effectivePhone = `UNKNOWN-${Math.random().toString(36).substring(2, 11).toUpperCase()}`;
+  }
+
+  // Ensure customer exists in the system (creates a stub if new)
+  customersService.getOrCreateCustomer(effectivePhone);
+
   const update = {
     postcode: addressData.postcode ? normaliseAndValidatePostcode(addressData.postcode) : undefined,
     street: addressData.line1,
@@ -141,11 +150,11 @@ export function verifyAddress(phone, addressData) {
 
     update.distance = parseFloat(miles.toFixed(2));
     logger.debug('Computed delivery distance for verified address', {
-      phone,
+      phone: effectivePhone,
       postcode: update.postcode ?? null,
       distance: update.distance,
     });
   }
 
-  return customersService.updateCustomerAddress(phone, update);
+  return customersService.updateCustomerAddress(effectivePhone, update);
 }

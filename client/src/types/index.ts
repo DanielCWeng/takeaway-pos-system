@@ -109,6 +109,7 @@ export interface Customer {
   postcode: string | null;
   houseNumber: string | null;
   street: string | null;
+  town: string | null;
   latitude: number | null;
   longitude: number | null;
   distance: number | null;

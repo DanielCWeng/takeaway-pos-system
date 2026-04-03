@@ -88,6 +88,7 @@ export function DeliveryAddressModal({
             postcode: customer.postcode || '',
             houseNumber: customer.houseNumber || '',
             street: customer.street || '',
+            town: customer.town || '',
             distance: customer.distance || 0,
         }));
       }
@@ -120,6 +121,7 @@ export function DeliveryAddressModal({
         
         onSave({
             ...formData,
+            phone: customer.phone,
             distance: customer.distance || 0,
             address: `${formData.houseNumber || ''} ${formData.street || ''}, ${formData.town || ''}, ${formData.postcode || ''}`.trim().replace(/^, /, ''),
         });
@@ -326,7 +328,7 @@ export function DeliveryAddressModal({
                 <Button variant="outline" className="w-full h-14 text-base font-semibold" onClick={onClose} disabled={isLoading}>
                     Cancel
                 </Button>
-                <Button className="w-full h-16 text-xl font-black shadow-xl shadow-primary/20 gap-3" onClick={handleSave} disabled={isLoading || !formData.phone}>
+                <Button className="w-full h-16 text-xl font-black shadow-xl shadow-primary/20 gap-3" onClick={handleSave} disabled={isLoading}>
                     <Save className="h-6 w-6" /> SAVE
                 </Button>
              </div>

@@ -101,17 +101,24 @@ async function seed() {
         CREATE TABLE IF NOT EXISTS addresses (
             postcode  TEXT PRIMARY KEY,
             street    TEXT,
+            town      TEXT,
             latitude  REAL,
             longitude REAL,
             source    TEXT DEFAULT 'api',
             data      TEXT
         )
     `);
+  // Ensure 'town' column exists for existing installations
+  try {
+    db.exec('ALTER TABLE addresses ADD COLUMN town TEXT');
+  } catch {
+    // Column already exists, ignore
+  }
 
   // Prepare transformation and insertion
   const insert = db.prepare(`
-        INSERT OR REPLACE INTO addresses (postcode, street, latitude, longitude, source, data)
-        VALUES (@postcode, @street, @latitude, @longitude, @source, @data)
+        INSERT OR REPLACE INTO addresses (postcode, street, town, latitude, longitude, source, data)
+        VALUES (@postcode, @street, @town, @latitude, @longitude, @source, @data)
     `);
 
   // 4. Transform and Insert (Atomic Transaction)
@@ -121,7 +128,7 @@ async function seed() {
 
   const seedTransaction = db.transaction((items) => {
     for (const [code, details] of items) {
-      const { easting, northing, street } = details;
+      const { easting, northing, street, ward, town, city } = details;
 
       if (!easting || !northing) {
         skipCount++;
@@ -131,14 +138,35 @@ async function seed() {
       try {
         // Convert Easting/Northing to [Lng, Lat]
         const [lng, lat] = proj4('EPSG:27700', 'EPSG:4326', [easting, northing]);
+        const normalisedPostcode = normalisePostcode(code);
+        const locality =
+          (typeof ward === 'string' && ward.trim()) ||
+          (typeof town === 'string' && town.trim()) ||
+          (typeof city === 'string' && city.trim()) ||
+          '';
+
+        // Store a minimal address list payload so local lookups can return
+        // town/city information without needing a paid API lookup.
+        const seededAddress = [
+          {
+            line1: street || '',
+            line2: '',
+            town: locality,
+            postcode: normalisedPostcode,
+            latitude: lat,
+            longitude: lng,
+            source: 'seed',
+          },
+        ];
 
         insert.run({
-          postcode: normalisePostcode(code),
+          postcode: normalisedPostcode,
           street: street || '',
+          town: locality,
           latitude: lat,
           longitude: lng,
           source: 'seed',
-          data: null, // Historical seed data doesn't have the full extra JSON blob
+          data: JSON.stringify(seededAddress),
         });
         count++;
 

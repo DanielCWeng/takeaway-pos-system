@@ -42,13 +42,19 @@ function getPostcodeDb() {
       CREATE TABLE IF NOT EXISTS addresses (
         postcode  TEXT PRIMARY KEY,
         street    TEXT,
+        town      TEXT,
         latitude  REAL,
         longitude REAL,
         source    TEXT DEFAULT 'api',
         data      TEXT
       )
     `);
-    // Ensure 'data' column exists for existing installations
+    // Ensure columns exist for existing installations
+    try {
+      _db.exec('ALTER TABLE addresses ADD COLUMN town TEXT');
+    } catch {
+      // Column already exists, ignore
+    }
     try {
       _db.exec('ALTER TABLE addresses ADD COLUMN data TEXT');
     } catch {
@@ -147,11 +153,12 @@ export function findAddressesLocally(postcode) {
   // Legacy fallback: single-element array from street column
   // This handles cases where 'data' column is null or parsing failed,
   // and relies on the old 'street', 'latitude', 'longitude', 'source' columns.
-  if (row.street || row.latitude || row.longitude) {
+  if (row.street || row.latitude || row.longitude || row.town) {
     return [
       {
         postcode: row.postcode,
         street: row.street,
+        town: row.town,
         latitude: row.latitude,
         longitude: row.longitude,
         source: row.source,
@@ -181,10 +188,11 @@ export function saveAddresses(postcode, bestMatch, fullList = []) {
 
   try {
     const upsert = db.prepare(`
-      INSERT INTO addresses (postcode, street, latitude, longitude, data)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO addresses (postcode, street, town, latitude, longitude, data)
+      VALUES (?, ?, ?, ?, ?, ?)
       ON CONFLICT(postcode) DO UPDATE SET
         street = excluded.street,
+        town = excluded.town,
         latitude = excluded.latitude,
         longitude = excluded.longitude,
         data = excluded.data
@@ -193,6 +201,7 @@ export function saveAddresses(postcode, bestMatch, fullList = []) {
     upsert.run(
       norm,
       bestMatch.street || '',
+      bestMatch.town || '',
       bestMatch.latitude,
       bestMatch.longitude,
       fullList && fullList.length > 0 ? JSON.stringify(fullList) : null,

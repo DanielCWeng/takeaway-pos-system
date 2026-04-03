@@ -20,7 +20,7 @@ const lookupSchema = z.object({
 });
 
 const verifySchema = z.object({
-  phone: z.string().min(1),
+  phone: z.string().optional(),
   addressData: z.object({
     line1: z.string().optional(),
     line2: z.string().optional(),
