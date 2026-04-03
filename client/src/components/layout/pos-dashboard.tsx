@@ -219,7 +219,7 @@ export function PosDashboard() {
       addItem(
         {
           id: item.id,
-          name: item.name,
+          name: item.name,  // pass full {en, zh} object so zhName is preserved
           price: item.price ?? 0,
           uniqueId,
         },
@@ -256,7 +256,7 @@ export function PosDashboard() {
       addItem(
         {
           id: item.id,
-          name: item.name.en,
+          name: item.name,  // pass full {en, zh} object so zhName is preserved
           price: item.price ?? 0,
           uniqueId,
         },
