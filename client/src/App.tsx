@@ -8,6 +8,8 @@ import { ThemeProvider } from './context/ThemeContext';
 import { CallerProvider } from './context/CallerContext';
 import { PosDashboard } from './components/layout/pos-dashboard';
 
+import { VirtualKeyboard } from './components/ui/virtual-keyboard';
+
 function App() {
   return (
     <ThemeProvider>
@@ -18,6 +20,7 @@ function App() {
           </OrderProvider>
         </UIProvider>
       </CallerProvider>
+      <VirtualKeyboard />
     </ThemeProvider>
   );
 }
