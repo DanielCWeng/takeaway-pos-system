@@ -108,7 +108,8 @@ export async function printReceipt(order, opts = {}) {
   }
 
   const canvasApi = await tryLoadCanvas();
-  const receipt = buildReceiptBuffer(order, { canvasApi });
+  const receiptParts = buildReceiptBuffer(order, { canvasApi });
+  const totalBytes = receiptParts.reduce((sum, p) => sum + p.length, 0);
 
   return new Promise((resolve, reject) => {
     try {
@@ -130,13 +131,12 @@ export async function printReceipt(order, opts = {}) {
         );
       }, timeoutMs);
 
-      const CHUNK_SIZE = 512;
-      let offset = 0;
+      let partIndex = 0;
 
-      const sendNextChunk = () => {
+      const sendNextPart = () => {
         if (completed) return;
 
-        if (offset >= receipt.length) {
+        if (partIndex >= receiptParts.length) {
           completed = true;
           clearTimeout(timeout);
           iface.release(true, (releaseErr) => {
@@ -153,15 +153,15 @@ export async function printReceipt(order, opts = {}) {
             logger.info('Receipt printed', {
               hardware: true,
               orderId: order?.id ?? null,
-              bytes: receipt.length,
+              bytes: totalBytes,
             });
             return resolve({ printed: true });
           });
           return;
         }
 
-        const chunk = receipt.subarray(offset, offset + CHUNK_SIZE);
-        endpoint.transfer(chunk, (error) => {
+        const part = receiptParts[partIndex];
+        endpoint.transfer(part, (error) => {
           if (completed) return;
 
           if (error) {
@@ -180,14 +180,21 @@ export async function printReceipt(order, opts = {}) {
             return;
           }
 
-          offset += CHUNK_SIZE;
-          // 20ms delay lets the physical thermal head burn the raster line
-          // and frees the limited receive buffer on cheaper printers.
-          setTimeout(sendNextChunk, 20);
+          partIndex++;
+          
+          // Large parts are ESC/POS Raster images. A delay is strictly required 
+          // to give the thermal printhead time to burn the image and 
+          // clear its physical NV buffer so it doesn't overwrite pending data.
+          if (part.length > 200) {
+            setTimeout(sendNextPart, 60);
+          } else {
+            // Process small text parts immediately
+            sendNextPart();
+          }
         });
       };
 
-      sendNextChunk();
+      sendNextPart();
     } catch (err) {
       safeCloseDevice(device);
       return reject(

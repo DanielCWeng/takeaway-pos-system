@@ -134,7 +134,7 @@ function textToBitmap(canvasApi, text, opts = {}) {
   const align = opts.align ?? 'left';
   const bold = opts.bold ?? false;
 
-  const width = 384; // common 58mm printer width in dots
+  const width = 512; // fits common 512-dot / 80mm printers
   const canvas = canvasApi.createCanvas(width, fontSize * 2);
   const ctx = canvas.getContext('2d');
 
@@ -205,11 +205,18 @@ function bitmapToESCPOS(bitmap) {
 
 function appendSolidLine(receiptParts, deps) {
   if (deps.canvasApi) {
-    const width = 384;
-    const height = 3; // 3px solid line
+    const width = 512;
+    const height = 2; // 2px solid line
     const bytesPerLine = Math.ceil(width / 8);
     const data = new Array(bytesPerLine * height).fill(0xff);
-    receiptParts.push(bitmapToESCPOS({ width, height, data, bytesPerLine }));
+    
+    receiptParts.push(
+      Buffer.from('\n'), // space above
+      Buffer.from([ESC, 0x61, 0x01]), // center align raster
+      bitmapToESCPOS({ width, height, data, bytesPerLine }),
+      Buffer.from([ESC, 0x61, 0x00]), // restore left align
+      Buffer.from('\n') // space below
+    );
   } else {
     receiptParts.push(Buffer.from('-'.repeat(LINE_WIDTH) + '\n'));
   }
@@ -367,7 +374,11 @@ export function buildReceiptBuffer(archivedOrder, deps) {
   if (toText(info?.mapRef)) receiptParts.push(Buffer.from(`Map ref: ${toText(info.mapRef)}\n`));
 
   if (Number.isFinite(info?.distance)) {
-    receiptParts.push(Buffer.from(`Mileage: ${Number(info.distance).toFixed(2)} miles\n`));
+    receiptParts.push(
+      Buffer.from([ESC, 0x4D, 0x01]), // Select Font B (smaller text)
+      Buffer.from(`Mileage: ${Number(info.distance).toFixed(2)} miles\n`),
+      Buffer.from([ESC, 0x4D, 0x00])  // Re-select Font A
+    );
   }
 
   if (toText(info?.name)) receiptParts.push(Buffer.from(`${toText(info.name)}\n`));
@@ -376,7 +387,13 @@ export function buildReceiptBuffer(archivedOrder, deps) {
   } else if (toText(info?.address)) {
     receiptParts.push(Buffer.from(`${toText(info.address)}\n`));
   }
-  if (toText(info?.town)) receiptParts.push(Buffer.from(`${toText(info.town)}\n`));
+  
+  if (toText(info?.town)) {
+    // Truncate town to max 3 words depending on exact spaces (e.g. Toton & Chilwell Meadows -> Toton & Chilwell)
+    const townParts = toText(info.town).split(' ');
+    const truncatedTown = townParts.slice(0, 3).join(' ');
+    receiptParts.push(Buffer.from(`${truncatedTown}\n`));
+  }
   if (toText(info?.postcode))
     receiptParts.push(Buffer.from(`${toText(info.postcode).toUpperCase()}\n`));
   if (toText(info?.phone)) receiptParts.push(Buffer.from(`${toText(info.phone)}\n`));
@@ -396,5 +413,5 @@ export function buildReceiptBuffer(archivedOrder, deps) {
   }
 
   receiptParts.push(Buffer.from([ESC, 0x64, 3]), Buffer.from([GS, 0x56, 0x00]));
-  return Buffer.concat(receiptParts);
+  return receiptParts; // Return the raw array so printer.js can chunk them logically
 }
