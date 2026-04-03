@@ -10,7 +10,20 @@ export interface OrderItem {
   name: string;
   zhName?: string;
   price: number;
+  finalPrice?: number;
   quantity: number;
+  hidePrice?: boolean;
+  hideQuantity?: boolean;
+  isSwapped?: boolean;
+  modifiers?: Array<
+    | string
+    | {
+        command?: string;
+        ingredient?: { name?: string; zh?: string };
+        name?: string;
+        zh?: string;
+      }
+  >;
   parentId?: string;
   isFoc?: boolean;
   isIncluded?: boolean;
@@ -53,6 +66,7 @@ export interface CustomerInfo {
   town?: string;
   postcode?: string;
   distance?: number;
+  mapRef?: string;
   deliveryInstructions?: string;
   deliveryTime?: string;
 }
@@ -70,6 +84,12 @@ export interface FullOrder {
   orderType: OrderType;
   customerInfo?: CustomerInfo;
   payment: PaymentDetails;
+  subtotal?: number;
+  deliveryCharge?: number;
+  paymentDetails?: {
+    amountPaid?: number;
+    changeDue?: number;
+  };
   total: number;
   notes?: string;
 }

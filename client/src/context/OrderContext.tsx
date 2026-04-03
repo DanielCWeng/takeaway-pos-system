@@ -543,12 +543,15 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   const printOrder = useCallback(
     async (orderToPrint?: FullOrder): Promise<PrintResult> => {
       const source = orderToPrint ? orderToPrint : order;
+      const totals = deriveTotals(source as OrderState);
       const payload: FullOrder = {
         ...source,
         items: source.items.map((item) => ({ ...item })),
         customerInfo: source.customerInfo ? { ...source.customerInfo } : undefined,
         payment: { ...source.payment },
-        total: deriveTotals(source as OrderState).total,
+        subtotal: totals.subtotal,
+        deliveryCharge: totals.deliveryCharge,
+        total: totals.total,
       };
       const clientOrderId = orderToPrint
         ? generateClientOrderId()
