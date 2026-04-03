@@ -1,8 +1,8 @@
-import type { Address } from '../../types';
-import { motion } from 'framer-motion';
-import { Button } from '../ui/button';
-import { X, MapPin } from 'lucide-react';
-import { ScrollArea } from '../ui/scroll-area';
+import type { Address } from "../../types";
+import { motion } from "framer-motion";
+import { Button } from "../ui/button";
+import { X, MapPin } from "lucide-react";
+import { ScrollArea } from "../ui/scroll-area";
 
 interface AddressSelectionModalProps {
   addresses: Address[];
@@ -10,27 +10,38 @@ interface AddressSelectionModalProps {
   onClose: () => void;
 }
 
-export function AddressSelectionModal({ addresses, onSelect, onClose }: AddressSelectionModalProps) {
+export function AddressSelectionModal({
+  addresses,
+  onSelect,
+  onClose,
+}: AddressSelectionModalProps) {
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-[60] flex items-center justify-center bg-background/80 backdrop-blur-md p-4"
     >
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, scale: 0.9, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: 10 }}
-        transition={{ type: 'spring', duration: 0.3, bounce: 0.2 }}
+        transition={{ type: "spring", duration: 0.3, bounce: 0.2 }}
         className="pos-panel flex max-h-[80vh] w-full max-w-lg flex-col shadow-2xl overflow-hidden border-primary/20"
       >
         <div className="flex items-center justify-between border-b border-border/60 px-6 py-4 bg-primary/5">
           <div className="flex items-center gap-2">
             <MapPin className="h-5 w-5 text-primary" />
-            <span className="font-display text-lg font-bold tracking-tight">Select Address</span>
+            <span className="font-display text-lg font-bold tracking-tight">
+              Select Address
+            </span>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="rounded-full"
+          >
             <X className="h-5 w-5" />
           </Button>
         </div>
@@ -48,7 +59,7 @@ export function AddressSelectionModal({ addresses, onSelect, onClose }: AddressS
                 </span>
                 {(addr.line2 || addr.town) && (
                   <span className="text-xs text-muted-foreground italic">
-                    {[addr.line2, addr.town].filter(Boolean).join(', ')}
+                    {[addr.line2, addr.town].filter(Boolean).join(", ")}
                   </span>
                 )}
                 <span className="mt-1 font-mono text-[10px] uppercase tracking-widest opacity-60">
@@ -60,7 +71,11 @@ export function AddressSelectionModal({ addresses, onSelect, onClose }: AddressS
         </ScrollArea>
 
         <div className="border-t border-border/60 p-4 bg-muted/10">
-          <Button variant="outline" className="w-full h-12 text-base" onClick={onClose}>
+          <Button
+            variant="outline"
+            className="w-full h-12 text-base"
+            onClick={onClose}
+          >
             None of these
           </Button>
         </div>

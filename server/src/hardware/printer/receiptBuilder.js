@@ -219,9 +219,11 @@ function appendSolidLine(receiptParts, deps) {
     const bytesPerLine = Math.ceil(width / 8);
     const data = new Array(bytesPerLine * height).fill(0xff);
     receiptParts.push(
-      Buffer.from('\n'), // space above
+      Buffer.from('\n'),                            // space above
+      Buffer.from([ESC, 0x61, 0x01]),               // center align so raster fills edge-to-edge
       bitmapToESCPOS({ width, height, data, bytesPerLine }),
-      Buffer.from('\n') // space below
+      Buffer.from([ESC, 0x61, 0x00]),               // restore left align
+      Buffer.from('\n'),                            // space below
     );
   } else {
     console.log('[RECEIPT] appendSolidLine: no canvasApi, using dashes fallback');
