@@ -130,32 +130,64 @@ export async function printReceipt(order, opts = {}) {
         );
       }, timeoutMs);
 
-      endpoint.transfer(receipt, (error) => {
+      const CHUNK_SIZE = 512;
+      let offset = 0;
+
+      const sendNextChunk = () => {
         if (completed) return;
-        completed = true;
-        clearTimeout(timeout);
 
-        iface.release(true, (releaseErr) => {
-          safeCloseDevice(device);
+        if (offset >= receipt.length) {
+          completed = true;
+          clearTimeout(timeout);
+          iface.release(true, (releaseErr) => {
+            safeCloseDevice(device);
+            if (releaseErr) {
+              return reject(
+                new HardwareError('Failed to release printer interface', {
+                  vendorId,
+                  productId,
+                  error: releaseErr.message,
+                }),
+              );
+            }
+            logger.info('Receipt printed', {
+              hardware: true,
+              orderId: order?.id ?? null,
+              bytes: receipt.length,
+            });
+            return resolve({ printed: true });
+          });
+          return;
+        }
 
-          if (error || releaseErr) {
-            return reject(
-              new HardwareError('Failed to send data to printer', {
-                vendorId,
-                productId,
-                error: error?.message ?? releaseErr?.message ?? 'Unknown printer error',
-              }),
-            );
+        const chunk = receipt.subarray(offset, offset + CHUNK_SIZE);
+        endpoint.transfer(chunk, (error) => {
+          if (completed) return;
+
+          if (error) {
+            completed = true;
+            clearTimeout(timeout);
+            iface.release(true, () => {
+              safeCloseDevice(device);
+              reject(
+                new HardwareError('Failed to send data to printer', {
+                  vendorId,
+                  productId,
+                  error: error.message,
+                }),
+              );
+            });
+            return;
           }
 
-          logger.info('Receipt printed', {
-            hardware: true,
-            orderId: order?.id ?? null,
-            bytes: receipt.length,
-          });
-          return resolve({ printed: true });
+          offset += CHUNK_SIZE;
+          // 20ms delay lets the physical thermal head burn the raster line
+          // and frees the limited receive buffer on cheaper printers.
+          setTimeout(sendNextChunk, 20);
         });
-      });
+      };
+
+      sendNextChunk();
     } catch (err) {
       safeCloseDevice(device);
       return reject(

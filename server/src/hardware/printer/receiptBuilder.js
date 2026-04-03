@@ -18,17 +18,43 @@ const LEGACY_COMMAND_TRANSLATIONS = Object.freeze({
   ONLY: '\u53ea\u8981',
 });
 
-/**
- * Right-align a value on a receipt line.
- *
- * @param {string} left
- * @param {string | number} right
- * @returns {string}
- */
 function rightAlign(left, right) {
   const r = typeof right === 'number' ? right.toFixed(2) : String(right);
-  const spaces = Math.max(0, LINE_WIDTH - left.length - r.length);
-  return left + ' '.repeat(spaces) + r + '\n';
+
+  // Leave space for at least one blank character between text and price
+  const maxLeft = Math.max(1, LINE_WIDTH - r.length - 1);
+  
+  if (left.length <= maxLeft) {
+    const spaces = Math.max(0, LINE_WIDTH - left.length - r.length);
+    return left + ' '.repeat(spaces) + r + '\n';
+  }
+
+  // Wrap text if it's too long
+  let lines = [];
+  let remaining = left;
+
+  while (remaining.length > 0) {
+    if (remaining.length <= maxLeft) {
+      lines.push(remaining);
+      break;
+    }
+    let breakIndex = remaining.lastIndexOf(' ', maxLeft);
+    if (breakIndex <= 0) breakIndex = maxLeft; // hard break if no space
+    lines.push(remaining.substring(0, breakIndex));
+    remaining = remaining.substring(breakIndex).trimStart();
+  }
+
+  let result = '';
+  for (let i = 0; i < lines.length; i++) {
+    if (i === 0) {
+      const spaces = Math.max(0, LINE_WIDTH - lines[i].length - r.length);
+      result += lines[i] + ' '.repeat(spaces) + r + '\n';
+    } else {
+      // Indent subsequent lines slightly
+      result += '  ' + lines[i] + '\n';
+    }
+  }
+  return result;
 }
 
 function formatOrderType(raw) {
@@ -177,6 +203,18 @@ function bitmapToESCPOS(bitmap) {
   return Buffer.from([GS, 0x76, 0x30, 0x00, xL, xH, yL, yH, ...bitmap.data]);
 }
 
+function appendSolidLine(receiptParts, deps) {
+  if (deps.canvasApi) {
+    const width = 384;
+    const height = 3; // 3px solid line
+    const bytesPerLine = Math.ceil(width / 8);
+    const data = new Array(bytesPerLine * height).fill(0xff);
+    receiptParts.push(bitmapToESCPOS({ width, height, data, bytesPerLine }));
+  } else {
+    receiptParts.push(Buffer.from('-'.repeat(LINE_WIDTH) + '\n'));
+  }
+}
+
 function appendBitmapOrText(receiptParts, deps, text, opts = {}) {
   const line = toText(text);
   if (!line) return;
@@ -254,9 +292,9 @@ export function buildReceiptBuffer(archivedOrder, deps) {
     Buffer.from([ESC, 0x40, ESC, 0x61, 0x01, ESC, 0x45, 0x01]),
     Buffer.from(`${dateStr}  ${timeStr}\n`),
     Buffer.from([ESC, 0x45, 0x00]),
-    Buffer.from('-'.repeat(LINE_WIDTH) + '\n'),
-    Buffer.from([ESC, 0x61, 0x00]),
   );
+  appendSolidLine(receiptParts, deps);
+  receiptParts.push(Buffer.from([ESC, 0x61, 0x00]));
 
   receiptParts.push(
     Buffer.from([ESC, 0x61, 0x01, ESC, 0x45, 0x01]),
@@ -311,7 +349,7 @@ export function buildReceiptBuffer(archivedOrder, deps) {
     }
   }
 
-  receiptParts.push(Buffer.from('-'.repeat(LINE_WIDTH) + '\n'));
+  appendSolidLine(receiptParts, deps);
 
   receiptParts.push(
     Buffer.from([ESC, 0x61, 0x01, GS, 0x21, 0x11, ESC, 0x45, 0x01]),
@@ -323,7 +361,7 @@ export function buildReceiptBuffer(archivedOrder, deps) {
   if (String(order?.orderType ?? '').toLowerCase() === 'delivery') {
     receiptParts.push(Buffer.from(rightAlign('+Delivery', deliveryCharge)));
   }
-  receiptParts.push(Buffer.from(rightAlign('', '--------------')));
+  appendSolidLine(receiptParts, deps);
 
   receiptParts.push(
     Buffer.from([ESC, 0x61, 0x01, GS, 0x21, 0x22, ESC, 0x45, 0x01]),
@@ -331,17 +369,13 @@ export function buildReceiptBuffer(archivedOrder, deps) {
     Buffer.from([ESC, 0x61, 0x00, GS, 0x21, 0x00, ESC, 0x45, 0x00]),
   );
 
-  receiptParts.push(Buffer.from('-'.repeat(LINE_WIDTH) + '\n'));
+  appendSolidLine(receiptParts, deps);
   receiptParts.push(Buffer.from([ESC, 0x61, 0x00, GS, 0x21, 0x11]));
 
   if (toText(info?.mapRef)) receiptParts.push(Buffer.from(`Map ref: ${toText(info.mapRef)}\n`));
 
   if (Number.isFinite(info?.distance)) {
-    appendBitmapOrText(receiptParts, deps, `Mileage: ${Number(info.distance).toFixed(2)} miles`, {
-      fontSize: 44,
-      align: 'left',
-      bold: true,
-    });
+    receiptParts.push(Buffer.from(`Mileage: ${Number(info.distance).toFixed(2)} miles\n`));
   }
 
   if (toText(info?.name)) receiptParts.push(Buffer.from(`${toText(info.name)}\n`));
@@ -368,13 +402,6 @@ export function buildReceiptBuffer(archivedOrder, deps) {
       Buffer.from([ESC, 0x61, 0x00, GS, 0x21, 0x00, ESC, 0x45, 0x00]),
     );
   }
-
-  receiptParts.push(Buffer.from('\n'));
-  receiptParts.push(
-    Buffer.from([ESC, 0x61, 0x01, GS, 0x21, 0x00, ESC, 0x45, 0x00]),
-    Buffer.from(`${getPaymentStatusLine(order)}\n`),
-    Buffer.from([ESC, 0x61, 0x00, GS, 0x21, 0x00, ESC, 0x45, 0x00]),
-  );
 
   receiptParts.push(Buffer.from([ESC, 0x64, 3]), Buffer.from([GS, 0x56, 0x00]));
   return Buffer.concat(receiptParts);
