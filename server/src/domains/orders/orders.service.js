@@ -79,11 +79,6 @@ function validateOrder(order) {
         { field: 'customerInfo', orderType: 'delivery' },
       );
     }
-    if (!info.name || info.name.trim() === '') {
-      throw new ValidationError('Delivery orders require a customer name', {
-        field: 'customerInfo.name',
-      });
-    }
   }
 }
 
