@@ -40,6 +40,14 @@ function isChunkLoadFailure(message: string, source?: string) {
 }
 
 function reportClientError(payload: ClientErrorPayload) {
+  const sameOrigin = (() => {
+    try {
+      return new URL(CLIENT_ERROR_ENDPOINT, window.location.origin).origin === window.location.origin;
+    } catch {
+      return false;
+    }
+  })();
+
   const body = JSON.stringify({
     type: clamp(payload.type, 64),
     message: clamp(payload.message, 1500),
@@ -51,7 +59,7 @@ function reportClientError(payload: ClientErrorPayload) {
   });
 
   try {
-    if (typeof navigator.sendBeacon === "function") {
+    if (sameOrigin && typeof navigator.sendBeacon === "function") {
       const blob = new Blob([body], { type: "application/json" });
       navigator.sendBeacon(CLIENT_ERROR_ENDPOINT, blob);
       return;
@@ -62,6 +70,8 @@ function reportClientError(payload: ClientErrorPayload) {
 
   void fetch(CLIENT_ERROR_ENDPOINT, {
     method: "POST",
+    mode: "cors",
+    credentials: "omit",
     headers: { "Content-Type": "application/json" },
     body,
     keepalive: true,

@@ -124,7 +124,10 @@ export function DeliveryAddressModal({
             address: `${formData.houseNumber || ''} ${formData.street || ''}, ${formData.town || ''}, ${formData.postcode || ''}`.trim().replace(/^, /, ''),
         });
     } catch (err) {
-        console.error('Verify address failed', err);
+        const withStatus = err as Error & { status?: number };
+        if (withStatus?.status && withStatus.status !== 404) {
+          console.error('Verify address failed', err);
+        }
         onSave(formData);
     } finally {
         setIsLoading(false);
