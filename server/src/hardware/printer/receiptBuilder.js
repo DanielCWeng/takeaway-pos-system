@@ -30,7 +30,7 @@ function rightAlign(left, right) {
   }
 
   // Wrap text if it's too long
-  let lines = [];
+  const lines = [];
   let remaining = left;
 
   while (remaining.length > 0) {
@@ -242,14 +242,6 @@ function computeDeliveryCharge(order, subtotal, total) {
   if (String(order?.orderType ?? '').toLowerCase() !== 'delivery') return 0;
   const derived = total - subtotal;
   return derived > 0 ? derived : 0;
-}
-
-function getPaymentStatusLine(order) {
-  const method = toText(order?.payment?.method).toLowerCase();
-  if (method === 'cash') return '[X] Cash   [ ] Card';
-  if (method === 'card') return '[ ] Cash   [X] Card';
-  if (order?.paymentDetails) return '[X] Cash   [ ] Unpaid';
-  return '[ ] Cash   [X] Unpaid';
 }
 
 /**

@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * scripts/seedPostcodes.js
  *
