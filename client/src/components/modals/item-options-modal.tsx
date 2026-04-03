@@ -1,28 +1,56 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import type { MenuItem } from '../../types';
-import { Button } from '../ui/button';
-import { X } from 'lucide-react';
-import { ScrollArea } from '../ui/scroll-area';
-import { formatCurrency } from '../../lib/format';
-import { cn } from '../../lib/utils';
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import type { MenuItem } from "../../types";
+import { Button } from "../ui/button";
+import { X } from "lucide-react";
+import { ScrollArea } from "../ui/scroll-area";
+import { formatCurrency } from "../../lib/format";
+import { cn } from "../../lib/utils";
 
 interface ItemOptionsModalProps {
   item: MenuItem;
-  onConfirm: (finalizedItem: { name: string | { en: string; zh: string }; price: number }) => void;
+  onConfirm: (finalizedItem: {
+    name: string | { en: string; zh: string };
+    price: number;
+  }) => void;
   onClose: () => void;
 }
 
-export function ItemOptionsModal({ item, onConfirm, onClose }: ItemOptionsModalProps) {
+const OPTION_TRANSLATIONS: Record<string, string> = {
+  // Sizes / Portions
+  Small: "小",
+  Large: "大",
+  Quarter: "1/4",
+  Half: "半",
+  Whole: "全",
+  Chips: "条",
+  "Fried Rice": "炒饭",
+  "Boiled Rice": "白饭",
+};
+
+function translateOption(opt: string): string {
+  // If the option has a known translation, use it. Otherwise fallback to the English string.
+  return OPTION_TRANSLATIONS[opt] || opt;
+}
+
+export function ItemOptionsModal({
+  item,
+  onConfirm,
+  onClose,
+}: ItemOptionsModalProps) {
   const [selections, setSelections] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const initialSelections: Record<string, string> = {};
     if (item.options?.length) {
-      initialSelections['main'] = item.options[0].name;
+      initialSelections["main"] = item.options[0].name;
     }
     item.contents?.forEach((content) => {
-      if (content.type === 'choice' && content.options?.length && content.description) {
+      if (
+        content.type === "choice" &&
+        content.options?.length &&
+        content.description
+      ) {
         initialSelections[content.description] = content.options[0];
       }
     });
@@ -37,37 +65,44 @@ export function ItemOptionsModal({ item, onConfirm, onClose }: ItemOptionsModalP
 
   const handleConfirm = () => {
     const selectionValues = Object.values(selections);
-    const suffix = selectionValues.length > 0 ? ` (${selectionValues.join(', ')})` : '';
+    const suffixEn =
+      selectionValues.length > 0 ? ` (${selectionValues.join(", ")})` : "";
+    const suffixZh =
+      selectionValues.length > 0
+        ? ` (${selectionValues.map(translateOption).join(", ")})`
+        : "";
 
     let price = item.price ?? 0;
     if (item.options) {
-      const selectedOption = item.options.find((opt) => opt.name === selections['main']);
+      const selectedOption = item.options.find(
+        (opt) => opt.name === selections["main"],
+      );
       if (selectedOption?.price !== undefined) {
         price = selectedOption.price;
       }
     }
 
-    onConfirm({ 
+    onConfirm({
       name: {
-        en: `${item.name.en}${suffix}`,
-        zh: `${item.name.zh}${suffix}`
-      }, 
-      price 
+        en: `${item.name.en}${suffixEn}`,
+        zh: `${item.name.zh}${suffixZh}`,
+      },
+      price,
     });
   };
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4"
     >
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        transition={{ type: 'spring', duration: 0.4, bounce: 0.3 }}
+        transition={{ type: "spring", duration: 0.4, bounce: 0.3 }}
         className="pos-panel flex max-h-[90vh] w-full max-w-2xl flex-col shadow-2xl overflow-hidden"
       >
         <div className="flex items-center justify-between border-b border-border/60 px-6 py-4">
@@ -77,7 +112,12 @@ export function ItemOptionsModal({ item, onConfirm, onClose }: ItemOptionsModalP
               {item.name.en}
             </span>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="rounded-full"
+          >
             <X className="h-5 w-5" />
           </Button>
         </div>
@@ -93,12 +133,12 @@ export function ItemOptionsModal({ item, onConfirm, onClose }: ItemOptionsModalP
                   {item.options.map((opt) => (
                     <button
                       key={opt.name}
-                      onClick={() => handleSelectionChange('main', opt.name)}
+                      onClick={() => handleSelectionChange("main", opt.name)}
                       className={cn(
-                        'flex h-20 flex-col items-center justify-center gap-1 rounded-xl border transition-all',
-                        selections['main'] === opt.name
-                          ? 'pos-btn-tactile-primary'
-                          : 'pos-btn-tactile hover:bg-muted/50'
+                        "flex h-20 flex-col items-center justify-center gap-1 rounded-xl border transition-all",
+                        selections["main"] === opt.name
+                          ? "pos-btn-tactile-primary"
+                          : "pos-btn-tactile hover:bg-muted/50",
                       )}
                     >
                       <span className="text-sm font-semibold">{opt.name}</span>
@@ -114,14 +154,24 @@ export function ItemOptionsModal({ item, onConfirm, onClose }: ItemOptionsModalP
             )}
 
             {item.contents?.map((content, index) => {
-              if (content.type === 'item') {
+              if (content.type === "item") {
                 return (
-                  <div key={index} className="rounded-lg bg-primary/5 p-3 text-sm text-muted-foreground border border-border/40">
-                    Includes: <span className="text-foreground font-medium">{content.item}</span>
+                  <div
+                    key={index}
+                    className="rounded-lg bg-primary/5 p-3 text-sm text-muted-foreground border border-border/40"
+                  >
+                    Includes:{" "}
+                    <span className="text-foreground font-medium">
+                      {content.item}
+                    </span>
                   </div>
                 );
               }
-              if (content.type === 'choice' && content.description && content.options) {
+              if (
+                content.type === "choice" &&
+                content.description &&
+                content.options
+              ) {
                 return (
                   <div key={index} className="space-y-3">
                     <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
@@ -131,12 +181,14 @@ export function ItemOptionsModal({ item, onConfirm, onClose }: ItemOptionsModalP
                       {content.options.map((opt) => (
                         <button
                           key={opt}
-                          onClick={() => handleSelectionChange(content.description!, opt)}
+                          onClick={() =>
+                            handleSelectionChange(content.description!, opt)
+                          }
                           className={cn(
-                            'flex h-16 items-center justify-center px-3 rounded-xl border transition-all text-sm font-medium',
+                            "flex h-16 items-center justify-center px-3 rounded-xl border transition-all text-sm font-medium",
                             selections[content.description!] === opt
-                              ? 'pos-btn-tactile-primary'
-                              : 'pos-btn-tactile hover:bg-muted/50'
+                              ? "pos-btn-tactile-primary"
+                              : "pos-btn-tactile hover:bg-muted/50",
                           )}
                         >
                           {opt}
@@ -152,10 +204,18 @@ export function ItemOptionsModal({ item, onConfirm, onClose }: ItemOptionsModalP
         </ScrollArea>
 
         <div className="flex gap-3 border-t border-border/60 bg-muted/20 p-6">
-          <Button variant="outline" className="flex-1 h-12 text-base" onClick={onClose}>
+          <Button
+            variant="outline"
+            className="flex-1 h-12 text-base"
+            onClick={onClose}
+          >
             Cancel
           </Button>
-          <Button className="flex-1 h-12 text-base font-bold shadow-lg shadow-primary/20" variant="default" onClick={handleConfirm}>
+          <Button
+            className="flex-1 h-12 text-base font-bold shadow-lg shadow-primary/20"
+            variant="default"
+            onClick={handleConfirm}
+          >
             Confirm & Add
           </Button>
         </div>
