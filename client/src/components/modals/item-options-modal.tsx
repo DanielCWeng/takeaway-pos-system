@@ -24,7 +24,7 @@ const OPTION_TRANSLATIONS: Record<string, string> = {
   Half: "半",
   Whole: "全",
   Chips: "条",
-  "Fried Rice": "炒饭",
+  "Egg Fried Rice": "炒饭",
   "Boiled Rice": "白饭",
 };
 

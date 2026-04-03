@@ -143,7 +143,7 @@
     "id": "2a",
     "name": {
       "en": "Fortune Kitchen's Munchy Box",
-      "zh": "富厨餐盒"
+      "zh": "富厨"
     },
     "price": 14,
     "primaryCategory": "Special",
@@ -2989,7 +2989,7 @@
     "id": "S1",
     "name": {
       "en": "Sweet & Sour Chicken Balls (5) Snack Box",
-      "zh": "甜酸鸡球(5个)餐盒"
+      "zh": "甜酸鸡球(5个)"
     },
     "price": 6.5,
     "primaryCategory": "Chicken",
@@ -3010,7 +3010,7 @@
     "id": "S2",
     "name": {
       "en": "Sweet & Sour Pork Balls (5) Snack Box",
-      "zh": "甜酸猪球(5个)餐盒"
+      "zh": "甜酸猪球(5个)"
     },
     "price": 6.5,
     "primaryCategory": "Pork",
@@ -3031,7 +3031,7 @@
     "id": "S3",
     "name": {
       "en": "Chicken Curry Snack Box",
-      "zh": "咖喱鸡餐盒"
+      "zh": "咖喱鸡"
     },
     "price": 6.5,
     "primaryCategory": "Chicken",
@@ -3052,7 +3052,7 @@
     "id": "S4",
     "name": {
       "en": "Beef Curry Snack Box",
-      "zh": "咖喱牛餐盒"
+      "zh": "咖喱牛"
     },
     "price": 6.5,
     "primaryCategory": "Beef",
@@ -3073,7 +3073,7 @@
     "id": "S5",
     "name": {
       "en": "Char Sui Curry Snack Box",
-      "zh": "咖喱叉烧餐盒"
+      "zh": "咖喱叉烧"
     },
     "price": 6.5,
     "primaryCategory": "Pork",
@@ -3094,7 +3094,7 @@
     "id": "S6",
     "name": {
       "en": "Chicken Mushroom Snack Box",
-      "zh": "蘑菇鸡餐盒"
+      "zh": "蘑菇鸡"
     },
     "price": 6.5,
     "primaryCategory": "Chicken",
@@ -3115,7 +3115,7 @@
     "id": "S7",
     "name": {
       "en": "Beef Mushroom Snack Box",
-      "zh": "蘑菇牛餐盒"
+      "zh": "蘑菇牛"
     },
     "price": 6.5,
     "primaryCategory": "Beef",
@@ -3136,7 +3136,7 @@
     "id": "S8",
     "name": {
       "en": "Char Sui Mushroom Snack Box",
-      "zh": "蘑菇叉烧餐盒"
+      "zh": "蘑菇叉烧"
     },
     "price": 6.5,
     "primaryCategory": "Pork",
@@ -3157,7 +3157,7 @@
     "id": "S9",
     "name": {
       "en": "Chicken Black Bean Sauce Snack Box",
-      "zh": "豉汁鸡餐盒"
+      "zh": "豉汁鸡"
     },
     "price": 6.5,
     "primaryCategory": "Chicken",
@@ -3178,7 +3178,7 @@
     "id": "S10",
     "name": {
       "en": "Beef Black Bean Sauce Snack Box",
-      "zh": "豉汁牛餐盒"
+      "zh": "豉汁牛"
     },
     "price": 6.5,
     "primaryCategory": "Beef",
@@ -3199,7 +3199,7 @@
     "id": "S11",
     "name": {
       "en": "Char Sui Black Bean Sauce Snack Box",
-      "zh": "豉汁叉烧餐盒"
+      "zh": "豉汁叉烧"
     },
     "price": 6.5,
     "primaryCategory": "Pork",
@@ -3220,7 +3220,7 @@
     "id": "S12",
     "name": {
       "en": "Sweet & Sour Chicken Hong Kong Style Snack Box",
-      "zh": "港式咕咾鸡餐盒"
+      "zh": "港式咕咾鸡"
     },
     "price": 6.5,
     "primaryCategory": "Chicken",
@@ -3241,7 +3241,7 @@
     "id": "S13",
     "name": {
       "en": "Sweet & Sour Pork Hong Kong Style Snack Box",
-      "zh": "港式咕咾肉餐盒"
+      "zh": "港式咕咾肉"
     },
     "price": 6.5,
     "primaryCategory": "Pork",
@@ -3262,7 +3262,7 @@
     "id": "S14",
     "name": {
       "en": "Shredded Beef in Chilli Sauce Snack Box",
-      "zh": "辣汁牛丝餐盒"
+      "zh": "辣汁牛丝"
     },
     "price": 6.5,
     "primaryCategory": "Beef",
@@ -3283,7 +3283,7 @@
     "id": "S15",
     "name": {
       "en": "Shredded Chicken in Chilli Sauce Snack Box",
-      "zh": "辣汁鸡丝餐盒"
+      "zh": "辣汁鸡丝"
     },
     "price": 6.5,
     "primaryCategory": "Chicken",
