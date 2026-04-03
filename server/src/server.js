@@ -67,13 +67,29 @@ app.use((req, _res, next) => {
   next();
 });
 
-// Log every incoming request at info level
-app.use((req, _res, next) => {
+// Log every incoming request and its duration upon completion
+app.use((req, res, next) => {
+  const start = process.hrtime.bigint();
+
   logger.info('Incoming request', {
     requestId: req.requestId,
     method: req.method,
     path: req.path,
   });
+
+  res.on('finish', () => {
+    const end = process.hrtime.bigint();
+    const durationMs = Number(end - start) / 1_000_000;
+
+    logger.info('Request completed', {
+      requestId: req.requestId,
+      method: req.method,
+      path: req.path,
+      statusCode: res.statusCode,
+      durationMs: parseFloat(durationMs.toFixed(3)),
+    });
+  });
+
   next();
 });
 
