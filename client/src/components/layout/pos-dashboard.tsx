@@ -128,12 +128,14 @@ export function PosDashboard() {
   } = useOrder();
   const { activeModal, openModal, closeModal } = useUI();
   const { addressOptions, selectAddress, clearCall } = useCallHandler();
-  
+
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [isMenuLoading, setIsMenuLoading] = useState(true);
   const [selectedOrderIndex, setSelectedOrderIndex] = useState<number | null>(
     null,
   );
+  const selectedItem =
+    selectedOrderIndex !== null ? order.items[selectedOrderIndex] : undefined;
 
   // Lazy-load menu data to keep the entry bundle small and show loader long enough to avoid flicker.
   const MIN_LOADER_MS = 1500;
@@ -165,6 +167,13 @@ export function PosDashboard() {
     };
   }, []);
 
+  useEffect(() => {
+    if (selectedOrderIndex === null) return;
+    if (selectedOrderIndex < 0 || selectedOrderIndex >= order.items.length) {
+      setSelectedOrderIndex(null);
+    }
+  }, [order.items.length, selectedOrderIndex]);
+
   // Modal States
   const [configuringItem, setConfiguringItem] = useState<MenuItem | null>(null);
   const [modifyingItem, setModifyingItem] = useState<{
@@ -185,10 +194,7 @@ export function PosDashboard() {
   const generateId = () => Math.random().toString(36).substring(2, 11);
 
   const handleAddItem = useCallback((item: MenuItem) => {
-    let parentId =
-      isIncMode && selectedOrderIndex !== null
-        ? order.items[selectedOrderIndex].uniqueId
-        : undefined;
+    let parentId = isIncMode ? selectedItem?.uniqueId : undefined;
 
     // Nesting Prevention: Prevent Set Meal in Happy Meal and vice versa
     const isAddingSet = !!item.contents?.length;
@@ -260,7 +266,7 @@ export function PosDashboard() {
         },
       );
     }
-  }, [isIncMode, selectedOrderIndex, order.items, addItem]);
+  }, [isIncMode, selectedItem, order.items, addItem]);
 
   const handleSetMealChoiceConfirm = (selections: string[]) => {
     if (!pendingSetMeal) return;
@@ -293,32 +299,28 @@ export function PosDashboard() {
     name: string | { en: string; zh: string };
     price: number;
   }) => {
+    const parentId = isIncMode ? selectedItem?.uniqueId : undefined;
     addItem(
       {
         id: configuringItem?.id || "CUSTOM",
         ...finalized,
       },
       {
-        parentId:
-          isIncMode && selectedOrderIndex !== null
-            ? order.items[selectedOrderIndex].uniqueId
-            : undefined,
-        isFoc: !!(isIncMode && selectedOrderIndex !== null
-          ? order.items[selectedOrderIndex].uniqueId
-          : undefined),
+        parentId,
+        isFoc: !!parentId,
       },
     );
     setConfiguringItem(null);
-  }, [addItem, configuringItem?.id, isIncMode, selectedOrderIndex, order.items]);
+  }, [addItem, configuringItem?.id, isIncMode, selectedItem]);
 
   const handleModifyItem = useCallback(() => {
-    if (selectedOrderIndex !== null) {
+    if (selectedOrderIndex !== null && selectedItem) {
       setModifyingItem({
-        item: order.items[selectedOrderIndex],
+        item: selectedItem,
         index: selectedOrderIndex,
       });
     }
-  }, [selectedOrderIndex, order.items]);
+  }, [selectedOrderIndex, selectedItem]);
 
   const handleUpdateItem = useCallback((updated: OrderItem) => {
     if (modifyingItem) {
@@ -334,20 +336,16 @@ export function PosDashboard() {
   }, [selectedOrderIndex, removeItem]);
 
   const handleDuplicateItem = useCallback(() => {
-    if (selectedOrderIndex !== null) duplicateItem(selectedOrderIndex);
-  }, [selectedOrderIndex, duplicateItem]);
+    if (selectedOrderIndex !== null && selectedItem) duplicateItem(selectedOrderIndex);
+  }, [selectedOrderIndex, selectedItem, duplicateItem]);
 
   const handleFocItem = useCallback(() => {
-    if (selectedOrderIndex !== null) setFocItem(selectedOrderIndex);
-  }, [selectedOrderIndex, setFocItem]);
+    if (selectedOrderIndex !== null && selectedItem) setFocItem(selectedOrderIndex);
+  }, [selectedOrderIndex, selectedItem, setFocItem]);
 
-  const isHappyMealSelected =
-    selectedOrderIndex !== null &&
-    order.items[selectedOrderIndex]?.id?.startsWith("HM");
+  const isHappyMealSelected = selectedItem?.id?.startsWith("HM") ?? false;
 
-  const isSetMealItemSelected =
-    selectedOrderIndex !== null &&
-    order.items[selectedOrderIndex]?.id?.startsWith("SET");
+  const isSetMealItemSelected = selectedItem?.id?.startsWith("SET") ?? false;
 
   const handleToggleZeroPriceMode = useCallback(() => setIsZeroPriceMode((p) => !p), [setIsZeroPriceMode]);
   const handleToggleSwapMode = useCallback(() => {
