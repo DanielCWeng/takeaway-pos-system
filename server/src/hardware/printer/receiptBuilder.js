@@ -239,7 +239,9 @@ export function buildReceiptBuffer(archivedOrder, deps) {
     hour12: true,
   });
 
-  const subtotal = Number.isFinite(order?.subtotal) ? Number(order.subtotal) : computeSubtotal(items);
+  const subtotal = Number.isFinite(order?.subtotal)
+    ? Number(order.subtotal)
+    : computeSubtotal(items);
   const total = Number.isFinite(order?.total) ? Number(order.total) : subtotal;
   const deliveryCharge = computeDeliveryCharge(order, subtotal, total);
   const itemCount = items.reduce((sum, item) => sum + toQuantity(item?.quantity), 0);
@@ -349,7 +351,8 @@ export function buildReceiptBuffer(archivedOrder, deps) {
     receiptParts.push(Buffer.from(`${toText(info.address)}\n`));
   }
   if (toText(info?.town)) receiptParts.push(Buffer.from(`${toText(info.town)}\n`));
-  if (toText(info?.postcode)) receiptParts.push(Buffer.from(`${toText(info.postcode).toUpperCase()}\n`));
+  if (toText(info?.postcode))
+    receiptParts.push(Buffer.from(`${toText(info.postcode).toUpperCase()}\n`));
   if (toText(info?.phone)) receiptParts.push(Buffer.from(`${toText(info.phone)}\n`));
 
   if (toText(info?.deliveryInstructions)) {

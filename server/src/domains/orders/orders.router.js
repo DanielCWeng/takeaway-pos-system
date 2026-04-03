@@ -43,17 +43,19 @@ const printPaymentMethodSchema = z
 
 const modifierSchema = z.union([
   z.string().min(1),
-  z.object({
-    command: z.string().optional(),
-    ingredient: z
-      .object({
-        name: z.string().optional(),
-        zh: z.string().optional(),
+  z
+    .object({
+      command: z.string().optional(),
+      ingredient: z
+        .object({
+          name: z.string().optional(),
+          zh: z.string().optional(),
+        })
+        .optional(),
+      name: z.string().optional(),
+      zh: z.string().optional(),
     })
-      .optional(),
-    name: z.string().optional(),
-    zh: z.string().optional(),
-  }).passthrough(),
+    .passthrough(),
 ]);
 
 const customerInfoSchema = z
@@ -86,51 +88,55 @@ const paymentSchema = z.object({
   amount: z.number().nonnegative(),
 });
 
-const printableOrderSchema = z.object({
-  orderType: printOrderTypeSchema,
-  items: z.array(
-    z.object({
-      id: z.string().optional(),
-      name: z.string().min(1),
-      zhName: z.string().optional(),
-      price: z.number().nonnegative(),
-      finalPrice: z.number().nonnegative().optional(),
-      quantity: z.number().int().positive(),
-      hidePrice: z.boolean().optional(),
-      hideQuantity: z.boolean().optional(),
-      isSwapped: z.boolean().optional(),
-      modifiers: z.array(modifierSchema).optional(),
-    }).passthrough(),
-  ),
-  customerInfo: z
-    .object({
-      name: z.string().optional(),
-      phone: z.string().optional(),
-      address: z.string().optional(),
-      houseNumber: z.string().optional(),
-      street: z.string().optional(),
-      town: z.string().optional(),
-      postcode: z.string().optional(),
-      distance: z.number().optional(),
-      mapRef: z.string().optional(),
-      deliveryInstructions: z.string().optional(),
-      deliveryTime: z.string().optional(),
-    })
-    .passthrough()
-    .optional(),
-  payment: paymentSchema.optional(),
-  paymentDetails: z
-    .object({
-      amountPaid: z.number().nonnegative().optional(),
-      changeDue: z.number().optional(),
-    })
-    .optional(),
-  subtotal: z.number().nonnegative().optional(),
-  deliveryCharge: z.number().nonnegative().optional(),
-  discount: z.number().nonnegative().optional(),
-  total: z.number().nonnegative(),
-  notes: z.string().optional(),
-}).passthrough();
+const printableOrderSchema = z
+  .object({
+    orderType: printOrderTypeSchema,
+    items: z.array(
+      z
+        .object({
+          id: z.string().optional(),
+          name: z.string().min(1),
+          zhName: z.string().optional(),
+          price: z.number().nonnegative(),
+          finalPrice: z.number().nonnegative().optional(),
+          quantity: z.number().int().positive(),
+          hidePrice: z.boolean().optional(),
+          hideQuantity: z.boolean().optional(),
+          isSwapped: z.boolean().optional(),
+          modifiers: z.array(modifierSchema).optional(),
+        })
+        .passthrough(),
+    ),
+    customerInfo: z
+      .object({
+        name: z.string().optional(),
+        phone: z.string().optional(),
+        address: z.string().optional(),
+        houseNumber: z.string().optional(),
+        street: z.string().optional(),
+        town: z.string().optional(),
+        postcode: z.string().optional(),
+        distance: z.number().optional(),
+        mapRef: z.string().optional(),
+        deliveryInstructions: z.string().optional(),
+        deliveryTime: z.string().optional(),
+      })
+      .passthrough()
+      .optional(),
+    payment: paymentSchema.optional(),
+    paymentDetails: z
+      .object({
+        amountPaid: z.number().nonnegative().optional(),
+        changeDue: z.number().optional(),
+      })
+      .optional(),
+    subtotal: z.number().nonnegative().optional(),
+    deliveryCharge: z.number().nonnegative().optional(),
+    discount: z.number().nonnegative().optional(),
+    total: z.number().nonnegative(),
+    notes: z.string().optional(),
+  })
+  .passthrough();
 
 const printOrderRequestSchema = z.object({
   order: printableOrderSchema,

@@ -16,8 +16,8 @@ describe('Postcodes Module (Address Granularity)', () => {
         ...actual,
         config: {
           ...actual.config,
-          db: { ...actual.config.db, postcodesPath: './data/test_postcodes.db' }
-        }
+          db: { ...actual.config.db, postcodesPath: './data/test_postcodes.db' },
+        },
       };
     });
   });
@@ -25,7 +25,11 @@ describe('Postcodes Module (Address Granularity)', () => {
   afterEach(() => {
     postcodes.closePostcodeDb();
     if (fs.existsSync(testDbPath)) {
-      try { fs.unlinkSync(testDbPath); } catch (err) { /* ignore */ }
+      try {
+        fs.unlinkSync(testDbPath);
+      } catch (err) {
+        /* ignore */
+      }
     }
     vi.resetAllMocks();
   });
@@ -35,7 +39,7 @@ describe('Postcodes Module (Address Granularity)', () => {
     const bestMatch = { street: 'High St', latitude: 52.9, longitude: -1.2 };
     const fullList = [
       { line1: '1 High St', town: 'Beeston', latitude: 52.9, longitude: -1.2 },
-      { line1: '2 High St', town: 'Beeston', latitude: 52.9, longitude: -1.2 }
+      { line1: '2 High St', town: 'Beeston', latitude: 52.9, longitude: -1.2 },
     ];
 
     postcodes.saveAddresses(postcode, bestMatch, fullList);
@@ -59,9 +63,9 @@ describe('Postcodes Module (Address Granularity)', () => {
         data      TEXT
       )
     `);
-    db.prepare('INSERT INTO addresses (postcode, street, latitude, longitude) VALUES (?, ?, ?, ?)').run(
-      'DE1 1AA', 'Derby St', 52.9, -1.4
-    );
+    db.prepare(
+      'INSERT INTO addresses (postcode, street, latitude, longitude) VALUES (?, ?, ?, ?)',
+    ).run('DE1 1AA', 'Derby St', 52.9, -1.4);
     db.close();
 
     const results = postcodes.findAddressesLocally('DE1 1AA');

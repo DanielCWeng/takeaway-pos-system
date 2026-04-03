@@ -22,7 +22,7 @@ const envSchema = z.object({
     .regex(/^\d+$/, 'PORT must be a numeric string')
     .transform(Number)
     .pipe(z.number().int().min(1).max(65535)),
- 
+
   CORS_ORIGIN: z.string().url('CORS_ORIGIN must be a valid URL').default('http://localhost:5173'),
 
   DB_PATH: z.string().min(1, 'DB_PATH must be a non-empty path'),

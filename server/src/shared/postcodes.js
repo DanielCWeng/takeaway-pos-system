@@ -28,7 +28,6 @@ let _db = null;
 /** @type {import('better-sqlite3').Statement | null} */
 let _stmtIsValid = null;
 
-
 /**
  * Return the open postcodes database connection.
  * Opens it on demand if not already open.
@@ -67,7 +66,6 @@ function getPostcodeDb() {
 function getIsValidStmt() {
   return (_stmtIsValid ??= getPostcodeDb().prepare('SELECT 1 FROM addresses WHERE postcode = ?'));
 }
-
 
 // ---------------------------------------------------------------------------
 // UK postcode regex (uppercase, space already inserted)
@@ -132,10 +130,16 @@ export function findAddressesLocally(postcode) {
       if (Array.isArray(parsedData)) {
         return parsedData;
       }
-      logger.warn('findAddressesLocally: Stored data is not an array for postcode', { postcode: norm, data: row.data });
+      logger.warn('findAddressesLocally: Stored data is not an array for postcode', {
+        postcode: norm,
+        data: row.data,
+      });
       // Fall through to legacy if JSON is not an array
     } catch (e) {
-      logger.warn('findAddressesLocally: Failed to parse JSON data for postcode', { postcode: norm, error: e.message });
+      logger.warn('findAddressesLocally: Failed to parse JSON data for postcode', {
+        postcode: norm,
+        error: e.message,
+      });
       // Corrupt JSON? Fall back to basic street-only row
     }
   }
@@ -163,7 +167,11 @@ export function saveAddresses(postcode, bestMatch, fullList = []) {
   const db = getPostcodeDb();
 
   // Hardening: Ensure we have the minimum required fields before a write
-  if (!bestMatch || typeof bestMatch.latitude !== 'number' || typeof bestMatch.longitude !== 'number') {
+  if (
+    !bestMatch ||
+    typeof bestMatch.latitude !== 'number' ||
+    typeof bestMatch.longitude !== 'number'
+  ) {
     logger.warn('Failed to save postcode data: missing or invalid coordinates', {
       postcode: norm,
       bestMatch,

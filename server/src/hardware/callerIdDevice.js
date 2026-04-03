@@ -206,9 +206,7 @@ export async function startListening(handler) {
   }
 
   if (!stopped) {
-    throw new Error(
-      'startListening() called while already listening — call stopListening() first',
-    );
+    throw new Error('startListening() called while already listening — call stopListening() first');
   }
 
   onPhoneDetected = handler;

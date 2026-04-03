@@ -46,4 +46,3 @@ apiRouter.use((_req, res) => {
 
 // Re-export the shared handler as globalErrorHandler for server.js
 export { globalErrorHandler };
-

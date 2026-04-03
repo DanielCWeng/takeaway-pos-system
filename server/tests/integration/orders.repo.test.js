@@ -105,7 +105,10 @@ describe('Orders Repository (Integration)', () => {
   describe('findByDate / deleteByDate', () => {
     it('should find orders by date string', () => {
       const date = '2026-03-27';
-      const orderId = repo.createOrder({ data: { total: 100 }, archivedAt: `${date}T10:00:00Z` }).id;
+      const orderId = repo.createOrder({
+        data: { total: 100 },
+        archivedAt: `${date}T10:00:00Z`,
+      }).id;
       repo.createOrder({ data: { total: 50 }, archivedAt: `2026-03-26T10:00:00Z` });
 
       const orders = repo.findOrdersByDate(date);
