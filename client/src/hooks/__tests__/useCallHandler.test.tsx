@@ -79,6 +79,7 @@ describe("useCallHandler", () => {
           phone: "07000",
           name: "Alex",
           postcode: null,
+          town: null,
           houseNumber: null,
           street: null,
           latitude: null,
