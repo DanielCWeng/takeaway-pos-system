@@ -24,7 +24,7 @@ import { randomUUID } from 'crypto';
 import { openDb, runMigrations, closeDb } from './infrastructure/db.js';
 import { logger } from './infrastructure/logger.js';
 import { apiRouter, globalErrorHandler } from './api/router.js';
-import { createWsServer, broadcast } from './api/websocket.js';
+import { createWsServer, broadcast, closeWsServer } from './api/websocket.js';
 import { closePostcodeDb } from './shared/postcodes.js';
 import {
   startListening as startCallerIdListening,
@@ -129,11 +129,20 @@ const server = app.listen(config.port, () => {
 
 function shutdown(signal) {
   logger.info(`Received ${signal} — shutting down gracefully`);
+
+  // 1. Run explicit cleanup immediately
+  try { stopCallerIdListening(); } catch(e) {}
+  try { closePostcodeDb(); } catch(e) {}
+  try { closeWsServer(); } catch(e) {}
+
+  // 2. Force close any idle keep-alive connections on Node 18+
+  server.closeAllConnections?.();
+  server.closeIdleConnections?.();
+
+  // 3. Gracefully wait for active HTTP requests to complete
   server.close(() => {
     logger.info('HTTP server closed');
-    stopCallerIdListening();
-    closePostcodeDb();
-    closeDb();
+    try { closeDb(); } catch(e) {}
     process.exit(0);
   });
 
