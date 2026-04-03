@@ -15,6 +15,7 @@ import { Router } from 'express';
 import { ordersRouter } from '../domains/orders/orders.router.js';
 import { customersRouter } from '../domains/customers/customers.router.js';
 import { addressesRouter } from '../domains/addresses/addresses.router.js';
+import { telemetryRouter } from '../domains/telemetry/telemetry.router.js';
 import { errorHandler as globalErrorHandler } from '../shared/middleware/errorHandler.js';
 
 export const apiRouter = Router();
@@ -26,9 +27,10 @@ export const apiRouter = Router();
 apiRouter.use('/orders', ordersRouter);
 apiRouter.use('/customers', customersRouter);
 apiRouter.use('/addresses', addressesRouter);
+apiRouter.use('/telemetry', telemetryRouter);
 
 // ---------------------------------------------------------------------------
-// 404 handler — unknown API route
+// 404 handler - unknown API route
 // Note: Express skips this for next(err) calls (error middleware requires 4 params)
 // ---------------------------------------------------------------------------
 
@@ -44,3 +46,4 @@ apiRouter.use((_req, res) => {
 
 // Re-export the shared handler as globalErrorHandler for server.js
 export { globalErrorHandler };
+
