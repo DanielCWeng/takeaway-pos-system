@@ -137,7 +137,7 @@ function textToBitmap(canvasApi, text, opts = {}) {
   const width = 384; // 58mm thermal printer = 384 dots
   console.log(`[BITMAP] textToBitmap: text="${text}" fontSize=${fontSize} align=${align} bold=${bold} width=${width}`);
 
-  const canvas = canvasApi.createCanvas(width, fontSize * 2);
+  const canvas = canvasApi.createCanvas(width, fontSize * 10);
   const ctx = canvas.getContext('2d');
 
   ctx.fillStyle = 'white';
@@ -149,14 +149,30 @@ function textToBitmap(canvasApi, text, opts = {}) {
   ctx.font = fontStr;
   ctx.textBaseline = 'top';
 
-  let xPos = 0;
-  const textWidth = ctx.measureText(text).width;
-  if (align === 'center') xPos = (canvas.width - textWidth) / 2;
-  if (align === 'right') xPos = canvas.width - textWidth;
+  const lines = [];
+  let currentLine = '';
+  // Greedy wrap character by character (standard for Chinese text, works fine for mixed)
+  for (const char of text) {
+    const testLine = currentLine + char;
+    if (ctx.measureText(testLine).width > width && currentLine.length > 0) {
+      lines.push(currentLine);
+      currentLine = char; // start new line
+    } else {
+      currentLine = testLine;
+    }
+  }
+  if (currentLine) lines.push(currentLine);
 
-  console.log(`[BITMAP] font="${fontStr}" measuredWidth=${textWidth.toFixed(1)}px xPos=${xPos.toFixed(1)}`);
+  console.log(`[BITMAP] font="${fontStr}" wrapping text into ${lines.length} lines`);
 
-  ctx.fillText(text, Math.max(0, xPos), 0);
+  const lineHeight = fontSize * 1.2;
+  lines.forEach((line, i) => {
+    let xPos = 0;
+    const textWidth = ctx.measureText(line).width;
+    if (align === 'center') xPos = (width - textWidth) / 2;
+    if (align === 'right') xPos = width - textWidth;
+    ctx.fillText(line, Math.max(0, xPos), i * lineHeight);
+  });
 
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   let maxY = 0;
