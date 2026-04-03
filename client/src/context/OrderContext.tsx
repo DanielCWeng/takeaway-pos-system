@@ -115,6 +115,8 @@ type PrintQueueItem = {
 };
 
 const PRINT_QUEUE_STORAGE_KEY = "pos.print-queue.v1";
+const ORDER_DRAFT_STORAGE_KEY = "pos.order-draft.v1";
+const ORDER_DRAFT_VERSION = 1;
 
 function generateClientOrderId() {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
@@ -145,6 +147,145 @@ function loadPrintQueue(): PrintQueueItem[] {
   } catch (error) {
     console.error("Failed to parse persisted print queue", error);
     return [];
+  }
+}
+
+function normalizeOrderItem(raw: unknown): OrderItem | null {
+  if (!raw || typeof raw !== "object") return null;
+  const item = raw as Partial<OrderItem>;
+
+  const id = typeof item.id === "string" && item.id ? item.id : "CUSTOM";
+  const name = typeof item.name === "string" && item.name ? item.name : "Item";
+  const uniqueId =
+    typeof item.uniqueId === "string" && item.uniqueId
+      ? item.uniqueId
+      : generateUniqueId();
+  const price = Number.isFinite(item.price) ? Number(item.price) : 0;
+  const quantity =
+    Number.isFinite(item.quantity) && Number(item.quantity) > 0
+      ? Math.floor(Number(item.quantity))
+      : 1;
+
+  return {
+    uniqueId,
+    id,
+    name,
+    zhName: typeof item.zhName === "string" ? item.zhName : undefined,
+    price,
+    finalPrice:
+      Number.isFinite(item.finalPrice) && Number(item.finalPrice) >= 0
+        ? Number(item.finalPrice)
+        : undefined,
+    quantity,
+    hidePrice: item.hidePrice === true,
+    hideQuantity: item.hideQuantity === true,
+    isSwapped: item.isSwapped === true,
+    modifiers: Array.isArray(item.modifiers) ? item.modifiers : undefined,
+    parentId: typeof item.parentId === "string" ? item.parentId : undefined,
+    isFoc: item.isFoc === true,
+    isIncluded: item.isIncluded === true,
+  };
+}
+
+function loadOrderDraft():
+  | { orders: OrderState[]; activeOrderIndex: number }
+  | null {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const raw = window.localStorage.getItem(ORDER_DRAFT_STORAGE_KEY);
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw) as {
+      version?: number;
+      activeOrderIndex?: unknown;
+      orders?: unknown;
+    };
+
+    if (parsed?.version !== ORDER_DRAFT_VERSION) return null;
+    if (!Array.isArray(parsed.orders) || parsed.orders.length === 0) return null;
+
+    const normalizedOrders = parsed.orders
+      .map<OrderState | null>((rawOrder, index) => {
+        if (!rawOrder || typeof rawOrder !== "object") return null;
+        const order = rawOrder as Partial<OrderState>;
+
+        const items = Array.isArray(order.items)
+          ? order.items
+              .map((item) => normalizeOrderItem(item))
+              .filter((item): item is OrderItem => item !== null)
+          : [];
+
+        const orderType = order.orderType === "delivery" ? "delivery" : "collection";
+        const customerInfo =
+          order.customerInfo && typeof order.customerInfo === "object"
+            ? (order.customerInfo as CustomerInfo)
+            : undefined;
+        const subtotal = items.reduce(
+          (sum, item) =>
+            sum +
+            (Number.isFinite(item.finalPrice) ? Number(item.finalPrice) : item.price) *
+              item.quantity,
+          0,
+        );
+        const deliveryCharge =
+          orderType === "delivery" ? calculateDeliveryCharge(customerInfo?.distance) : 0;
+        const fallbackTotal = subtotal + deliveryCharge;
+
+        const normalizedOrder: OrderState = {
+          id:
+            Number.isFinite(order.id) && Number(order.id) > 0
+              ? Math.floor(Number(order.id))
+              : index + 1,
+          clientOrderId:
+            typeof order.clientOrderId === "string" && order.clientOrderId
+              ? order.clientOrderId
+              : generateClientOrderId(),
+          items,
+          orderType,
+          customerInfo,
+          payment:
+            order.payment &&
+            typeof order.payment === "object" &&
+            (order.payment.method === "cash" || order.payment.method === "card")
+              ? {
+                  method: order.payment.method,
+                  amount: Number.isFinite(order.payment.amount)
+                    ? Number(order.payment.amount)
+                    : 0,
+                }
+              : { method: "cash", amount: 0 },
+          subtotal: Number.isFinite(order.subtotal) ? Number(order.subtotal) : subtotal,
+          deliveryCharge:
+            Number.isFinite(order.deliveryCharge) && Number(order.deliveryCharge) >= 0
+              ? Number(order.deliveryCharge)
+              : deliveryCharge,
+          total:
+            Number.isFinite(order.total) && Number(order.total) >= 0
+              ? Number(order.total)
+              : fallbackTotal,
+          notes: typeof order.notes === "string" ? order.notes : undefined,
+          hasUnreadChanges: order.hasUnreadChanges === true,
+          lastActivityTime: Number.isFinite(order.lastActivityTime)
+            ? Number(order.lastActivityTime)
+            : Date.now(),
+        };
+        return normalizedOrder;
+      })
+      .filter((order): order is OrderState => order !== null);
+
+    if (normalizedOrders.length === 0) return null;
+
+    const requestedIndex = Number(parsed.activeOrderIndex);
+    const activeOrderIndex =
+      Number.isInteger(requestedIndex) && requestedIndex >= 0
+        ? Math.min(requestedIndex, normalizedOrders.length - 1)
+        : 0;
+
+    return { orders: normalizedOrders, activeOrderIndex };
+  } catch (error) {
+    console.error("Failed to parse persisted order draft", error);
+    return null;
   }
 }
 
@@ -195,8 +336,15 @@ function deriveTotals(order: OrderState) {
 
 export function OrderProvider({ children }: { children: ReactNode }) {
   const { isConnected } = useCaller();
-  const [orders, setOrders] = useState<OrderState[]>([generateInitialOrder(1)]);
-  const [activeOrderIndex, setActiveOrderIndexState] = useState(0);
+  const initialDraftRef = useRef(loadOrderDraft());
+  const [orders, setOrders] = useState<OrderState[]>(() => {
+    const draft = initialDraftRef.current;
+    return draft?.orders ?? [generateInitialOrder(1)];
+  });
+  const [activeOrderIndex, setActiveOrderIndexState] = useState(() => {
+    const draft = initialDraftRef.current;
+    return draft?.activeOrderIndex ?? 0;
+  });
 
   const [isZeroPriceMode, setIsZeroPriceMode] = useState(false);
   const [isSwapMode, setIsSwapMode] = useState(false);
@@ -253,6 +401,22 @@ export function OrderProvider({ children }: { children: ReactNode }) {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(PRINT_QUEUE_STORAGE_KEY, JSON.stringify(printQueue));
   }, [printQueue]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(
+        ORDER_DRAFT_STORAGE_KEY,
+        JSON.stringify({
+          version: ORDER_DRAFT_VERSION,
+          activeOrderIndex: safeIndex,
+          orders,
+        }),
+      );
+    } catch (error) {
+      console.error("Failed to persist order draft", error);
+    }
+  }, [orders, safeIndex]);
 
   const createNewOrder = useCallback(() => {
     setOrders((prev) => {
