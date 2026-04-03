@@ -184,7 +184,7 @@ export function DeliveryAddressModal({
                     </label>
                     <div className="flex gap-2">
                         <Input 
-                            value={formData.phone}
+                            value={formData.phone?.startsWith('UNKNOWN-') ? '' : formData.phone}
                             onChange={e => setFormData(p => ({...p, phone: e.target.value}))}
                             placeholder="07..."
                             className="h-14 text-xl font-mono font-bold bg-background/50 border-border/60 focus:border-primary/50"

@@ -12,7 +12,7 @@ export function CustomerCard({ orderType, onChangeOrderType, customerInfo }: Cus
   const empty = '\u2014';
   const infoRows = [
     { label: 'Name', value: customerInfo?.name || empty },
-    { label: 'Phone', value: customerInfo?.phone || empty },
+    { label: 'Phone', value: customerInfo?.phone?.startsWith('UNKNOWN-') ? 'Anonymous' : (customerInfo?.phone || empty) },
     { label: 'Address', value: customerInfo?.address || customerInfo?.postcode || empty },
   ];
 
