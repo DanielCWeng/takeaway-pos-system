@@ -14,6 +14,8 @@ import { LRUCache } from "lru-cache";
 import { config } from "../../config/index.js";
 import { logger } from "../../infrastructure/logger.js";
 
+const GETADDRESS_ORIGIN = "https://api.getaddress.io";
+
 // Cache up to 100 postcodes for 24 hours
 const cache = new LRUCache({
   max: 100,
@@ -28,6 +30,26 @@ const cache = new LRUCache({
  * @property {number} latitude
  * @property {number} longitude
  */
+
+/**
+ * Convert user input into a safe postcode path segment for getaddress.io.
+ * Returns an empty string when input is malformed so no outbound request is made.
+ *
+ * @param {string} postcode
+ * @returns {string}
+ */
+function normalisePostcodeSegment(postcode) {
+  if (typeof postcode !== "string") return "";
+
+  const compact = postcode.trim().toUpperCase().replace(/\s+/g, "");
+
+  // Prevent path/query injection by only allowing alphanumeric postcode chars.
+  if (!/^[A-Z0-9]{5,8}$/.test(compact)) {
+    return "";
+  }
+
+  return compact;
+}
 
 /**
  * Fetch addresses from getaddress.io.
@@ -47,9 +69,13 @@ export async function findAddressesFromApi(postcode) {
     return null;
   }
 
-  // Normalise before cache lookup and URL construction so that "ng9 8gf" and "NG9 8GF"
-  // resolve to the same cache entry and don't trigger duplicate API calls.
-  const normPostcode = postcode.trim().toUpperCase().replace(/\s+/g, "");
+  // Normalise and validate before cache lookup / URL construction so malformed
+  // user input never reaches fetch.
+  const normPostcode = normalisePostcodeSegment(postcode);
+  if (!normPostcode) {
+    logger.warn("Address lookup skipped: invalid postcode format", { postcode });
+    return null;
+  }
 
   // Check cache first
   const cached = cache.get(normPostcode);
@@ -58,8 +84,10 @@ export async function findAddressesFromApi(postcode) {
     return cached;
   }
 
-  // API key is sent as a header to avoid it appearing in server logs or URLs
-  const url = `https://api.getaddress.io/find/${normPostcode}?expand=true`;
+  // Build URL from a fixed origin and encoded path/query segments.
+  // This prevents request-forgery via crafted postcode values.
+  const url = new URL(`/find/${encodeURIComponent(normPostcode)}`, GETADDRESS_ORIGIN);
+  url.searchParams.set("expand", "true");
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 5000);

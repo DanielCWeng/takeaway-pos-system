@@ -151,4 +151,13 @@ describe("Address API Client (getaddress.io)", () => {
     expect(r2).toEqual([]);
     expect(global.fetch).toHaveBeenCalledTimes(1);
   });
+
+  it("rejects malformed postcode input before making a request", async () => {
+    global.fetch = vi.fn();
+
+    const result = await findAddressesFromApi("../../etc/passwd");
+
+    expect(result).toBeNull();
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
 });
