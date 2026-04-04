@@ -125,6 +125,7 @@ export function PosDashboard() {
     setIsZeroPriceMode,
     setIsSwapMode,
     setIsShortMode,
+    decrementItem,
   } = useOrder();
   const { activeModal, openModal, closeModal } = useUI();
   const { addressOptions, selectAddress, clearCall } = useCallHandler();
@@ -335,6 +336,10 @@ export function PosDashboard() {
     setSelectedOrderIndex(null);
   }, [selectedOrderIndex, removeItem]);
 
+  const handleDecrementSelected = useCallback(() => {
+    if (selectedOrderIndex !== null) decrementItem(selectedOrderIndex);
+  }, [selectedOrderIndex, decrementItem]);
+
   const handleDuplicateItem = useCallback(() => {
     if (selectedOrderIndex !== null && selectedItem) duplicateItem(selectedOrderIndex);
   }, [selectedOrderIndex, selectedItem, duplicateItem]);
@@ -377,6 +382,7 @@ export function PosDashboard() {
               selectedIndex={selectedOrderIndex}
               onSelectIndex={setSelectedOrderIndex}
               onRemoveSelected={handleRemoveSelected}
+              onDecrementSelected={handleDecrementSelected}
               onClearOrder={clearOrder}
               subtotal={subtotal}
               deliveryFee={deliveryCharge}

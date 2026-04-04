@@ -84,6 +84,7 @@ interface OrderContextType {
 
   addItem: (item: AddableItem, options?: AddItemOptions) => void;
   removeItem: (index: number) => void;
+  decrementItem: (index: number) => void;
   updateItem: (index: number, updater: (item: OrderItem) => OrderItem) => void;
   duplicateItem: (index: number) => void;
   setFocItem: (index: number) => void;
@@ -593,6 +594,34 @@ export function OrderProvider({ children }: { children: ReactNode }) {
     [updateOrderState],
   );
 
+  const decrementItem = useCallback(
+    (index: number) => {
+      updateOrderState((prev) => {
+        if (index < 0 || index >= prev.items.length) return {};
+        const item = prev.items[index];
+        
+        if (item.quantity <= 1) {
+          // Fallback to removeItem if quantity is 1
+          const idToRemove = item.uniqueId;
+          const nextItems = prev.items.filter((it, idx) => {
+            if (idx === index) return false;
+            if (it.parentId === idToRemove) return false;
+            return true;
+          });
+          return { items: nextItems };
+        }
+
+        const nextItems = [...prev.items];
+        nextItems[index] = {
+          ...item,
+          quantity: item.quantity - 1,
+        };
+        return { items: nextItems };
+      });
+    },
+    [updateOrderState]
+  );
+
   const setFocItem = useCallback(
     (index: number) => {
       updateOrderState((prev) => {
@@ -805,6 +834,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
 
         addItem,
         removeItem,
+        decrementItem,
         updateItem,
         duplicateItem,
         setFocItem,

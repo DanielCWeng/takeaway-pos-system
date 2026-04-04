@@ -20,6 +20,7 @@ interface LeftPanelProps {
   selectedIndex: number | null;
   onSelectIndex: (index: number) => void;
   onRemoveSelected: () => void;
+  onDecrementSelected: () => void;
   onClearOrder: () => void;
   subtotal: number;
   deliveryFee: number;
@@ -55,6 +56,7 @@ export const LeftPanel = React.memo(function LeftPanel({
   selectedIndex,
   onSelectIndex,
   onRemoveSelected,
+  onDecrementSelected,
   subtotal,
   deliveryFee,
   total,
@@ -117,6 +119,7 @@ export const LeftPanel = React.memo(function LeftPanel({
         
         <OrderControls 
           onDuplicateItem={onDuplicateItem}
+          onDecrementItem={onDecrementSelected}
           onRemoveItem={onRemoveSelected}
           onModifyItem={onModifyItem}
           onFocItem={onFocItem}

@@ -2,6 +2,7 @@ import { Button } from '../ui/button';
 
 interface OrderControlsProps {
   onDuplicateItem: () => void;
+  onDecrementItem: () => void;
   onRemoveItem: () => void;
   onModifyItem: () => void;
   onFocItem: () => void;
@@ -20,6 +21,7 @@ interface OrderControlsProps {
 
 export function OrderControls({
   onDuplicateItem,
+  onDecrementItem,
   onRemoveItem,
   onModifyItem,
   onFocItem,
@@ -48,7 +50,7 @@ export function OrderControls({
       <Button
         variant="utility"
         className="row-span-2 h-full text-xl"
-        onClick={onRemoveItem}
+        onClick={onDecrementItem}
         disabled={!isItemSelected}
       >
         -
