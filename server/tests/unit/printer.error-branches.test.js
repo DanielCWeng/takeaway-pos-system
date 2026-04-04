@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { HardwareError } from "../../src/shared/errors.js";
 
 vi.mock("usb", () => ({
   default: {
