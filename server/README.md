@@ -9,6 +9,7 @@ Backend service for the takeaway POS platform.
 [![Tested with Vitest](https://img.shields.io/badge/Tested_with-Vitest-6E9F18?style=flat-square&logo=vitest&logoColor=white)](https://vitest.dev/)
 
 ## Tech Stack
+
 - Node.js (ES modules)
 - Express 5
 - SQLite (`better-sqlite3`)
@@ -137,4 +138,3 @@ Unit tests cover domain logic; integration tests cover API/DB/WebSocket behavior
 - Native module install failures: install platform build dependencies
 - Address lookup returns empty: check `GETADDRESS_API_KEY` and network access
 - Reprint reports `printed: false`: backend archived order, but printer adapter could not confirm device transfer
-

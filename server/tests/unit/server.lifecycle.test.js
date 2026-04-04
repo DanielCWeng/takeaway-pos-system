@@ -70,15 +70,11 @@ describe("server lifecycle", () => {
       handlePhoneDetected,
     }));
 
-    const processOnSpy = vi
-      .spyOn(process, "on")
-      .mockImplementation((event, handler) => {
-        handlers[event] = handler;
-        return process;
-      });
-    const processExitSpy = vi
-      .spyOn(process, "exit")
-      .mockImplementation(() => undefined);
+    const processOnSpy = vi.spyOn(process, "on").mockImplementation((event, handler) => {
+      handlers[event] = handler;
+      return process;
+    });
+    const processExitSpy = vi.spyOn(process, "exit").mockImplementation(() => undefined);
 
     await import("../../src/server.js");
     await Promise.resolve();
