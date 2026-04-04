@@ -1,8 +1,8 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { PRIMARY_CATEGORIES } from '../../constants/menu-categories';
-import { cn } from '../../lib/utils';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
-import { 
+import React, { useEffect, useRef, useState } from "react";
+import { PRIMARY_CATEGORIES } from "../../constants/menu-categories";
+import { cn } from "../../lib/utils";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
+import {
   ChickenIcon,
   BeefIcon,
   PorkIcon,
@@ -15,26 +15,26 @@ import {
   VegIcon,
   SpecialIcon,
   RiceIcon,
-  ChipsIcon
-} from '../icons';
-import type { AnimatedIconProps } from '../icons/chicken-icon';
+  ChipsIcon,
+} from "../icons";
+import type { AnimatedIconProps } from "../icons/chicken-icon";
 
 type IconComponent = React.FC<AnimatedIconProps>;
 
 const ICON_MAP: Record<string, IconComponent> = {
-  "Chicken": ChickenIcon,
-  "Beef": BeefIcon,
-  "Pork": PorkIcon,
-  "Duck": DuckIcon,
-  "Lamb": LambIcon,
+  Chicken: ChickenIcon,
+  Beef: BeefIcon,
+  Pork: PorkIcon,
+  Duck: DuckIcon,
+  Lamb: LambIcon,
   "King Prawn": KingPrawnIcon,
-  "Shrimp": ShrimpIcon,
-  "Fish": FishIcon,
-  "Mushroom": MushroomIcon,
-  "Veg": VegIcon,
-  "Special": SpecialIcon,
-  "Rice": RiceIcon,
-  "Chips": ChipsIcon,
+  Shrimp: ShrimpIcon,
+  Fish: FishIcon,
+  Mushroom: MushroomIcon,
+  Veg: VegIcon,
+  Special: SpecialIcon,
+  Rice: RiceIcon,
+  Chips: ChipsIcon,
 };
 
 const DEFAULT_ANIMATION_DURATION_MS = 1400;
@@ -48,7 +48,10 @@ interface CategoryStripProps {
   onSelectPrimary: (category: string) => void;
 }
 
-export const CategoryStrip = React.memo(function CategoryStrip({ selectedPrimary, onSelectPrimary }: CategoryStripProps) {
+export const CategoryStrip = React.memo(function CategoryStrip({
+  selectedPrimary,
+  onSelectPrimary,
+}: CategoryStripProps) {
   const [animationKeys, setAnimationKeys] = useState<Record<string, number>>({});
   const animationTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -67,18 +70,17 @@ export const CategoryStrip = React.memo(function CategoryStrip({ selectedPrimary
 
     // Ensure the selected category has a counter entry so the key flips when it becomes active.
     const initTimer = setTimeout(() => {
-      setAnimationKeys(prev => ({
+      setAnimationKeys((prev) => ({
         ...prev,
         [selectedPrimary]: prev[selectedPrimary] ?? 0,
       }));
     }, 0);
 
     const cycleMs =
-      (ICON_DURATION_MS[selectedPrimary] ?? DEFAULT_ANIMATION_DURATION_MS) +
-      ANIMATION_BREAK_MS;
+      (ICON_DURATION_MS[selectedPrimary] ?? DEFAULT_ANIMATION_DURATION_MS) + ANIMATION_BREAK_MS;
 
     const scheduleNext = () => {
-      setAnimationKeys(prev => ({
+      setAnimationKeys((prev) => ({
         ...prev,
         [selectedPrimary]: (prev[selectedPrimary] ?? 0) + 1,
       }));
@@ -100,7 +102,7 @@ export const CategoryStrip = React.memo(function CategoryStrip({ selectedPrimary
     <TooltipProvider delayDuration={150}>
       <div className="pos-panel p-2">
         <div className="flex items-center gap-2 overflow-x-auto">
-          {PRIMARY_CATEGORIES.map(category => {
+          {PRIMARY_CATEGORIES.map((category) => {
             const isActive = selectedPrimary === category.name;
             const IconComponent = ICON_MAP[category.name];
             const animationKey = animationKeys[category.name] ?? 0;
@@ -112,17 +114,17 @@ export const CategoryStrip = React.memo(function CategoryStrip({ selectedPrimary
                     onClick={() => handleCategoryClick(category.name)}
                     aria-label={category.name}
                     className={cn(
-                      'relative flex h-12 w-12 flex-shrink-0 flex-col items-center justify-center gap-1 rounded-xl text-xl leading-none transition pos-category-pill',
+                      "relative flex h-12 w-12 flex-shrink-0 flex-col items-center justify-center gap-1 rounded-xl text-xl leading-none transition pos-category-pill",
                       isActive
-                        ? 'pos-btn-tactile-primary'
-                        : 'pos-btn-tactile text-muted-foreground hover:text-foreground',
+                        ? "pos-btn-tactile-primary"
+                        : "pos-btn-tactile text-muted-foreground hover:text-foreground",
                     )}
                   >
                     {IconComponent ? (
-                      <IconComponent 
-                        key={`${category.name}-${animationKey}-${isActive ? 'on' : 'off'}`} 
-                        isAnimating={isActive} 
-                        className="h-8 w-8" 
+                      <IconComponent
+                        key={`${category.name}-${animationKey}-${isActive ? "on" : "off"}`}
+                        isAnimating={isActive}
+                        className="h-8 w-8"
                       />
                     ) : (
                       <span>{category.icon}</span>

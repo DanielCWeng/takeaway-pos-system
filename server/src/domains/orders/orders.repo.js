@@ -9,8 +9,8 @@
  *  - No SQLite row objects or Statement instances are ever returned to callers.
  */
 
-import { getDb } from '../../infrastructure/db.js';
-import { AppError } from '../../shared/errors.js';
+import { getDb } from "../../infrastructure/db.js";
+import { AppError } from "../../shared/errors.js";
 
 // ---------------------------------------------------------------------------
 // Statement Cache
@@ -37,14 +37,14 @@ const stmts = {
 function getStmts() {
   const db = getDb();
   if (!stmts.insert) {
-    stmts.insert = db.prepare('INSERT INTO orders (data, archived_at) VALUES (?, ?)');
-    stmts.findById = db.prepare('SELECT * FROM orders WHERE id = ?');
-    stmts.findAll = db.prepare('SELECT * FROM orders ORDER BY archived_at DESC LIMIT 500');
+    stmts.insert = db.prepare("INSERT INTO orders (data, archived_at) VALUES (?, ?)");
+    stmts.findById = db.prepare("SELECT * FROM orders WHERE id = ?");
+    stmts.findAll = db.prepare("SELECT * FROM orders ORDER BY archived_at DESC LIMIT 500");
     stmts.findByDate = db.prepare(
-      'SELECT * FROM orders WHERE archived_at LIKE ? ORDER BY archived_at DESC',
+      "SELECT * FROM orders WHERE archived_at LIKE ? ORDER BY archived_at DESC",
     );
-    stmts.delete = db.prepare('DELETE FROM orders WHERE id = ?');
-    stmts.deleteByDate = db.prepare('DELETE FROM orders WHERE archived_at LIKE ?');
+    stmts.delete = db.prepare("DELETE FROM orders WHERE id = ?");
+    stmts.deleteByDate = db.prepare("DELETE FROM orders WHERE archived_at LIKE ?");
   }
   return stmts;
 }
@@ -65,7 +65,7 @@ function rowToOrder(row) {
   } catch (err) {
     throw new AppError(
       `Order ${row.id} has corrupted data and cannot be parsed`,
-      'INTERNAL_ERROR',
+      "INTERNAL_ERROR",
       { id: row.id, error: err.message },
     );
   }

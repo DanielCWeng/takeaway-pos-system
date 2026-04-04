@@ -12,11 +12,11 @@
  *  - ID generation is delegated entirely to the repo (which uses AUTOINCREMENT).
  */
 
-import * as repo from './orders.repo.js';
-import { getDb } from '../../infrastructure/db.js';
-import { logger } from '../../infrastructure/logger.js';
-import { printReceipt } from '../../hardware/printer.js';
-import { HardwareError, ValidationError, NotFoundError } from '../../shared/errors.js';
+import * as repo from "./orders.repo.js";
+import { getDb } from "../../infrastructure/db.js";
+import { logger } from "../../infrastructure/logger.js";
+import { printReceipt } from "../../hardware/printer.js";
+import { HardwareError, ValidationError, NotFoundError } from "../../shared/errors.js";
 
 // ---------------------------------------------------------------------------
 // Validation
@@ -30,38 +30,38 @@ import { HardwareError, ValidationError, NotFoundError } from '../../shared/erro
  * @throws {ValidationError}
  */
 function validateOrder(order) {
-  if (!order || typeof order !== 'object') {
-    throw new ValidationError('Order must be a non-null object');
+  if (!order || typeof order !== "object") {
+    throw new ValidationError("Order must be a non-null object");
   }
 
   if (!Array.isArray(order.items) || order.items.length === 0) {
-    throw new ValidationError('Order must contain at least one item', {
-      field: 'items',
+    throw new ValidationError("Order must contain at least one item", {
+      field: "items",
     });
   }
 
   // Validate item payloads
   for (const [i, item] of order.items.entries()) {
-    if (!item.name || typeof item.name !== 'string') {
+    if (!item.name || typeof item.name !== "string") {
       throw new ValidationError(`Item at index ${i} is missing a name`, {
         field: `items[${i}].name`,
       });
     }
-    if (typeof item.price !== 'number' || item.price < 0) {
+    if (typeof item.price !== "number" || item.price < 0) {
       throw new ValidationError(`Item at index ${i} has an invalid price`, {
         field: `items[${i}].price`,
       });
     }
-    if (typeof item.quantity !== 'number' || item.quantity < 1) {
+    if (typeof item.quantity !== "number" || item.quantity < 1) {
       throw new ValidationError(`Item at index ${i} has an invalid quantity`, {
         field: `items[${i}].quantity`,
       });
     }
   }
 
-  const validOrderTypes = ['collection', 'delivery'];
+  const validOrderTypes = ["collection", "delivery"];
   if (!validOrderTypes.includes(order.orderType)) {
-    throw new ValidationError(`Order type must be one of: ${validOrderTypes.join(', ')}`, {
+    throw new ValidationError(`Order type must be one of: ${validOrderTypes.join(", ")}`, {
       field: order.orderType,
       received: order.orderType,
     });
@@ -70,13 +70,13 @@ function validateOrder(order) {
   // Delivery orders MUST have a customer address.
   // The old system silently converted these to collection orders — that bug is fixed here.
   // NOTE: Phone number is intentionally optional for delivery as some customers call with no ID.
-  if (order.orderType === 'delivery') {
+  if (order.orderType === "delivery") {
     const info = order.customerInfo;
     if (!info || !info.address || !info.postcode) {
       throw new ValidationError(
-        'Delivery orders require a valid customer address and postcode. ' +
-          'Confirm the address before submitting.',
-        { field: 'customerInfo', orderType: 'delivery' },
+        "Delivery orders require a valid customer address and postcode. " +
+          "Confirm the address before submitting.",
+        { field: "customerInfo", orderType: "delivery" },
       );
     }
   }
@@ -114,7 +114,7 @@ export async function printAndArchiveOrder(orderData) {
     return { orderId: archived.id, printed: result.printed === true };
   } catch (err) {
     const isHardwareError = err instanceof HardwareError;
-    logger.error('Order saved but printing failed', {
+    logger.error("Order saved but printing failed", {
       hardware: true,
       orderId: archived.id,
       error: err?.message ?? String(err),
@@ -150,7 +150,7 @@ export function deleteOrder(id) {
  */
 export function deleteOrdersByDate(date) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-    throw new ValidationError('Invalid date format. Expected YYYY-MM-DD', { date });
+    throw new ValidationError("Invalid date format. Expected YYYY-MM-DD", { date });
   }
   repo.deleteOrdersByDate(date);
 }
@@ -168,7 +168,7 @@ export function deleteOrdersByDate(date) {
 export function listOrders(date) {
   if (date) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      throw new ValidationError('Invalid date format. Expected YYYY-MM-DD', { date });
+      throw new ValidationError("Invalid date format. Expected YYYY-MM-DD", { date });
     }
     return repo.findOrdersByDate(date);
   }
@@ -210,7 +210,7 @@ export async function reprintOrder(id) {
     const result = await printReceipt(archived);
     return { printed: result.printed === true };
   } catch (err) {
-    logger.error('Reprint failed', {
+    logger.error("Reprint failed", {
       hardware: true,
       orderId: id,
       error: err?.message ?? String(err),

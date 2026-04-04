@@ -1,13 +1,13 @@
-import { AppError, ValidationError, NotFoundError, NotImplementedError } from '../errors.js';
-import { logger } from '../../infrastructure/logger.js';
-import { sendValidationError } from './sendValidationError.js';
+import { AppError, ValidationError, NotFoundError, NotImplementedError } from "../errors.js";
+import { logger } from "../../infrastructure/logger.js";
+import { sendValidationError } from "./sendValidationError.js";
 
 export function errorHandler(err, req, res, _next) {
   const logDetails = {
     requestId: req.requestId,
     method: req.method,
     path: req.path,
-    errorCode: err.code ?? 'UNKNOWN',
+    errorCode: err.code ?? "UNKNOWN",
     errorMessage: err.message,
     details: err.details,
     stack: err.stack,
@@ -15,10 +15,10 @@ export function errorHandler(err, req, res, _next) {
 
   // Only log at error level for unexpected errors (not AppError)
   if (!(err instanceof AppError)) {
-    logger.error('Unhandled error in request', logDetails);
+    logger.error("Unhandled error in request", logDetails);
   } else if (!(err instanceof ValidationError) && !(err instanceof NotFoundError)) {
     // Log other application errors (NotImplemented, ExternalService, etc.) as warnings
-    logger.warn('Application error in request', logDetails);
+    logger.warn("Application error in request", logDetails);
   }
   // Note: Validation and 404 errors are considered "normal" noise and are not logged here
   // to prevent log pollution.
@@ -53,8 +53,8 @@ export function errorHandler(err, req, res, _next) {
   // Unhandled — return generic JSON error to client
   return res.status(500).json({
     error: {
-      code: 'INTERNAL_ERROR',
-      message: 'An unexpected error occurred',
+      code: "INTERNAL_ERROR",
+      message: "An unexpected error occurred",
     },
   });
 }

@@ -19,14 +19,7 @@ import { config } from "../../config";
 import { cn } from "../../lib/utils";
 import { formatCurrency } from "../../lib/format";
 import type { ArchivedOrder } from "../../types";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "../ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
@@ -58,13 +51,9 @@ export function AdminPage({ onClose }: AdminPageProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [orders, setOrders] = useState<ArchivedOrder[]>([]);
-  const [selectedDate, setSelectedDate] = useState(
-    new Date().toISOString().split("T")[0],
-  );
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedOrder, setSelectedOrder] = useState<ArchivedOrder | null>(
-    null,
-  );
+  const [selectedOrder, setSelectedOrder] = useState<ArchivedOrder | null>(null);
 
   // ─── Action states ───────────────────────────────────────────────────────
   const [isDeleting, setIsDeleting] = useState(false);
@@ -83,9 +72,7 @@ export function AdminPage({ onClose }: AdminPageProps) {
         setOrders(data.orders);
       } catch (err) {
         console.error("Failed to fetch orders", err);
-        setFetchError(
-          "Could not load orders for this date. Check your connection and try again.",
-        );
+        setFetchError("Could not load orders for this date. Check your connection and try again.");
       } finally {
         setIsLoading(false);
       }
@@ -112,11 +99,7 @@ export function AdminPage({ onClose }: AdminPageProps) {
       const idStr = o.id.toString();
       const customerName = o.data.customerInfo?.name?.toLowerCase() || "";
       const phone = o.data.customerInfo?.phone || "";
-      return (
-        idStr.includes(query) ||
-        customerName.includes(query) ||
-        phone.includes(query)
-      );
+      return idStr.includes(query) || customerName.includes(query) || phone.includes(query);
     });
   }, [orders, searchQuery]);
 
@@ -175,10 +158,7 @@ export function AdminPage({ onClose }: AdminPageProps) {
       setReprintStatus("error");
     } finally {
       if (reprintTimerRef.current) clearTimeout(reprintTimerRef.current);
-      reprintTimerRef.current = setTimeout(
-        () => setReprintStatus("idle"),
-        3000,
-      );
+      reprintTimerRef.current = setTimeout(() => setReprintStatus("idle"), 3000);
     }
   };
 
@@ -202,9 +182,7 @@ export function AdminPage({ onClose }: AdminPageProps) {
             <div className="relative">
               <div className="flex items-center justify-center gap-2 h-12 bg-zinc-900 rounded-xl border border-zinc-800">
                 {password.length === 0 ? (
-                  <span className="text-zinc-700 text-sm font-medium">
-                    Enter PIN
-                  </span>
+                  <span className="text-zinc-700 text-sm font-medium">Enter PIN</span>
                 ) : (
                   Array.from({ length: password.length }).map((_, i) => (
                     <div key={i} className="w-3 h-3 bg-sky-400 rounded-full" />
@@ -298,9 +276,7 @@ export function AdminPage({ onClose }: AdminPageProps) {
               <Calendar className="h-6 w-6 text-sky-500" />
             </div>
             <div className="flex-1">
-              <p className="text-xs text-zinc-500 uppercase font-semibold">
-                Report Date
-              </p>
+              <p className="text-xs text-zinc-500 uppercase font-semibold">Report Date</p>
               <input
                 type="date"
                 value={selectedDate}
@@ -317,9 +293,7 @@ export function AdminPage({ onClose }: AdminPageProps) {
               <Search className="h-6 w-6 text-zinc-400" />
             </div>
             <div className="flex-1">
-              <p className="text-xs text-zinc-500 uppercase font-semibold">
-                Search Filter
-              </p>
+              <p className="text-xs text-zinc-500 uppercase font-semibold">Search Filter</p>
               <input
                 type="text"
                 placeholder="ID, Name, Phone..."
@@ -446,9 +420,7 @@ export function AdminPage({ onClose }: AdminPageProps) {
                   <TableCell colSpan={6} className="h-64 text-center">
                     <div className="flex flex-col items-center gap-3">
                       <AlertTriangle className="h-8 w-8 text-red-500/60" />
-                      <p className="text-red-400 font-bold italic text-sm max-w-xs">
-                        {fetchError}
-                      </p>
+                      <p className="text-red-400 font-bold italic text-sm max-w-xs">{fetchError}</p>
                       <button
                         type="button"
                         onClick={() => setSelectedDate((d) => d)}
@@ -537,8 +509,7 @@ export function AdminPage({ onClose }: AdminPageProps) {
               <div className="p-8 border-b border-zinc-800 flex justify-between items-start bg-zinc-900/30">
                 <div>
                   <h3 className="text-3xl font-black italic tracking-tighter text-white">
-                    Order Receipt{" "}
-                    <span className="text-sky-400">#{selectedOrder.id}</span>
+                    Order Receipt <span className="text-sky-400">#{selectedOrder.id}</span>
                   </h3>
                   <div className="flex gap-4 mt-1">
                     <p className="text-zinc-500 font-bold text-xs uppercase tracking-widest flex items-center gap-1">
@@ -571,9 +542,8 @@ export function AdminPage({ onClose }: AdminPageProps) {
                       <Badge
                         className={cn(
                           "rounded-md px-3 font-black italic",
-                          ORDER_TYPE_BADGE_SOLID[
-                            selectedOrder.data.orderType
-                          ] ?? "bg-zinc-500 text-white",
+                          ORDER_TYPE_BADGE_SOLID[selectedOrder.data.orderType] ??
+                            "bg-zinc-500 text-white",
                         )}
                       >
                         {selectedOrder.data.orderType.toUpperCase()}
@@ -602,8 +572,7 @@ export function AdminPage({ onClose }: AdminPageProps) {
                               {selectedOrder.data.customerInfo.postcode}
                             </span>
                           )}
-                          {!selectedOrder.data.customerInfo?.street &&
-                            "No street address found."}
+                          {!selectedOrder.data.customerInfo?.street && "No street address found."}
                         </p>
                       </div>
                     )}

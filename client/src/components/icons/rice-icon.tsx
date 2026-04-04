@@ -71,10 +71,7 @@ export function RiceIcon({ isAnimating, ...props }: AnimatedIconProps) {
 
         {/* RICE */}
         <g id="rice-body">
-          <path
-            d="M 8 28 C 8 18, 16 14, 24 14 C 32 14, 40 18, 40 28 Z"
-            fill="#FDFBF7"
-          >
+          <path d="M 8 28 C 8 18, 16 14, 24 14 C 32 14, 40 18, 40 28 Z" fill="#FDFBF7">
             {isAnimating && (
               <animate
                 attributeName="d"

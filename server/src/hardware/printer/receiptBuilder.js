@@ -11,22 +11,22 @@ const GS = 0x1d;
 // Receipt formatting
 const LINE_WIDTH = 42;
 const LEGACY_COMMAND_TRANSLATIONS = Object.freeze({
-  REMOVE: '\u8d70',
-  LESS: '\u5c11',
-  MORE: '\u52a0',
-  WANT: '\u8981',
-  ONLY: '\u53ea\u8981',
+  REMOVE: "\u8d70",
+  LESS: "\u5c11",
+  MORE: "\u52a0",
+  WANT: "\u8981",
+  ONLY: "\u53ea\u8981",
 });
 
 function rightAlign(left, right) {
-  const r = typeof right === 'number' ? right.toFixed(2) : String(right);
+  const r = typeof right === "number" ? right.toFixed(2) : String(right);
 
   // Leave space for at least one blank character between text and price
   const maxLeft = Math.max(1, LINE_WIDTH - r.length - 1);
-  
+
   if (left.length <= maxLeft) {
     const spaces = Math.max(0, LINE_WIDTH - left.length - r.length);
-    return left + ' '.repeat(spaces) + r + '\n';
+    return left + " ".repeat(spaces) + r + "\n";
   }
 
   // Wrap text if it's too long
@@ -38,30 +38,30 @@ function rightAlign(left, right) {
       lines.push(remaining);
       break;
     }
-    let breakIndex = remaining.lastIndexOf(' ', maxLeft);
+    let breakIndex = remaining.lastIndexOf(" ", maxLeft);
     if (breakIndex <= 0) breakIndex = maxLeft; // hard break if no space
     lines.push(remaining.substring(0, breakIndex));
     remaining = remaining.substring(breakIndex).trimStart();
   }
 
-  let result = '';
+  let result = "";
   for (let i = 0; i < lines.length; i++) {
     if (i === 0) {
       const spaces = Math.max(0, LINE_WIDTH - lines[i].length - r.length);
-      result += lines[i] + ' '.repeat(spaces) + r + '\n';
+      result += lines[i] + " ".repeat(spaces) + r + "\n";
     } else {
       // Indent subsequent lines slightly
-      result += '  ' + lines[i] + '\n';
+      result += "  " + lines[i] + "\n";
     }
   }
   return result;
 }
 
 function formatOrderType(raw) {
-  if (!raw) return 'ORDER';
+  if (!raw) return "ORDER";
   const v = String(raw).toLowerCase();
-  if (v === 'delivery') return 'DELIVERY';
-  if (v === 'collection') return 'COLLECTION';
+  if (v === "delivery") return "DELIVERY";
+  if (v === "collection") return "COLLECTION";
   return raw;
 }
 
@@ -83,7 +83,7 @@ function toQuantity(value) {
   return Number.isFinite(num) && num > 0 ? num : 1;
 }
 
-function toText(value, fallback = '') {
+function toText(value, fallback = "") {
   if (value == null) return fallback;
   const text = String(value).trim();
   return text || fallback;
@@ -99,23 +99,23 @@ function normalizeModifiers(rawModifiers) {
   const chinese = [];
 
   for (const mod of source) {
-    if (typeof mod === 'string') {
+    if (typeof mod === "string") {
       const text = toText(mod);
       if (text) english.push(`(${text})`);
       continue;
     }
-    if (!mod || typeof mod !== 'object') continue;
+    if (!mod || typeof mod !== "object") continue;
 
     const command = toText(mod.command);
     const ingredientEn = toText(mod.ingredient?.name ?? mod.name);
     const ingredientZh = toText(mod.ingredient?.zh ?? mod.zh);
 
     const englishParts = [command, ingredientEn].filter(Boolean);
-    if (englishParts.length > 0) english.push(`(${englishParts.join(' ')})`);
+    if (englishParts.length > 0) english.push(`(${englishParts.join(" ")})`);
 
     const translatedCommand = LEGACY_COMMAND_TRANSLATIONS[command.toUpperCase()] ?? command;
     const chineseParts = [translatedCommand, ingredientZh].filter(Boolean);
-    if (chineseParts.length > 0) chinese.push(`(${chineseParts.join(' ')})`);
+    if (chineseParts.length > 0) chinese.push(`(${chineseParts.join(" ")})`);
   }
 
   return { english, chinese };
@@ -131,26 +131,28 @@ function normalizeModifiers(rawModifiers) {
  */
 function textToBitmap(canvasApi, text, opts = {}) {
   const fontSize = opts.fontSize ?? 24;
-  const align = opts.align ?? 'left';
+  const align = opts.align ?? "left";
   const bold = opts.bold ?? false;
 
   const width = 384; // 58mm thermal printer = 384 dots
-  console.log(`[BITMAP] textToBitmap: text="${text}" fontSize=${fontSize} align=${align} bold=${bold} width=${width}`);
+  console.log(
+    `[BITMAP] textToBitmap: text="${text}" fontSize=${fontSize} align=${align} bold=${bold} width=${width}`,
+  );
 
   const canvas = canvasApi.createCanvas(width, fontSize * 10);
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext("2d");
 
-  ctx.fillStyle = 'white';
+  ctx.fillStyle = "white";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  ctx.fillStyle = 'black';
-  const weight = bold ? '500 ' : '';
+  ctx.fillStyle = "black";
+  const weight = bold ? "500 " : "";
   const fontStr = `${weight}${fontSize}px "Noto Sans SC", "WenQuanYi Micro Hei", sans-serif`;
   ctx.font = fontStr;
-  ctx.textBaseline = 'top';
+  ctx.textBaseline = "top";
 
   const lines = [];
-  let currentLine = '';
+  let currentLine = "";
   // Greedy wrap character by character (standard for Chinese text, works fine for mixed)
   for (const char of text) {
     const testLine = currentLine + char;
@@ -169,8 +171,8 @@ function textToBitmap(canvasApi, text, opts = {}) {
   lines.forEach((line, i) => {
     let xPos = 0;
     const textWidth = ctx.measureText(line).width;
-    if (align === 'center') xPos = (width - textWidth) / 2;
-    if (align === 'right') xPos = width - textWidth;
+    if (align === "center") xPos = (width - textWidth) / 2;
+    if (align === "right") xPos = width - textWidth;
     ctx.fillText(line, Math.max(0, xPos), i * lineHeight);
   });
 
@@ -205,7 +207,9 @@ function textToBitmap(canvasApi, text, opts = {}) {
     }
   }
 
-  console.log(`[BITMAP] Result: canvasH=${canvas.height} maxY=${maxY} actualHeight=${actualHeight} bytesPerLine=${bytesPerLine} totalDataBytes=${bitmapData.length}`);
+  console.log(
+    `[BITMAP] Result: canvasH=${canvas.height} maxY=${maxY} actualHeight=${actualHeight} bytesPerLine=${bytesPerLine} totalDataBytes=${bitmapData.length}`,
+  );
   return { width, height: actualHeight, data: bitmapData, bytesPerLine };
 }
 
@@ -223,44 +227,48 @@ function bitmapToESCPOS(bitmap) {
   const yL = height & 0xff;
   const yH = (height >> 8) & 0xff;
   const buf = Buffer.from([GS, 0x76, 0x30, 0x00, xL, xH, yL, yH, ...bitmap.data]);
-  console.log(`[ESCPOS] GS v 0: xL=${xL}(${bytesPerLine}Bpl) xH=${xH} yL=${yL}(${height}rows) yH=${yH} totalBuf=${buf.length}B`);
+  console.log(
+    `[ESCPOS] GS v 0: xL=${xL}(${bytesPerLine}Bpl) xH=${xH} yL=${yL}(${height}rows) yH=${yH} totalBuf=${buf.length}B`,
+  );
   return buf;
 }
 
 function appendSolidLine(receiptParts, deps) {
   if (deps.canvasApi) {
-    console.log('[RECEIPT] appendSolidLine: using canvas bitmap (384-dot full-width black bar)');
+    console.log("[RECEIPT] appendSolidLine: using canvas bitmap (384-dot full-width black bar)");
     const width = 384; // 58mm thermal printer = 384 dots
     const height = 2;
     const bytesPerLine = Math.ceil(width / 8);
     const data = new Array(bytesPerLine * height).fill(0xff);
     receiptParts.push(
-      Buffer.from('\n'),                            // space above
-      Buffer.from([ESC, 0x61, 0x01]),               // center align so raster fills edge-to-edge
+      Buffer.from("\n"), // space above
+      Buffer.from([ESC, 0x61, 0x01]), // center align so raster fills edge-to-edge
       bitmapToESCPOS({ width, height, data, bytesPerLine }),
-      Buffer.from([ESC, 0x61, 0x00]),               // restore left align
-      Buffer.from('\n'),                            // space below
+      Buffer.from([ESC, 0x61, 0x00]), // restore left align
+      Buffer.from("\n"), // space below
     );
   } else {
-    console.log('[RECEIPT] appendSolidLine: no canvasApi, using dashes fallback');
-    receiptParts.push(Buffer.from('-'.repeat(LINE_WIDTH) + '\n'));
+    console.log("[RECEIPT] appendSolidLine: no canvasApi, using dashes fallback");
+    receiptParts.push(Buffer.from("-".repeat(LINE_WIDTH) + "\n"));
   }
 }
 
 function appendBitmapOrText(receiptParts, deps, text, opts = {}) {
   const line = toText(text);
   if (!line) {
-    console.log('[RECEIPT] appendBitmapOrText: empty text, skipping');
+    console.log("[RECEIPT] appendBitmapOrText: empty text, skipping");
     return;
   }
   if (deps.canvasApi) {
     console.log(`[RECEIPT] appendBitmapOrText: rendering as bitmap — "${line}"`);
     const bitmap = textToBitmap(deps.canvasApi, line, opts);
-    receiptParts.push(bitmapToESCPOS(bitmap), Buffer.from('\n'));
+    receiptParts.push(bitmapToESCPOS(bitmap), Buffer.from("\n"));
     return;
   }
-  console.log(`[RECEIPT] appendBitmapOrText: NO canvasApi — falling back to plain text "${line}" (will NOT render on thermal printer!)`);
-  receiptParts.push(Buffer.from(line + '\n'));
+  console.log(
+    `[RECEIPT] appendBitmapOrText: NO canvasApi — falling back to plain text "${line}" (will NOT render on thermal printer!)`,
+  );
+  receiptParts.push(Buffer.from(line + "\n"));
 }
 
 function computeSubtotal(items) {
@@ -276,7 +284,7 @@ function computeSubtotal(items) {
 
 function computeDeliveryCharge(order, subtotal, total) {
   if (Number.isFinite(order?.deliveryCharge)) return Math.max(0, Number(order.deliveryCharge));
-  if (String(order?.orderType ?? '').toLowerCase() !== 'delivery') return 0;
+  if (String(order?.orderType ?? "").toLowerCase() !== "delivery") return 0;
   const derived = total - subtotal;
   return derived > 0 ? derived : 0;
 }
@@ -293,23 +301,27 @@ export function buildReceiptBuffer(archivedOrder, deps) {
   const items = Array.isArray(order?.items) ? order.items : [];
   const info = order?.customerInfo ?? {};
 
-  console.log('\n[RECEIPT] ========== buildReceiptBuffer START ==========');
-  console.log(`[RECEIPT] orderId=${archivedOrder?.id ?? '(none)'} orderType=${order?.orderType ?? '?'} itemCount=${items.length} canvasApi=${!!deps.canvasApi}`);
-  console.log(`[RECEIPT] customerInfo keys: ${Object.keys(info).join(', ') || '(none)'}`);
+  console.log("\n[RECEIPT] ========== buildReceiptBuffer START ==========");
+  console.log(
+    `[RECEIPT] orderId=${archivedOrder?.id ?? "(none)"} orderType=${order?.orderType ?? "?"} itemCount=${items.length} canvasApi=${!!deps.canvasApi}`,
+  );
+  console.log(`[RECEIPT] customerInfo keys: ${Object.keys(info).join(", ") || "(none)"}`);
   items.forEach((item, i) => {
-    console.log(`[RECEIPT] item[${i}]: id=${item?.id ?? '?'} name="${item?.name ?? '?'}" zhName="${item?.zhName ?? '(none)'}" qty=${item?.quantity ?? '?'} price=${item?.price ?? '?'}`);
+    console.log(
+      `[RECEIPT] item[${i}]: id=${item?.id ?? "?"} name="${item?.name ?? "?"}" zhName="${item?.zhName ?? "(none)"}" qty=${item?.quantity ?? "?"} price=${item?.price ?? "?"}`,
+    );
   });
 
   // Use archivedAt so reprints show the original order time, not the reprint time.
   const now = archivedOrder?.archivedAt ? new Date(archivedOrder.archivedAt) : new Date();
-  const dateStr = now.toLocaleDateString('en-GB', {
-    day: '2-digit',
-    month: '2-digit',
-    year: '2-digit',
+  const dateStr = now.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit",
   });
-  const timeStr = now.toLocaleTimeString('en-GB', {
-    hour: '2-digit',
-    minute: '2-digit',
+  const timeStr = now.toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
     hour12: true,
   });
 
@@ -322,11 +334,13 @@ export function buildReceiptBuffer(archivedOrder, deps) {
   const orderTypeLabel = formatOrderType(order?.orderType);
   const orderId = archivedOrder?.id;
 
-  console.log(`[RECEIPT] subtotal=${subtotal.toFixed(2)} deliveryCharge=${deliveryCharge.toFixed(2)} total=${total.toFixed(2)} itemCount=${itemCount}`);
+  console.log(
+    `[RECEIPT] subtotal=${subtotal.toFixed(2)} deliveryCharge=${deliveryCharge.toFixed(2)} total=${total.toFixed(2)} itemCount=${itemCount}`,
+  );
 
   const receiptParts = [];
   receiptParts.push(
-    Buffer.from('\n\n\n'),
+    Buffer.from("\n\n\n"),
     Buffer.from([ESC, 0x40, ESC, 0x61, 0x01, ESC, 0x45, 0x01]),
     Buffer.from(`${dateStr}  ${timeStr}\n`),
     Buffer.from([ESC, 0x45, 0x00]),
@@ -343,7 +357,7 @@ export function buildReceiptBuffer(archivedOrder, deps) {
   for (const item of items) {
     const qty = toQuantity(item?.quantity);
     const itemId = toText(item?.id);
-    const englishName = toText(item?.name, 'Item');
+    const englishName = toText(item?.name, "Item");
     const zhName = toText(item?.zhName);
     const unitPrice =
       Number.isFinite(item?.finalPrice) && Number(item?.finalPrice) >= 0
@@ -355,31 +369,35 @@ export function buildReceiptBuffer(archivedOrder, deps) {
     const modifiers = normalizeModifiers(item?.modifiers);
 
     console.log(`[RECEIPT] --- Item "${englishName}" ---`);
-    console.log(`[RECEIPT]   zhName: "${zhName || '(MISSING — no Chinese will print)'}"`);
+    console.log(`[RECEIPT]   zhName: "${zhName || "(MISSING — no Chinese will print)"}"`);
     console.log(`[RECEIPT]   canvasApi available: ${!!deps.canvasApi}`);
-    console.log(`[RECEIPT]   qty=${qty} unitPrice=${unitPrice} lineTotal=${lineTotal} hidePrice=${hidePrice} hideQty=${hideQuantity}`);
-    console.log(`[RECEIPT]   modifiers: english=[${modifiers.english.join(', ')}] chinese=[${modifiers.chinese.join(', ')}]`);
+    console.log(
+      `[RECEIPT]   qty=${qty} unitPrice=${unitPrice} lineTotal=${lineTotal} hidePrice=${hidePrice} hideQty=${hideQuantity}`,
+    );
+    console.log(
+      `[RECEIPT]   modifiers: english=[${modifiers.english.join(", ")}] chinese=[${modifiers.chinese.join(", ")}]`,
+    );
 
     let englishLine = itemId ? `(${itemId}) ${englishName}` : englishName;
-    if (item?.isSwapped === true) englishLine += ' (SWAP)';
-    if (modifiers.english.length > 0) englishLine += ` ${modifiers.english.join(' ')}`;
+    if (item?.isSwapped === true) englishLine += " (SWAP)";
+    if (modifiers.english.length > 0) englishLine += ` ${modifiers.english.join(" ")}`;
 
     receiptParts.push(
       Buffer.from([ESC, 0x45, 0x01]),
-      Buffer.from(rightAlign(englishLine, hidePrice ? '' : lineTotal)),
+      Buffer.from(rightAlign(englishLine, hidePrice ? "" : lineTotal)),
       Buffer.from([ESC, 0x45, 0x00]),
     );
 
-    const quantityPrefix = hideQuantity ? '  ' : `${qty} `;
+    const quantityPrefix = hideQuantity ? "  " : `${qty} `;
     if (zhName) {
       const chineseLine =
         modifiers.chinese.length > 0
-          ? `${quantityPrefix}${zhName} ${modifiers.chinese.join(' ')}`
+          ? `${quantityPrefix}${zhName} ${modifiers.chinese.join(" ")}`
           : `${quantityPrefix}${zhName}`;
       console.log(`[RECEIPT]   Rendering Chinese: "${chineseLine}"`);
       appendBitmapOrText(receiptParts, deps, chineseLine, {
         fontSize: 48,
-        align: 'left',
+        align: "left",
         bold: true,
       });
       continue;
@@ -390,7 +408,7 @@ export function buildReceiptBuffer(archivedOrder, deps) {
     if (containsNonAscii(englishName)) {
       appendBitmapOrText(receiptParts, deps, `${quantityPrefix}${englishName}`, {
         fontSize: 40,
-        align: 'left',
+        align: "left",
         bold: true,
       });
     }
@@ -404,9 +422,9 @@ export function buildReceiptBuffer(archivedOrder, deps) {
     Buffer.from([ESC, 0x61, 0x00, GS, 0x21, 0x00, ESC, 0x45, 0x00]),
   );
 
-  receiptParts.push(Buffer.from(rightAlign('Sub-total', subtotal)));
-  if (String(order?.orderType ?? '').toLowerCase() === 'delivery') {
-    receiptParts.push(Buffer.from(rightAlign('+Delivery', deliveryCharge)));
+  receiptParts.push(Buffer.from(rightAlign("Sub-total", subtotal)));
+  if (String(order?.orderType ?? "").toLowerCase() === "delivery") {
+    receiptParts.push(Buffer.from(rightAlign("+Delivery", deliveryCharge)));
   }
   appendSolidLine(receiptParts, deps);
 
@@ -423,9 +441,9 @@ export function buildReceiptBuffer(archivedOrder, deps) {
 
   if (Number.isFinite(info?.distance)) {
     receiptParts.push(
-      Buffer.from([ESC, 0x4D, 0x01]), // Select Font B (smaller text)
+      Buffer.from([ESC, 0x4d, 0x01]), // Select Font B (smaller text)
       Buffer.from(`Mileage: ${Number(info.distance).toFixed(2)} miles\n`),
-      Buffer.from([ESC, 0x4D, 0x00])  // Re-select Font A
+      Buffer.from([ESC, 0x4d, 0x00]), // Re-select Font A
     );
   }
 
@@ -435,11 +453,11 @@ export function buildReceiptBuffer(archivedOrder, deps) {
   } else if (toText(info?.address)) {
     receiptParts.push(Buffer.from(`${toText(info.address)}\n`));
   }
-  
+
   if (toText(info?.town)) {
     // Truncate town to max 3 words depending on exact spaces (e.g. Toton & Chilwell Meadows -> Toton & Chilwell)
-    const townParts = toText(info.town).split(' ');
-    const truncatedTown = townParts.slice(0, 3).join(' ');
+    const townParts = toText(info.town).split(" ");
+    const truncatedTown = townParts.slice(0, 3).join(" ");
     receiptParts.push(Buffer.from(`${truncatedTown}\n`));
   }
   if (toText(info?.postcode))
@@ -452,7 +470,7 @@ export function buildReceiptBuffer(archivedOrder, deps) {
   if (toText(order?.notes)) receiptParts.push(Buffer.from(`Notes: ${toText(order.notes)}\n`));
 
   if (toText(info?.deliveryTime)) {
-    receiptParts.push(Buffer.from('\n'));
+    receiptParts.push(Buffer.from("\n"));
     receiptParts.push(
       Buffer.from([ESC, 0x61, 0x01, GS, 0x21, 0x11, ESC, 0x45, 0x01]),
       Buffer.from(`Time: ${toText(info.deliveryTime)}\n`),
@@ -463,7 +481,9 @@ export function buildReceiptBuffer(archivedOrder, deps) {
   receiptParts.push(Buffer.from([ESC, 0x64, 3]), Buffer.from([GS, 0x56, 0x00]));
 
   const totalBytes = receiptParts.reduce((sum, p) => sum + p.length, 0);
-  console.log(`[RECEIPT] ========== buildReceiptBuffer DONE: ${receiptParts.length} parts, ${totalBytes} bytes ==========\n`);
+  console.log(
+    `[RECEIPT] ========== buildReceiptBuffer DONE: ${receiptParts.length} parts, ${totalBytes} bytes ==========\n`,
+  );
 
   return receiptParts; // Return the raw array so printer.js can chunk them logically
 }

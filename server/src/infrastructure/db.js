@@ -10,12 +10,12 @@
  *  - Domain (service) modules must never import from this file directly.
  */
 
-import Database from 'better-sqlite3';
-import { readFileSync, readdirSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
-import { config } from '../config/index.js';
-import { logger } from './logger.js';
+import Database from "better-sqlite3";
+import { readFileSync, readdirSync } from "fs";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
+import { config } from "../config/index.js";
+import { logger } from "./logger.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -34,7 +34,7 @@ let _db = null;
  */
 export function getDb() {
   if (!_db) {
-    throw new Error('Database has not been initialised. Call openDb() before using getDb().');
+    throw new Error("Database has not been initialised. Call openDb() before using getDb().");
   }
   return _db;
 }
@@ -56,17 +56,17 @@ export function openDb(dbPath) {
   _db = new Database(path, {
     // No verbose logging in production — debug-level SQL logs are noisy.
     // Enable only when configured logLevel is 'debug'.
-    verbose: config.logLevel === 'debug' ? (msg) => logger.debug(msg) : null,
+    verbose: config.logLevel === "debug" ? (msg) => logger.debug(msg) : null,
   });
 
   // Enable WAL mode for better concurrent read performance
-  _db.pragma('journal_mode = WAL');
+  _db.pragma("journal_mode = WAL");
   // Enforce foreign key constraints
-  _db.pragma('foreign_keys = ON');
+  _db.pragma("foreign_keys = ON");
   // Wait up to 5s before throwing SQLITE_BUSY
-  _db.pragma('busy_timeout = 5000');
+  _db.pragma("busy_timeout = 5000");
 
-  logger.info('Database opened', { path });
+  logger.info("Database opened", { path });
 
   return _db;
 }
@@ -75,7 +75,7 @@ export function openDb(dbPath) {
 // Migrations
 // ---------------------------------------------------------------------------
 
-const MIGRATIONS_DIR = join(__dirname, 'migrations');
+const MIGRATIONS_DIR = join(__dirname, "migrations");
 
 /**
  * Runs any SQL migration files in `infrastructure/migrations/` that have not
@@ -97,13 +97,13 @@ export function runMigrations() {
 
   // Collect all .sql files, sorted by name (so 001_ comes before 002_, etc.)
   const files = readdirSync(MIGRATIONS_DIR)
-    .filter((f) => f.endsWith('.sql'))
+    .filter((f) => f.endsWith(".sql"))
     .sort();
 
   // Query for already-applied migrations once
   const applied = new Set(
     db
-      .prepare('SELECT filename FROM _migrations')
+      .prepare("SELECT filename FROM _migrations")
       .all()
       .map((r) => r.filename),
   );
@@ -111,28 +111,28 @@ export function runMigrations() {
   let count = 0;
   for (const filename of files) {
     if (applied.has(filename)) {
-      logger.debug('Migration already applied, skipping', { filename });
+      logger.debug("Migration already applied, skipping", { filename });
       continue;
     }
 
-    const sql = readFileSync(join(MIGRATIONS_DIR, filename), 'utf8');
+    const sql = readFileSync(join(MIGRATIONS_DIR, filename), "utf8");
 
     // Wrap each migration in a transaction so a partial failure can't corrupt state
     const applyMigration = db.transaction(() => {
       db.exec(sql);
-      db.prepare('INSERT INTO _migrations (filename, applied_at) VALUES (?, ?)').run(
+      db.prepare("INSERT INTO _migrations (filename, applied_at) VALUES (?, ?)").run(
         filename,
         new Date().toISOString(),
       );
     });
 
     applyMigration();
-    logger.info('Migration applied', { filename });
+    logger.info("Migration applied", { filename });
     count++;
   }
 
   if (count === 0) {
-    logger.info('All migrations are up to date');
+    logger.info("All migrations are up to date");
   } else {
     logger.info(`Applied ${count} migration(s)`);
   }
@@ -149,7 +149,7 @@ export function runMigrations() {
 export function closeDb() {
   if (_db && _db.open) {
     _db.close();
-    logger.info('Database connection closed');
+    logger.info("Database connection closed");
     _db = null;
   }
 }

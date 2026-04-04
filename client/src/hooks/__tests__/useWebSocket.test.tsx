@@ -31,6 +31,10 @@ class MockWebSocket {
   triggerMessage(payload: WebSocketMessage) {
     this.onmessage?.({ data: JSON.stringify(payload) });
   }
+
+  triggerRaw(data: string) {
+    this.onmessage?.({ data });
+  }
 }
 
 describe("useWebSocket", () => {
@@ -153,5 +157,71 @@ describe("useWebSocket", () => {
     });
 
     expect(MockWebSocket.instances.length).toBe(1);
+  });
+
+  it("ignores invalid JSON messages", () => {
+    vi.useFakeTimers();
+    const handler = vi.fn();
+
+    const { result } = renderHook(() =>
+      useWebSocket({
+        createSocket: (url) => new MockWebSocket(url) as unknown as WebSocket,
+        reconnectJitterRatio: 0,
+      }),
+    );
+
+    act(() => {
+      vi.runAllTimers();
+      result.current.subscribe(handler);
+      MockWebSocket.instances[0].triggerRaw("{not-json");
+    });
+
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it("unsubscribe stops receiving future messages", () => {
+    vi.useFakeTimers();
+    const handler = vi.fn();
+
+    const { result } = renderHook(() =>
+      useWebSocket({
+        createSocket: (url) => new MockWebSocket(url) as unknown as WebSocket,
+        reconnectJitterRatio: 0,
+      }),
+    );
+
+    act(() => {
+      vi.runAllTimers();
+      const unsubscribe = result.current.subscribe(handler);
+      unsubscribe();
+      MockWebSocket.instances[0].triggerMessage({
+        type: "incoming_call",
+        payload: { phone: "07911123456", customer: null, addresses: [], distance: null },
+      });
+    });
+
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it("tracks retry metadata when socket construction throws", () => {
+    vi.useFakeTimers();
+    const failingFactory = vi.fn(() => {
+      throw new Error("constructor failed");
+    });
+
+    const { result } = renderHook(() =>
+      useWebSocket({
+        createSocket: failingFactory,
+        reconnectJitterRatio: 0,
+      }),
+    );
+
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+
+    expect(result.current.status).toBe("reconnecting");
+    expect(result.current.connection.retryAttempt).toBe(1);
+    expect(result.current.connection.nextRetryAt).toBeTypeOf("number");
   });
 });

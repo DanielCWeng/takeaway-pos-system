@@ -12,12 +12,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useCaller } from "../context/CallerContext";
 import { useOrder } from "../context/OrderContext";
 import { useUI } from "../context/UIContext";
-import type {
-  Address,
-  CallDetectedPayload,
-  WebSocketMessage,
-  CustomerInfo,
-} from "../types";
+import type { Address, CallDetectedPayload, WebSocketMessage, CustomerInfo } from "../types";
 
 export function useCallHandler() {
   const { subscribe, isConnected } = useCaller();
@@ -25,9 +20,7 @@ export function useCallHandler() {
   const { openModal, closeModal } = useUI();
 
   const [lastCall, setLastCall] = useState<CallDetectedPayload | null>(null);
-  const [pendingCall, setPendingCall] = useState<CallDetectedPayload | null>(
-    null,
-  );
+  const [pendingCall, setPendingCall] = useState<CallDetectedPayload | null>(null);
   const [addressOptions, setAddressOptions] = useState<Address[]>([]);
 
   const hasActiveOrder = useMemo(() => order.items.length > 0, [order.items]);
@@ -37,25 +30,21 @@ export function useCallHandler() {
       const customerHouseNumber = payload.customer?.houseNumber ?? undefined;
       const customerStreet = payload.customer?.street ?? undefined;
       const fallbackAddress =
-        [customerHouseNumber, customerStreet].filter(Boolean).join(" ") ||
-        undefined;
+        [customerHouseNumber, customerStreet].filter(Boolean).join(" ") || undefined;
 
       const info: CustomerInfo = {
         phone: payload.phone,
         name: payload.customer?.name ?? undefined,
         address:
           address && address.line1
-            ? [address.line1, address.line2, address.town]
-                .filter(Boolean)
-                .join(", ")
+            ? [address.line1, address.line2, address.town].filter(Boolean).join(", ")
             : fallbackAddress,
         postcode: address?.postcode ?? payload.customer?.postcode ?? undefined,
         distance: payload.distance ?? payload.customer?.distance ?? undefined,
       };
 
       setCustomerInfo(info);
-      const wantsDelivery =
-        Boolean(address) || Boolean(info.postcode) || Boolean(info.address);
+      const wantsDelivery = Boolean(address) || Boolean(info.postcode) || Boolean(info.address);
       setOrderType(wantsDelivery ? "delivery" : "collection");
       closeModal();
       setPendingCall(null);

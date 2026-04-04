@@ -76,13 +76,7 @@ export function ChickenIcon({ isAnimating, ...props }: AnimatedIconProps) {
             strokeWidth="2"
           />
 
-          <path
-            id="wing"
-            d="M 15 23 Q 22 28 27 22"
-            fill="none"
-            stroke="#332D27"
-            strokeWidth="2"
-          >
+          <path id="wing" d="M 15 23 Q 22 28 27 22" fill="none" stroke="#332D27" strokeWidth="2">
             {isAnimating && (
               <animateTransform
                 attributeName="transform"

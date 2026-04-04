@@ -10,8 +10,8 @@
  * - This module must never import any domain modules.
  */
 
-import { config } from '../config/index.js';
-import { logger } from '../infrastructure/logger.js';
+import { config } from "../config/index.js";
+import { logger } from "../infrastructure/logger.js";
 
 // Known VID/PID for JD-2000S (from legacy system)
 const DEFAULT_VENDOR_ID = 0x0483;
@@ -46,9 +46,9 @@ let stopped = true;
  * @returns {string | null}
  */
 export function extractPhone(data) {
-  if (!data || typeof data.length !== 'number') return null;
+  if (!data || typeof data.length !== "number") return null;
 
-  let digits = '';
+  let digits = "";
   for (let i = 0; i < data.length; i++) {
     const byte = data[i];
     if (byte >= 48 && byte <= 57) digits += String.fromCharCode(byte);
@@ -62,11 +62,11 @@ async function loadNodeHid() {
   if (hid) return hid;
 
   try {
-    const mod = await import('node-hid');
+    const mod = await import("node-hid");
     hid = mod.default ?? mod;
     return hid;
   } catch (err) {
-    logger.error('node-hid is not available (caller ID hardware disabled)', {
+    logger.error("node-hid is not available (caller ID hardware disabled)", {
       hardware: true,
       error: err?.message ?? String(err),
     });
@@ -85,13 +85,13 @@ function findCallerIdDevicePath(HID) {
     const devices = HID.devices();
     const match = devices.find(
       (d) =>
-        (d.product && String(d.product).includes('JD-2000S')) ||
-        (d.manufacturer && String(d.manufacturer).includes('KOSEN')) ||
+        (d.product && String(d.product).includes("JD-2000S")) ||
+        (d.manufacturer && String(d.manufacturer).includes("KOSEN")) ||
         (d.vendorId === DEFAULT_VENDOR_ID && d.productId === DEFAULT_PRODUCT_ID),
     );
     return match?.path ?? null;
   } catch (err) {
-    logger.warn('Failed to scan HID devices for JD-2000S', {
+    logger.warn("Failed to scan HID devices for JD-2000S", {
       hardware: true,
       error: err?.message ?? String(err),
     });
@@ -111,7 +111,7 @@ function closeDevice() {
   try {
     device.close();
   } catch (err) {
-    logger.warn('Failed to close caller ID HID device cleanly', {
+    logger.warn("Failed to close caller ID HID device cleanly", {
       hardware: true,
       error: err?.message ?? String(err),
     });
@@ -129,7 +129,7 @@ function scheduleReconnect(reason) {
     MAX_RECONNECT_DELAY_MS,
   );
 
-  logger.warn('Scheduling caller ID device reconnect', {
+  logger.warn("Scheduling caller ID device reconnect", {
     hardware: true,
     reason,
     delayMs,
@@ -157,39 +157,39 @@ async function connect() {
   const path = configuredPath || findCallerIdDevicePath(HID);
 
   if (!path) {
-    logger.warn('Caller ID device not found (will keep retrying)', {
+    logger.warn("Caller ID device not found (will keep retrying)", {
       hardware: true,
       vendorId: DEFAULT_VENDOR_ID,
       productId: DEFAULT_PRODUCT_ID,
     });
-    scheduleReconnect('device_not_found');
+    scheduleReconnect("device_not_found");
     return;
   }
 
   try {
     device = new HID.HID(path);
   } catch (err) {
-    logger.error('Failed to open caller ID HID device', {
+    logger.error("Failed to open caller ID HID device", {
       hardware: true,
       path,
       error: err?.message ?? String(err),
     });
-    scheduleReconnect('open_failed');
+    scheduleReconnect("open_failed");
     return;
   }
 
-  logger.info('Caller ID device connected', { hardware: true, path });
+  logger.info("Caller ID device connected", { hardware: true, path });
   reconnectAttempt = 0;
 
-  device.on('data', (data) => {
+  device.on("data", (data) => {
     const phone = extractPhone(data);
     if (!phone) return;
 
-    logger.info('Caller ID phone detected', { hardware: true, phone });
+    logger.info("Caller ID phone detected", { hardware: true, phone });
     try {
       onPhoneDetected?.(phone);
     } catch (err) {
-      logger.error('Caller ID onPhoneDetected callback threw', {
+      logger.error("Caller ID onPhoneDetected callback threw", {
         hardware: true,
         phone,
         error: err?.message ?? String(err),
@@ -197,12 +197,12 @@ async function connect() {
     }
   });
 
-  device.on('error', (err) => {
-    logger.warn('Caller ID device error', {
+  device.on("error", (err) => {
+    logger.warn("Caller ID device error", {
       hardware: true,
       error: err?.message ?? String(err),
     });
-    scheduleReconnect('device_error');
+    scheduleReconnect("device_error");
   });
 }
 
@@ -213,12 +213,12 @@ async function connect() {
  * @returns {Promise<void>}
  */
 export async function startListening(handler) {
-  if (typeof handler !== 'function') {
-    throw new TypeError('startListening(handler) requires a function');
+  if (typeof handler !== "function") {
+    throw new TypeError("startListening(handler) requires a function");
   }
 
   if (!stopped) {
-    throw new Error('startListening() called while already listening — call stopListening() first');
+    throw new Error("startListening() called while already listening — call stopListening() first");
   }
 
   onPhoneDetected = handler;
@@ -237,5 +237,5 @@ export function stopListening() {
   clearReconnectTimer();
   closeDevice();
   hid = null; // Clear cached module so the next startListening() re-resolves import cleanly
-  logger.info('Caller ID device listener stopped', { hardware: true });
+  logger.info("Caller ID device listener stopped", { hardware: true });
 }

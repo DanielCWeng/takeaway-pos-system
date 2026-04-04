@@ -1,23 +1,23 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { printReceipt } from '../../src/hardware/printer.js';
-import { HardwareError } from '../../src/shared/errors.js';
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { printReceipt } from "../../src/hardware/printer.js";
+import { HardwareError } from "../../src/shared/errors.js";
 
 // Mock the usb module
-vi.mock('usb', () => ({
+vi.mock("usb", () => ({
   default: {
     findByIds: vi.fn(),
   },
 }));
 
-vi.mock('canvas', () => ({
+vi.mock("canvas", () => ({
   default: {
     createCanvas: vi.fn(),
   },
 }));
 
-import usb from 'usb';
+import usb from "usb";
 
-describe('Printer Module (Timeout)', () => {
+describe("Printer Module (Timeout)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
@@ -27,9 +27,9 @@ describe('Printer Module (Timeout)', () => {
     vi.useRealTimers();
   });
 
-  it('rejects with HardwareError if the transfer times out', { timeout: 15000 }, async () => {
+  it("rejects with HardwareError if the transfer times out", { timeout: 15000 }, async () => {
     const mockEndpoint = {
-      direction: 'out',
+      direction: "out",
       transfer: vi.fn(), // Never calls the callback
     };
     const mockInterface = {
@@ -53,9 +53,9 @@ describe('Printer Module (Timeout)', () => {
     expect(mockDevice.close).toHaveBeenCalled();
   });
 
-  it('resolves if the transfer completes before timeout', async () => {
+  it("resolves if the transfer completes before timeout", async () => {
     const mockEndpoint = {
-      direction: 'out',
+      direction: "out",
       transfer: vi.fn((_data, cb) => cb()), // Immediate success
     };
     const mockInterface = {

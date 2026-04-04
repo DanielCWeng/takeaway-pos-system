@@ -30,12 +30,12 @@ const LON_RANGE = { min: -180, max: 180 };
 export function haversineInMiles(lat1, lon1, lat2, lon2) {
   // Type guard — catches null, undefined, NaN, non-numeric strings
   for (const [name, val] of [
-    ['lat1', lat1],
-    ['lon1', lon1],
-    ['lat2', lat2],
-    ['lon2', lon2],
+    ["lat1", lat1],
+    ["lon1", lon1],
+    ["lat2", lat2],
+    ["lon2", lon2],
   ]) {
-    if (typeof val !== 'number' || !isFinite(val)) {
+    if (typeof val !== "number" || !isFinite(val)) {
       throw new TypeError(`haversineInMiles: '${name}' must be a finite number, got ${val}`);
     }
   }

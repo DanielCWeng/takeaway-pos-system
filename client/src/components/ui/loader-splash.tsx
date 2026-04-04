@@ -1,4 +1,4 @@
-import { cn } from '../../lib/utils';
+import { cn } from "../../lib/utils";
 
 interface LoaderSplashProps {
   title?: string;
@@ -55,13 +55,23 @@ const fallbackSvg = `
 </svg>
 `;
 
-export function LoaderSplash({ title = 'Loading…', subtitle, svgMarkup, className }: LoaderSplashProps) {
+export function LoaderSplash({
+  title = "Loading…",
+  subtitle,
+  svgMarkup,
+  className,
+}: LoaderSplashProps) {
   return (
-    <div className={cn('pos-panel flex h-full min-h-[320px] w-full flex-col items-center justify-center p-6 text-center', className)}>
+    <div
+      className={cn(
+        "pos-panel flex h-full min-h-[320px] w-full flex-col items-center justify-center p-6 text-center",
+        className,
+      )}
+    >
       <div className="w-full max-w-[640px] mx-auto rounded-[18px] bg-gradient-to-b from-white/6 to-white/0 p-4 shadow-soft">
         <div
           className="w-full rounded-[12px] overflow-hidden"
-          style={{ aspectRatio: '16 / 9' }}
+          style={{ aspectRatio: "16 / 9" }}
           dangerouslySetInnerHTML={{ __html: svgMarkup || fallbackSvg }}
         />
         <div className="mt-3 flex flex-col gap-1">

@@ -10,9 +10,9 @@
  *  - Standardise response shape for the rest of the app.
  */
 
-import { LRUCache } from 'lru-cache';
-import { config } from '../../config/index.js';
-import { logger } from '../../infrastructure/logger.js';
+import { LRUCache } from "lru-cache";
+import { config } from "../../config/index.js";
+import { logger } from "../../infrastructure/logger.js";
 
 // Cache up to 100 postcodes for 24 hours
 const cache = new LRUCache({
@@ -43,18 +43,18 @@ export async function findAddressesFromApi(postcode) {
   const apiKey = config.address.apiKey;
 
   if (!apiKey) {
-    logger.warn('Address lookup skipped: GETADDRESS_API_KEY not configured');
+    logger.warn("Address lookup skipped: GETADDRESS_API_KEY not configured");
     return null;
   }
 
   // Normalise before cache lookup and URL construction so that "ng9 8gf" and "NG9 8GF"
   // resolve to the same cache entry and don't trigger duplicate API calls.
-  const normPostcode = postcode.trim().toUpperCase().replace(/\s+/g, '');
+  const normPostcode = postcode.trim().toUpperCase().replace(/\s+/g, "");
 
   // Check cache first
   const cached = cache.get(normPostcode);
   if (cached) {
-    logger.debug('Address lookup: cache hit', { postcode: normPostcode });
+    logger.debug("Address lookup: cache hit", { postcode: normPostcode });
     return cached;
   }
 
@@ -66,26 +66,26 @@ export async function findAddressesFromApi(postcode) {
 
   try {
     const response = await fetch(url, {
-      headers: { 'api-key': apiKey },
+      headers: { "api-key": apiKey },
       signal: controller.signal,
     });
 
     if (response.status === 429) {
-      logger.error('Address lookup: RATE LIMIT REACHED (HTTP 429)', {
+      logger.error("Address lookup: RATE LIMIT REACHED (HTTP 429)", {
         postcode,
-        message: 'The getaddress.io API limit for this day/key has been exceeded.',
+        message: "The getaddress.io API limit for this day/key has been exceeded.",
       });
       return null;
     }
 
     if (response.status === 404) {
-      logger.info('Address lookup: postcode not found', { postcode });
+      logger.info("Address lookup: postcode not found", { postcode });
       return null;
     }
 
     if (!response.ok) {
       const text = await response.text();
-      logger.error('Address lookup: API error', {
+      logger.error("Address lookup: API error", {
         postcode,
         status: response.status,
         error: text,
@@ -97,13 +97,13 @@ export async function findAddressesFromApi(postcode) {
 
     // Guard against unexpected response shapes before attempting to map
     if (!Array.isArray(data.addresses)) {
-      logger.error('Address lookup: unexpected response shape', { postcode, data });
+      logger.error("Address lookup: unexpected response shape", { postcode, data });
       return null;
     }
 
     // Latitude/longitude validation: must be numbers
-    if (typeof data.latitude !== 'number' || typeof data.longitude !== 'number') {
-      logger.error('Address lookup: missing or invalid coordinates in API response', {
+    if (typeof data.latitude !== "number" || typeof data.longitude !== "number") {
+      logger.error("Address lookup: missing or invalid coordinates in API response", {
         postcode,
         latitude: data.latitude,
         longitude: data.longitude,
@@ -114,9 +114,9 @@ export async function findAddressesFromApi(postcode) {
     // latitude/longitude are postcode-level fields on the API response, not
     // per-address — it is correct to apply them to every address in the list.
     const results = data.addresses.map((addr) => ({
-      line1: addr.line_1 || '',
-      line2: addr.line_2 || '',
-      town: addr.town_or_city || '',
+      line1: addr.line_1 || "",
+      line2: addr.line_2 || "",
+      town: addr.town_or_city || "",
       latitude: data.latitude,
       longitude: data.longitude,
     }));
@@ -124,17 +124,17 @@ export async function findAddressesFromApi(postcode) {
     // Intentionally cache empty arrays — a valid postcode with no listed
     // addresses is a known API state and should not trigger repeat calls.
     cache.set(normPostcode, results);
-    logger.info('Address lookup: API success', {
+    logger.info("Address lookup: API success", {
       postcode: normPostcode,
       resultCount: results.length,
     });
 
     return results;
   } catch (err) {
-    if (err.name === 'AbortError') {
-      logger.error('Address lookup: request timed out (5s)', { postcode });
+    if (err.name === "AbortError") {
+      logger.error("Address lookup: request timed out (5s)", { postcode });
     } else {
-      logger.error('Address lookup: network error', {
+      logger.error("Address lookup: network error", {
         postcode,
         error: err.message,
       });

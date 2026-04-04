@@ -9,11 +9,9 @@ interface WebSocketMessage<T> {
 }
 
 export function useWebSocket<T>(url: string) {
-  const [lastMessage, setLastMessage] = useState<WebSocketMessage<T> | null>(
-    null
-  );
+  const [lastMessage, setLastMessage] = useState<WebSocketMessage<T> | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  
+
   const ws = useRef<WebSocket | null>(null);
   const reconnectTimeout = useRef<NodeJS.Timeout | null>(null);
   const heartbeatInterval = useRef<NodeJS.Timeout | null>(null);
@@ -33,7 +31,10 @@ export function useWebSocket<T>(url: string) {
 
   const connect = () => {
     // Prevent multiple connections
-    if (ws.current?.readyState === WebSocket.OPEN || ws.current?.readyState === WebSocket.CONNECTING) {
+    if (
+      ws.current?.readyState === WebSocket.OPEN ||
+      ws.current?.readyState === WebSocket.CONNECTING
+    ) {
       return;
     }
 
@@ -52,7 +53,7 @@ export function useWebSocket<T>(url: string) {
         heartbeatInterval.current = setInterval(() => {
           if (ws.current?.readyState === WebSocket.OPEN) {
             ws.current.send(JSON.stringify({ type: "ping" }));
-            
+
             // Check for liveness
             if (Date.now() - lastPongTime.current > 30000) {
               console.warn("Server unresponsive, closing connection...");
@@ -65,16 +66,16 @@ export function useWebSocket<T>(url: string) {
       ws.current.onmessage = (event) => {
         try {
           const message = JSON.parse(event.data);
-          
+
           if (message.type === "pong") {
             lastPongTime.current = Date.now();
             return; // Don't expose pong to consumers
           }
 
           if (message && message.type && message.payload !== undefined) {
-             setLastMessage(message);
+            setLastMessage(message);
           } else {
-             console.warn("Received malformed WebSocket message:", message);
+            console.warn("Received malformed WebSocket message:", message);
           }
         } catch (error) {
           console.error("Failed to parse WebSocket message:", error);
@@ -90,7 +91,7 @@ export function useWebSocket<T>(url: string) {
         if (shouldReconnect.current) {
           const delay = Math.min(1000 * Math.pow(2, retryCount.current), 30000);
           console.log(`Reconnecting in ${delay}ms... (Attempt ${retryCount.current + 1})`);
-          
+
           reconnectTimeout.current = setTimeout(() => {
             retryCount.current += 1;
             connect();
@@ -107,8 +108,8 @@ export function useWebSocket<T>(url: string) {
       if (shouldReconnect.current) {
         const delay = Math.min(1000 * Math.pow(2, retryCount.current), 30000);
         reconnectTimeout.current = setTimeout(() => {
-           retryCount.current += 1;
-           connect();
+          retryCount.current += 1;
+          connect();
         }, delay);
       }
     }

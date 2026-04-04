@@ -11,24 +11,12 @@ export function LambIcon({ isAnimating, ...props }: AnimatedIconProps) {
     >
       <ellipse cx="24" cy="43" rx="14" ry="2" fill="#4A3B32" opacity="0.1" />
 
-      <g
-        id="lamb-legs-far"
-        fill="#D6C5B3"
-        stroke="#4A3B32"
-        strokeWidth="2"
-        strokeLinejoin="round"
-      >
+      <g id="lamb-legs-far" fill="#D6C5B3" stroke="#4A3B32" strokeWidth="2" strokeLinejoin="round">
         <rect x="18" y="28" width="3" height="13" rx="1.5" />
         <rect x="31" y="28" width="3" height="13" rx="1.5" />
       </g>
 
-      <g
-        id="lamb-legs-near"
-        fill="#D6C5B3"
-        stroke="#4A3B32"
-        strokeWidth="2"
-        strokeLinejoin="round"
-      >
+      <g id="lamb-legs-near" fill="#D6C5B3" stroke="#4A3B32" strokeWidth="2" strokeLinejoin="round">
         <rect x="15" y="30" width="3" height="12" rx="1.5" />
         <rect x="28" y="30" width="3" height="12" rx="1.5" />
       </g>
@@ -134,10 +122,7 @@ export function LambIcon({ isAnimating, ...props }: AnimatedIconProps) {
               strokeWidth="2"
               strokeLinejoin="round"
             />
-            <path
-              d="M 18 22.5 C 22 21 25 24 23.5 27 C 22.5 28 20 27 18 24.5 Z"
-              fill="#E8A2A8"
-            />
+            <path d="M 18 22.5 C 22 21 25 24 23.5 27 C 22.5 28 20 27 18 24.5 Z" fill="#E8A2A8" />
           </g>
 
           <path

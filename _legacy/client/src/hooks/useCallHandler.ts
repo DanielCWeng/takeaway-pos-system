@@ -7,8 +7,7 @@ import { CustomerInfo, OrderType } from "../types";
 
 export function useCallHandler() {
   const { lastCall } = useCallerId();
-  const { activeOrder, activeOrderIndex, orders, updateOrder, createNewOrder } =
-    useOrder();
+  const { activeOrder, activeOrderIndex, orders, updateOrder, createNewOrder } = useOrder();
 
   const { openAddressSelectionModal } = useUI();
 
@@ -41,22 +40,16 @@ export function useCallHandler() {
         activeOrder.items.length === 0 &&
         !activeOrder.customerInfo.phone;
 
-      console.log(
-        `[CALL DECISION] Should Auto Populate? ${shouldAutoPopulate}`,
-      );
+      console.log(`[CALL DECISION] Should Auto Populate? ${shouldAutoPopulate}`);
 
       if (shouldAutoPopulate) {
         isPopulatingActiveOrder.current = true;
       }
 
       try {
-        console.log(
-          `[EFFECT] New call from ${callData.phone}, fetching customer data...`,
-        );
+        console.log(`[EFFECT] New call from ${callData.phone}, fetching customer data...`);
 
-        const response = await fetch(
-          `${API_BASE_URL}/api/customer/${callData.phone}`,
-        );
+        const response = await fetch(`${API_BASE_URL}/api/customer/${callData.phone}`);
 
         let customerDataToApply: CustomerInfo = {};
 
@@ -129,19 +122,12 @@ export function useCallHandler() {
 
         // Apply to state
         if (shouldAutoPopulate) {
-          console.log(
-            "[UPDATE STATE] Populating ACTIVE order index:",
-            activeOrderIndex,
-          );
-          const deliveryCharge = calculateDeliveryCharge(
-            customerDataToApply.distance,
-          );
+          console.log("[UPDATE STATE] Populating ACTIVE order index:", activeOrderIndex);
+          const deliveryCharge = calculateDeliveryCharge(customerDataToApply.distance);
 
           // Open modal if flag set
           if (shouldOpenAddressModal && customerForModal) {
-            console.log(
-              "[EFFECT] Opening address selection modal for active order.",
-            );
+            console.log("[EFFECT] Opening address selection modal for active order.");
             openAddressSelectionModal(customerForModal);
             isPopulatingActiveOrder.current = false; // Release lock early if modal manages flow?
             // Actually App.tsx released lock here:
@@ -155,9 +141,7 @@ export function useCallHandler() {
           });
         } else {
           console.log("[UPDATE STATE] Creating BACKGROUND order.");
-          const deliveryCharge = calculateDeliveryCharge(
-            customerDataToApply.distance,
-          );
+          const deliveryCharge = calculateDeliveryCharge(customerDataToApply.distance);
 
           // Create background order with data
           createNewOrder(true, {

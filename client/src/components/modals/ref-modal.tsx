@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { X, Search } from 'lucide-react';
-import { Button } from '../ui/button';
-import { cn } from '../../lib/utils';
-import type { MenuItem } from '../../types';
+import React, { useState, useEffect, useRef } from "react";
+import { motion } from "framer-motion";
+import { X, Search } from "lucide-react";
+import { Button } from "../ui/button";
+import { cn } from "../../lib/utils";
+import type { MenuItem } from "../../types";
 
 interface RefModalProps {
   menuItems: MenuItem[];
@@ -12,7 +12,7 @@ interface RefModalProps {
 }
 
 export function RefModal({ menuItems, onSelect, onClose }: RefModalProps) {
-  const [ref, setRef] = useState('');
+  const [ref, setRef] = useState("");
   const [error, setError] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -24,9 +24,7 @@ export function RefModal({ menuItems, onSelect, onClose }: RefModalProps) {
     e?.preventDefault();
     if (!ref.trim()) return;
 
-    const matchedItem = menuItems.find(
-      (item) => item.id.toLowerCase() === ref.toLowerCase()
-    );
+    const matchedItem = menuItems.find((item) => item.id.toLowerCase() === ref.toLowerCase());
 
     if (matchedItem) {
       onSelect(matchedItem);
@@ -41,16 +39,16 @@ export function RefModal({ menuItems, onSelect, onClose }: RefModalProps) {
     <div className="modal-keyboard-aware fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 10 }}
-        animate={{ 
-          opacity: 1, 
-          scale: 1, 
+        animate={{
+          opacity: 1,
+          scale: 1,
           y: 0,
-          x: error ? [0, -10, 10, -10, 10, 0] : 0
+          x: error ? [0, -10, 10, -10, 10, 0] : 0,
         }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
-        transition={{ 
+        transition={{
           duration: 0.2,
-          x: { duration: 0.4, ease: "easeInOut" }
+          x: { duration: 0.4, ease: "easeInOut" },
         }}
         className="w-full max-w-md overflow-hidden rounded-2xl border border-border bg-card shadow-2xl"
       >
@@ -81,7 +79,7 @@ export function RefModal({ menuItems, onSelect, onClose }: RefModalProps) {
                 placeholder="Enter ID (e.g. 12, 12A, HM1)"
                 className={cn(
                   "w-full h-14 bg-muted/20 border rounded-xl px-4 text-2xl font-mono text-center text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all uppercase",
-                  error ? 'border-destructive/50 ring-2 ring-destructive/10' : 'border-border'
+                  error ? "border-destructive/50 ring-2 ring-destructive/10" : "border-border",
                 )}
               />
               {error && (
@@ -92,19 +90,10 @@ export function RefModal({ menuItems, onSelect, onClose }: RefModalProps) {
             </div>
 
             <div className="grid grid-cols-2 gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onClose}
-                className="h-12"
-              >
+              <Button type="button" variant="outline" onClick={onClose} className="h-12">
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                variant="default"
-                className="h-12 shadow-md"
-              >
+              <Button type="submit" variant="default" className="h-12 shadow-md">
                 Add Item
               </Button>
             </div>

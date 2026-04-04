@@ -16,41 +16,41 @@
  *   npm run db:seed-postcodes
  */
 
-import fs from 'fs';
-import path from 'path';
-import Database from 'better-sqlite3';
-import proj4 from 'proj4';
-import { fileURLToPath } from 'url';
+import fs from "fs";
+import path from "path";
+import Database from "better-sqlite3";
+import proj4 from "proj4";
+import { fileURLToPath } from "url";
 
 // ---------------------------------------------------------------------------
 // Setup & Config
 // ---------------------------------------------------------------------------
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const ROOT = path.join(__dirname, '..');
+const ROOT = path.join(__dirname, "..");
 
 // We don't import the full app config here to avoid triggering environment validation
 // for unrelated variables (like printer IDs) during a simple seed task.
 // Instead, we just look for the expected file locations.
-const JSON_PATH = path.join(ROOT, 'data', 'postcodes_detailed.json');
-const DB_DIR = path.join(ROOT, 'data');
-const DB_PATH = path.join(DB_DIR, 'postcodes.db');
+const JSON_PATH = path.join(ROOT, "data", "postcodes_detailed.json");
+const DB_DIR = path.join(ROOT, "data");
+const DB_PATH = path.join(DB_DIR, "postcodes.db");
 
 // Proj4 Definitions:
 // EPSG:27700 = British National Grid (OSGB36)
 // EPSG:4326 = WGS84 (Standard GPS Lat/Lng)
 proj4.defs(
-  'EPSG:27700',
-  '+proj=tmerc +lat_0=49 +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +towgs84=446.448,-125.157,542.06,0.15,0.247,0.842,-20.489 +units=m +no_defs',
+  "EPSG:27700",
+  "+proj=tmerc +lat_0=49 +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +towgs84=446.448,-125.157,542.06,0.15,0.247,0.842,-20.489 +units=m +no_defs",
 );
-proj4.defs('EPSG:4326', '+proj=longlat +datum=WGS84 +no_defs');
+proj4.defs("EPSG:4326", "+proj=longlat +datum=WGS84 +no_defs");
 
 // Minimal normalisation (mirroring shared/postcodes.js without the full import)
 function normalisePostcode(pc) {
-  if (!pc) return '';
-  const clean = pc.replace(/\s/g, '').toUpperCase();
+  if (!pc) return "";
+  const clean = pc.replace(/\s/g, "").toUpperCase();
   if (clean.length < 5) return clean;
-  return clean.slice(0, -3) + ' ' + clean.slice(-3);
+  return clean.slice(0, -3) + " " + clean.slice(-3);
 }
 
 // ---------------------------------------------------------------------------
@@ -58,12 +58,12 @@ function normalisePostcode(pc) {
 // ---------------------------------------------------------------------------
 
 async function seed() {
-  console.log('--- Initial Postcode Seed ---');
+  console.log("--- Initial Postcode Seed ---");
 
   // 1. Validation
   if (!fs.existsSync(JSON_PATH)) {
     console.error(`[ERROR] Source file not found: ${JSON_PATH}`);
-    console.error('Please ensure postcodes_detailed.json is in the server/data directory.');
+    console.error("Please ensure postcodes_detailed.json is in the server/data directory.");
     process.exit(1);
   }
 
@@ -76,7 +76,7 @@ async function seed() {
   const startTime = Date.now();
   let rawData;
   try {
-    rawData = fs.readFileSync(JSON_PATH, 'utf8');
+    rawData = fs.readFileSync(JSON_PATH, "utf8");
   } catch (err) {
     console.error(`[ERROR] Failed to read JSON file: ${err.message}`);
     process.exit(1);
@@ -111,7 +111,7 @@ async function seed() {
     `);
   // Ensure 'town' column exists for existing installations
   try {
-    db.exec('ALTER TABLE addresses ADD COLUMN town TEXT');
+    db.exec("ALTER TABLE addresses ADD COLUMN town TEXT");
   } catch {
     // Column already exists, ignore
   }
@@ -123,7 +123,7 @@ async function seed() {
     `);
 
   // 4. Transform and Insert (Atomic Transaction)
-  console.log('Transforming coordinates and seeding database...');
+  console.log("Transforming coordinates and seeding database...");
   let count = 0;
   let skipCount = 0;
 
@@ -138,35 +138,35 @@ async function seed() {
 
       try {
         // Convert Easting/Northing to [Lng, Lat]
-        const [lng, lat] = proj4('EPSG:27700', 'EPSG:4326', [easting, northing]);
+        const [lng, lat] = proj4("EPSG:27700", "EPSG:4326", [easting, northing]);
         const normalisedPostcode = normalisePostcode(code);
         const locality =
-          (typeof ward === 'string' && ward.trim()) ||
-          (typeof town === 'string' && town.trim()) ||
-          (typeof city === 'string' && city.trim()) ||
-          '';
+          (typeof ward === "string" && ward.trim()) ||
+          (typeof town === "string" && town.trim()) ||
+          (typeof city === "string" && city.trim()) ||
+          "";
 
         // Store a minimal address list payload so local lookups can return
         // town/city information without needing a paid API lookup.
         const seededAddress = [
           {
-            line1: street || '',
-            line2: '',
+            line1: street || "",
+            line2: "",
             town: locality,
             postcode: normalisedPostcode,
             latitude: lat,
             longitude: lng,
-            source: 'seed',
+            source: "seed",
           },
         ];
 
         insert.run({
           postcode: normalisedPostcode,
-          street: street || '',
+          street: street || "",
           town: locality,
           latitude: lat,
           longitude: lng,
-          source: 'seed',
+          source: "seed",
           data: JSON.stringify(seededAddress),
         });
         count++;
@@ -191,18 +191,18 @@ async function seed() {
 
   // 5. Cleanup
   const duration = ((Date.now() - startTime) / 1000).toFixed(1);
-  console.log('------------------------------');
+  console.log("------------------------------");
   console.log(`Finished in ${duration}s`);
   console.log(`Inserted: ${count}`);
   console.log(`Skipped:  ${skipCount}`);
-  console.log('------------------------------');
+  console.log("------------------------------");
 
   db.close();
-  console.log('Database connection closed.');
+  console.log("Database connection closed.");
 
   // Per the plan, we should suggest deleting the JSON file now
-  console.log('\n[PLAN ADVISORY] As per the rebuild plan, you may now safely delete');
-  console.log('server/data/postcodes_detailed.json to reduce repository weight.');
+  console.log("\n[PLAN ADVISORY] As per the rebuild plan, you may now safely delete");
+  console.log("server/data/postcodes_detailed.json to reduce repository weight.");
 }
 
 seed();

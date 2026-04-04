@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -17,11 +17,11 @@
     --primary-foreground: 0 0% 100%;
     --accent: 158 82% 39%;
     --accent-foreground: 0 0% 100%;
-    
+
     --positive: 158 82% 39%;
     --info: 217 91% 60%;
     --destructive: 0 84% 60%;
-    
+
     --ring: 239 84% 67%;
     --radius: 8px;
     --order-type-active: 217 91% 60%; /* Solid Blue for active side */
@@ -56,11 +56,11 @@
 
   body {
     @apply bg-background text-foreground antialiased transition-colors duration-300;
-    font-family: 'Outfit', sans-serif;
+    font-family: "Outfit", sans-serif;
     min-height: 100vh;
     margin: 0;
     /* Engineered machine grid background */
-    background-image: 
+    background-image:
       linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
       linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
     background-size: 24px 24px;
@@ -92,10 +92,10 @@
   }
 
   html.touch-ui button,
-  html.touch-ui [role='button'],
-  html.touch-ui input[type='button'],
-  html.touch-ui input[type='submit'],
-  html.touch-ui input[type='reset'] {
+  html.touch-ui [role="button"],
+  html.touch-ui input[type="button"],
+  html.touch-ui input[type="submit"],
+  html.touch-ui input[type="reset"] {
     min-height: 48px;
     min-width: 48px;
     padding: 12px 16px;
@@ -123,8 +123,12 @@
 
   .dark .pos-panel {
     /* Richer, slightly lighter elements to contrast with background in dark mode */
-    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0) 100%);
-    box-shadow: 
+    background-image: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.03) 0%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    box-shadow:
       inset 0 1px 0 0 rgba(255, 255, 255, 0.05),
       0 4px 12px rgba(0, 0, 0, 0.3);
   }
@@ -138,7 +142,8 @@
     @apply bg-muted;
   }
 
-  .pos-btn-tactile:active, .pos-btn-tactile.active {
+  .pos-btn-tactile:active,
+  .pos-btn-tactile.active {
     @apply bg-primary text-primary-foreground border-primary shadow-inner brightness-100;
   }
 
@@ -149,56 +154,76 @@
   .dark .pos-btn-tactile:hover {
     @apply bg-zinc-800;
   }
-  
+
   /* Semantic Action Buttons */
   .pos-btn-positive {
     background-color: hsl(var(--positive));
     @apply text-white border border-transparent shadow-sm transition-all duration-150;
   }
-  .pos-btn-positive:active { @apply brightness-90 translate-y-px; }
+  .pos-btn-positive:active {
+    @apply brightness-90 translate-y-px;
+  }
 
   .pos-btn-info {
     background-color: hsl(var(--info));
     @apply text-white border border-transparent shadow-sm transition-all duration-150;
   }
-  .pos-btn-info:active { @apply brightness-90 translate-y-px; }
+  .pos-btn-info:active {
+    @apply brightness-90 translate-y-px;
+  }
 
   .pos-btn-destructive {
     @apply bg-white dark:bg-zinc-900/50 text-destructive border-2 border-destructive/30 shadow-none transition-all duration-150;
   }
-  .pos-btn-destructive:hover { @apply bg-destructive/5 border-destructive/50; }
-  .pos-btn-destructive:active { @apply brightness-105; }
+  .pos-btn-destructive:hover {
+    @apply bg-destructive/5 border-destructive/50;
+  }
+  .pos-btn-destructive:active {
+    @apply brightness-105;
+  }
 
   .pos-btn-destructive-solid {
     background-color: hsl(var(--destructive));
     @apply text-white border border-transparent shadow-sm transition-all duration-150;
   }
-  .pos-btn-destructive-solid:active { @apply brightness-90 translate-y-px; }
+  .pos-btn-destructive-solid:active {
+    @apply brightness-90 translate-y-px;
+  }
 
   /* Utility Buttons */
   .pos-btn-utility {
     @apply bg-muted text-foreground border-transparent shadow-none transition-all duration-150;
   }
-  .pos-btn-utility:active { @apply bg-border translate-y-px; }
-  
+  .pos-btn-utility:active {
+    @apply bg-border translate-y-px;
+  }
+
   .pos-btn-tactile-primary {
     @apply bg-primary text-primary-foreground border border-primary/50 shadow-sm transition-all duration-150;
-    box-shadow: inset 0 1px 1px 0 rgba(255,255,255,0.2), 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow:
+      inset 0 1px 1px 0 rgba(255, 255, 255, 0.2),
+      0 2px 4px rgba(0, 0, 0, 0.1);
   }
 
   .dark .pos-btn-tactile-primary {
-    background-image: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 100%);
-    box-shadow: inset 0 1px 1px 0 rgba(255,255,255,0.2), 0 2px 4px rgba(0,0,0,0.2);
-    text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+    background-image: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.15) 0%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    box-shadow:
+      inset 0 1px 1px 0 rgba(255, 255, 255, 0.2),
+      0 2px 4px rgba(0, 0, 0, 0.2);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
   }
 
   .pos-btn-tactile-primary:active {
     @apply translate-y-[1px] brightness-90;
-    box-shadow: inset 0 2px 6px rgba(0,0,0,0.2) !important;
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.2) !important;
   }
-  
+
   .dark .pos-btn-tactile-primary:active {
-    box-shadow: inset 0 2px 6px rgba(0,0,0,0.5) !important;
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.5) !important;
   }
 
   /* Tabs / Segmented Controls */
@@ -210,12 +235,12 @@
     @apply text-muted-foreground transition-all duration-200 font-bold uppercase tracking-widest text-[10px] rounded-md;
   }
 
-  .pos-tabs-trigger[data-state='active'] {
+  .pos-tabs-trigger[data-state="active"] {
     background-color: hsl(var(--order-type-active));
     @apply text-white shadow-md scale-[1.02];
   }
 
-  .dark .pos-tabs-trigger[data-state='active'] {
+  .dark .pos-tabs-trigger[data-state="active"] {
     @apply shadow-[0_0_15px_rgba(37,99,235,0.3)];
   }
 
@@ -229,7 +254,7 @@
 
   .pos-value {
     font-variant-numeric: tabular-nums;
-    font-family: 'JetBrains Mono', monospace;
+    font-family: "JetBrains Mono", monospace;
   }
 
   /* Touch density overrides */
@@ -317,7 +342,8 @@
  * Forces the browser to snap every layout change instantly. 
  * This bypasses Framer Motion logic and CSS transitions entirely.
  */
-.instant-ui, .instant-ui * {
+.instant-ui,
+.instant-ui * {
   transition: none !important;
   transition-duration: 0ms !important;
   transition-delay: 0ms !important;
@@ -372,6 +398,7 @@ body.keyboard-open .modal-keyboard-aware {
 
 body.keyboard-open .modal-keyboard-aware > * {
   max-height: calc(100dvh - var(--kb-height, 320px) - 16px) !important;
-  transition: max-height 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-              height 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition:
+    max-height 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    height 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }

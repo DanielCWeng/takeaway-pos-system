@@ -1,6 +1,6 @@
-import React from 'react';
-import { MenuItem, ItemOption } from '../types';
-import { IconX } from './Icons';
+import React from "react";
+import { MenuItem, ItemOption } from "../types";
+import { IconX } from "./Icons";
 
 interface ItemOptionsModalProps {
   item: MenuItem;
@@ -8,7 +8,15 @@ interface ItemOptionsModalProps {
   onClose: () => void;
 }
 
-const PosButton = ({ children, className = '', ...props }: {children?: React.ReactNode, className?: string, [key: string]: any}) => (
+const PosButton = ({
+  children,
+  className = "",
+  ...props
+}: {
+  children?: React.ReactNode;
+  className?: string;
+  [key: string]: any;
+}) => (
   <button
     className={`px-4 py-3 text-lg bg-gray-300 border-2 border-r-gray-500 border-b-gray-500 border-l-gray-100 border-t-gray-100 active:border-l-gray-500 active:border-t-gray-500 active:border-r-gray-100 active:border-b-gray-100 focus:outline-none ${className}`}
     {...props}
@@ -29,14 +37,18 @@ const ItemOptionsModal: React.FC<ItemOptionsModalProps> = ({ item, onSelect, onC
             <IconX className="w-8 h-8" />
           </button>
         </div>
-        
+
         <div className="grid grid-cols-2 gap-4">
-            {item.options.map(option => (
-                <PosButton key={option.name} onClick={() => onSelect(option)} className="h-24 flex flex-col">
-                    <span>{option.name}</span>
-                    <span className="font-bold text-xl">£{option.price.toFixed(2)}</span>
-                </PosButton>
-            ))}
+          {item.options.map((option) => (
+            <PosButton
+              key={option.name}
+              onClick={() => onSelect(option)}
+              className="h-24 flex flex-col"
+            >
+              <span>{option.name}</span>
+              <span className="font-bold text-xl">£{option.price.toFixed(2)}</span>
+            </PosButton>
+          ))}
         </div>
       </div>
     </div>

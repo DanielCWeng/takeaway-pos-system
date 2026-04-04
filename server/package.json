@@ -12,8 +12,8 @@
     "test:coverage": "vitest run --coverage",
     "lint": "eslint src/ tests/ scripts/",
     "lint:fix": "eslint src/ tests/ scripts/ --fix",
-    "format": "prettier --write src/ tests/ scripts/",
-    "format:check": "prettier --check src/ tests/ scripts/",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "migrate": "node scripts/migrate.js",
     "db:seed-postcodes": "node scripts/seedPostcodes.js"
   },

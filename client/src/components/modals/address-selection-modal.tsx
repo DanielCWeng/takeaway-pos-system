@@ -32,16 +32,9 @@ export function AddressSelectionModal({
         <div className="flex items-center justify-between border-b border-border/60 px-6 py-4 bg-primary/5">
           <div className="flex items-center gap-2">
             <MapPin className="h-5 w-5 text-primary" />
-            <span className="font-display text-lg font-bold tracking-tight">
-              Select Address
-            </span>
+            <span className="font-display text-lg font-bold tracking-tight">Select Address</span>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="rounded-full"
-          >
+          <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full">
             <X className="h-5 w-5" />
           </Button>
         </div>
@@ -71,11 +64,7 @@ export function AddressSelectionModal({
         </ScrollArea>
 
         <div className="border-t border-border/60 p-4 bg-muted/10">
-          <Button
-            variant="outline"
-            className="w-full h-12 text-base"
-            onClick={onClose}
-          >
+          <Button variant="outline" className="w-full h-12 text-base" onClick={onClose}>
             None of these
           </Button>
         </div>

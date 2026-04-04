@@ -12,10 +12,10 @@
  * @param {string} [message='Invalid request body']
  * @returns {import('express').Response}
  */
-export function sendValidationError(res, details, message = 'Invalid request body') {
+export function sendValidationError(res, details, message = "Invalid request body") {
   return res.status(400).json({
     error: {
-      code: 'VALIDATION_ERROR',
+      code: "VALIDATION_ERROR",
       message,
       details,
     },

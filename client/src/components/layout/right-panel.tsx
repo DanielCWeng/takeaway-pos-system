@@ -1,8 +1,8 @@
-import React, { useMemo, useState, useCallback } from 'react';
-import type { MenuItem } from '../../types';
-import { MenuTable } from './menu-table';
-import { CategoryStrip } from './category-strip';
-import { CategoryGrid } from './category-grid';
+import React, { useMemo, useState, useCallback } from "react";
+import type { MenuItem } from "../../types";
+import { MenuTable } from "./menu-table";
+import { CategoryStrip } from "./category-strip";
+import { CategoryGrid } from "./category-grid";
 
 interface RightPanelProps {
   menuItems: MenuItem[];
@@ -10,21 +10,24 @@ interface RightPanelProps {
   onOpenMenuRef: () => void;
 }
 
-export const RightPanel = React.memo(function RightPanel({ menuItems, onAddItem, onOpenMenuRef }: RightPanelProps) {
+export const RightPanel = React.memo(function RightPanel({
+  menuItems,
+  onAddItem,
+  onOpenMenuRef,
+}: RightPanelProps) {
   const [selectedPrimary, setSelectedPrimary] = useState<string | null>(null);
   const [selectedSecondary, setSelectedSecondary] = useState<string | null>(null);
   const [page, setPage] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const filteredItems = useMemo(() => {
-    return menuItems.filter(item => {
-      const primaryList = [
-        item.primaryCategory,
-        ...(item.primaryCategories || []),
-      ].filter(Boolean) as string[];
+    return menuItems.filter((item) => {
+      const primaryList = [item.primaryCategory, ...(item.primaryCategories || [])].filter(
+        Boolean,
+      ) as string[];
       const matchesPrimary = selectedPrimary ? primaryList.includes(selectedPrimary) : true;
       const matchesSecondary =
-        selectedSecondary && selectedSecondary !== 'Show All'
+        selectedSecondary && selectedSecondary !== "Show All"
           ? item.secondaryCategory === selectedSecondary
           : true;
       return matchesPrimary && matchesSecondary;
@@ -33,37 +36,40 @@ export const RightPanel = React.memo(function RightPanel({ menuItems, onAddItem,
 
   const activeSelectedId = useMemo(() => {
     if (!filteredItems.length) return null;
-    const exists = filteredItems.some(item => item.id === selectedId);
+    const exists = filteredItems.some((item) => item.id === selectedId);
     return exists ? selectedId : filteredItems[0].id;
   }, [filteredItems, selectedId]);
 
   const handleAddSelected = useCallback(() => {
-    const item = filteredItems.find(menuItem => menuItem.id === activeSelectedId);
+    const item = filteredItems.find((menuItem) => menuItem.id === activeSelectedId);
     if (item) onAddItem(item);
   }, [filteredItems, activeSelectedId, onAddItem]);
 
-  const handleNavigate = useCallback((direction: 'up' | 'down') => {
-    if (!filteredItems.length) return;
-    const currentIndex = filteredItems.findIndex(item => item.id === activeSelectedId);
-    const nextIndex =
-      direction === 'up'
-        ? Math.max(0, currentIndex - 1)
-        : Math.min(filteredItems.length - 1, currentIndex + 1);
-    const nextItem = filteredItems[nextIndex];
-    if (nextItem) setSelectedId(nextItem.id);
-  }, [filteredItems, activeSelectedId]);
+  const handleNavigate = useCallback(
+    (direction: "up" | "down") => {
+      if (!filteredItems.length) return;
+      const currentIndex = filteredItems.findIndex((item) => item.id === activeSelectedId);
+      const nextIndex =
+        direction === "up"
+          ? Math.max(0, currentIndex - 1)
+          : Math.min(filteredItems.length - 1, currentIndex + 1);
+      const nextItem = filteredItems[nextIndex];
+      if (nextItem) setSelectedId(nextItem.id);
+    },
+    [filteredItems, activeSelectedId],
+  );
 
   const handleSelectPrimary = useCallback((category: string) => {
-    setSelectedPrimary(prev => (prev === category ? null : category));
+    setSelectedPrimary((prev) => (prev === category ? null : category));
   }, []);
 
   const handleSelectSecondary = useCallback((category: string) => {
-    if (category === 'Show All') {
+    if (category === "Show All") {
       setSelectedPrimary(null);
       setSelectedSecondary(null);
       return;
     }
-    setSelectedSecondary(prev => (prev === category ? null : category));
+    setSelectedSecondary((prev) => (prev === category ? null : category));
   }, []);
 
   return (

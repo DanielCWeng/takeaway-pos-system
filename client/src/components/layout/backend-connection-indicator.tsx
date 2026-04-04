@@ -12,8 +12,7 @@ type StatusTheme = {
 const STATUS_THEME: Record<string, StatusTheme> = {
   connected: {
     label: "Backend Online",
-    containerClassName:
-      "border-emerald-500/30 bg-emerald-500/10 text-emerald-200",
+    containerClassName: "border-emerald-500/30 bg-emerald-500/10 text-emerald-200",
     iconClassName: "text-emerald-300",
   },
   connecting: {
@@ -55,17 +54,13 @@ export function BackendConnectionIndicator() {
   } = connection;
   const [now, setNow] = useState(() => Date.now());
 
-  const offlineSeconds = offlineSince
-    ? Math.max(0, Math.floor((now - offlineSince) / 1000))
-    : null;
+  const offlineSeconds = offlineSince ? Math.max(0, Math.floor((now - offlineSince) / 1000)) : null;
   const isEscalatedOutage =
     status !== "connected" && offlineSeconds !== null && offlineSeconds >= 60;
   const theme =
     (isEscalatedOutage ? STATUS_THEME.disconnected : STATUS_THEME[status]) ??
     STATUS_THEME.disconnected;
-  const retryInSeconds = nextRetryAt
-    ? Math.max(0, Math.ceil((nextRetryAt - now) / 1000))
-    : null;
+  const retryInSeconds = nextRetryAt ? Math.max(0, Math.ceil((nextRetryAt - now) / 1000)) : null;
   const hasFailedRetry = Boolean(lastRetryFailedAt);
   const isAttemptingNow = status === "reconnecting" && retryAttempt > 0 && !nextRetryAt;
 

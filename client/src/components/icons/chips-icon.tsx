@@ -83,14 +83,7 @@ export function ChipsIcon({ isAnimating, ...props }: AnimatedIconProps) {
                 keySplines="0.4 0 0.2 1; 0 0 0.2 1; 0.4 0 0.6 1; 0.8 0 1 1; 0 0 0.2 1; 0 0 1 1"
               />
             )}
-            <rect
-              x="21.5"
-              y="10"
-              width="5"
-              height="24"
-              rx="2.5"
-              fill="#FFD24D"
-            />
+            <rect x="21.5" y="10" width="5" height="24" rx="2.5" fill="#FFD24D" />
           </g>
         </g>
 
@@ -105,8 +98,8 @@ export function ChipsIcon({ isAnimating, ...props }: AnimatedIconProps) {
               type="translate"
               values="0,0; 0,-1; 0,1.5; 0,1.5; 0,-0.5; 0,0; 0,0"
               keyTimes="0; 0.15; 0.35; 0.45; 0.6; 0.7; 1"
-               dur="1.4s"
-               repeatCount="1"
+              dur="1.4s"
+              repeatCount="1"
               calcMode="spline"
               keySplines="0.4 0 0.2 1; 0 0 0.2 1; 0.4 0 0.6 1; 0.8 0 1 1; 0 0 0.2 1; 0 0 1 1"
             />

@@ -15,7 +15,7 @@ export function DuckIcon({ isAnimating, ...props }: AnimatedIconProps) {
         <g stroke="#332D27" fill="none">
           <path d="M 18 31 L 18 42 M 15 42 L 21 42" />
         </g>
-        
+
         {/* Duck Rig */}
         <g id="duck-rig">
           {isAnimating && (
@@ -40,7 +40,7 @@ export function DuckIcon({ isAnimating, ...props }: AnimatedIconProps) {
                 repeatCount="1"
               />
             )}
-            
+
             {/* Lower Beak */}
             <g id="lower-beak">
               {isAnimating && (
@@ -53,19 +53,11 @@ export function DuckIcon({ isAnimating, ...props }: AnimatedIconProps) {
                   repeatCount="1"
                 />
               )}
-              <path
-                d="M 33 15 L 42 15 C 42 17 38 18 33 17 Z"
-                fill="#F2A649"
-                stroke="#332D27"
-              />
+              <path d="M 33 15 L 42 15 C 42 17 38 18 33 17 Z" fill="#F2A649" stroke="#332D27" />
             </g>
 
             {/* Upper Beak */}
-            <path
-              d="M 33 12 C 39 11 43 13 43 15 L 33 15 Z"
-              fill="#F2A649"
-              stroke="#332D27"
-            />
+            <path d="M 33 12 C 39 11 43 13 43 15 L 33 15 Z" fill="#F2A649" stroke="#332D27" />
 
             {/* Body */}
             <path
@@ -84,14 +76,10 @@ export function DuckIcon({ isAnimating, ...props }: AnimatedIconProps) {
                   values="0 18 24; -15 18 24; 5 18 24; -10 18 24; 0 18 24"
                   keyTimes="0; 0.15; 0.3; 0.45; 1"
                   dur="1.2s"
-                 repeatCount="1"
+                  repeatCount="1"
                 />
               )}
-              <path
-                d="M 16 26 Q 22 31 28 24"
-                fill="none"
-                stroke="#332D27"
-              />
+              <path d="M 16 26 Q 22 31 28 24" fill="none" stroke="#332D27" />
             </g>
 
             {/* Eye Blink */}

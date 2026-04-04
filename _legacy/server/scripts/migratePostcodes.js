@@ -1,19 +1,19 @@
-import Database from 'better-sqlite3';
-import fs from 'fs';
-import path from 'path';
+import Database from "better-sqlite3";
+import fs from "fs";
+import path from "path";
 
-const JSON_PATH = path.join(process.cwd(), 'data', 'postcodes_detailed.json');
-const DB_PATH = path.join(process.cwd(), 'data', 'postcodes.db');
+const JSON_PATH = path.join(process.cwd(), "data", "postcodes_detailed.json");
+const DB_PATH = path.join(process.cwd(), "data", "postcodes.db");
 
 async function migrate() {
-  console.log('Starting migration...');
+  console.log("Starting migration...");
   console.log(`Reading JSON from ${JSON_PATH}...`);
-  
+
   try {
-    const rawData = fs.readFileSync(JSON_PATH, 'utf8');
+    const rawData = fs.readFileSync(JSON_PATH, "utf8");
     const postcodes = JSON.parse(rawData);
     const entries = Object.entries(postcodes);
-    
+
     console.log(`Loaded ${entries.length} postcodes. Creating database...`);
 
     // Delete existing DB if it exists to start fresh
@@ -22,7 +22,7 @@ async function migrate() {
     }
 
     const db = new Database(DB_PATH);
-    
+
     // Create table
     db.exec(`
       CREATE TABLE postcodes (
@@ -47,25 +47,24 @@ async function migrate() {
           street: details.street || null,
           easting: details.easting || null,
           northing: details.northing || null,
-          ward: details.ward || null
+          ward: details.ward || null,
         });
       }
     });
 
-    console.log('Inserting data...');
+    console.log("Inserting data...");
     insertMany(entries);
-    
-    console.log('Creating index...');
+
+    console.log("Creating index...");
     db.close();
 
-    const backupPath = JSON_PATH + '.bak';
+    const backupPath = JSON_PATH + ".bak";
     fs.renameSync(JSON_PATH, backupPath);
     console.log(`Renamed JSON file to ${backupPath}`);
 
-    console.log('Migration complete!');
-
+    console.log("Migration complete!");
   } catch (err) {
-    console.error('Migration failed:', err);
+    console.error("Migration failed:", err);
     process.exit(1);
   }
 }

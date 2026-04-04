@@ -1,8 +1,8 @@
-import { Moon, Sun } from 'lucide-react';
-import { useTheme } from '../../context/ThemeContext';
-import { cn } from '../../lib/utils';
-import { Button } from './button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './tooltip';
+import { Moon, Sun } from "lucide-react";
+import { useTheme } from "../../context/ThemeContext";
+import { cn } from "../../lib/utils";
+import { Button } from "./button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./tooltip";
 
 interface ThemeToggleProps {
   className?: string;
@@ -10,7 +10,7 @@ interface ThemeToggleProps {
 
 export function ThemeToggle({ className }: ThemeToggleProps) {
   const { theme, toggleTheme } = useTheme();
-  const nextTheme = theme === 'dark' ? 'light' : 'dark';
+  const nextTheme = theme === "dark" ? "light" : "dark";
   const label = `Switch to ${nextTheme} theme`;
 
   return (
@@ -21,12 +21,12 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
             type="button"
             variant="outline"
             size="icon"
-            className={cn('h-8 w-8', className)}
+            className={cn("h-8 w-8", className)}
             onClick={toggleTheme}
             aria-label={label}
             title={label}
           >
-            {theme === 'dark' ? (
+            {theme === "dark" ? (
               <Sun className="h-4 w-4" aria-hidden="true" />
             ) : (
               <Moon className="h-4 w-4" aria-hidden="true" />
@@ -38,4 +38,3 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
     </TooltipProvider>
   );
 }
-

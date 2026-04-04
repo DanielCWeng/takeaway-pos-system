@@ -8,13 +8,13 @@
  *  - POST /api/addresses/verify
  */
 
-import { config } from '../../config/index.js';
-import { logger } from '../../infrastructure/logger.js';
-import * as postcodes from '../../shared/postcodes.js';
-import { haversineInMiles } from '../../shared/haversine.js';
-import { ValidationError } from '../../shared/errors.js';
-import * as customersService from '../customers/customers.service.js';
-import * as addressClient from '../callerIdService/addressClient.js';
+import { config } from "../../config/index.js";
+import { logger } from "../../infrastructure/logger.js";
+import * as postcodes from "../../shared/postcodes.js";
+import { haversineInMiles } from "../../shared/haversine.js";
+import { ValidationError } from "../../shared/errors.js";
+import * as customersService from "../customers/customers.service.js";
+import * as addressClient from "../callerIdService/addressClient.js";
 
 // Matches formats: A9 9AA, A99 9AA, AA9 9AA, AA99 9AA, A9A 9AA, AA9A 9AA
 const UK_POSTCODE_RE = /^[A-Z]{1,2}\d[A-Z\d]? \d[A-Z]{2}$/;
@@ -29,8 +29,8 @@ const UK_POSTCODE_RE = /^[A-Z]{1,2}\d[A-Z\d]? \d[A-Z]{2}$/;
 function normaliseAndValidatePostcode(postcode) {
   const norm = postcodes.normalisePostcode(postcode);
   if (!norm || !UK_POSTCODE_RE.test(norm)) {
-    throw new ValidationError('Postcode must be a valid UK postcode', {
-      field: 'postcode',
+    throw new ValidationError("Postcode must be a valid UK postcode", {
+      field: "postcode",
       received: postcode,
     });
   }
@@ -46,10 +46,10 @@ function normaliseAndValidatePostcode(postcode) {
 function localRowToAddress(row) {
   // Handle both API-style rows (line1/town) and legacy rows (street/ward).
   return {
-    line1: row.line1 || row.street || '',
-    line2: row.line2 || '',
-    town: row.town || row.ward || '',
-    postcode: row.postcode || '',
+    line1: row.line1 || row.street || "",
+    line2: row.line2 || "",
+    town: row.town || row.ward || "",
+    postcode: row.postcode || "",
     latitude: row.latitude,
     longitude: row.longitude,
   };
@@ -74,23 +74,23 @@ export async function lookupPostcode(postcode) {
   if (local.length > 0) {
     return {
       addresses: local.map(localRowToAddress),
-      source: 'local_db',
+      source: "local_db",
     };
   }
 
   if (!config.address.apiKey) {
-    return { addresses: [], source: 'no_api_key' };
+    return { addresses: [], source: "no_api_key" };
   }
 
   const apiResults = await addressClient.findAddressesFromApi(norm);
   if (!apiResults) {
-    return { addresses: [], source: 'not_found' };
+    return { addresses: [], source: "not_found" };
   }
 
   const addresses = apiResults.map((addr) => ({
-    line1: addr.line1 || '',
-    line2: addr.line2 || '',
-    town: addr.town || '',
+    line1: addr.line1 || "",
+    line2: addr.line2 || "",
+    town: addr.town || "",
     postcode: norm,
     latitude: addr.latitude,
     longitude: addr.longitude,
@@ -108,7 +108,7 @@ export async function lookupPostcode(postcode) {
     );
   }
 
-  return { addresses, source: 'api' };
+  return { addresses, source: "api" };
 }
 
 /**
@@ -123,8 +123,11 @@ export function verifyAddress(phone, addressData) {
   let effectivePhone = phone;
 
   // If no phone or placeholder '0000' or otherwise invalid numeric phone, generate an UNKNOWN- identifier
-  const isInvalidNumeric = !effectivePhone || effectivePhone === '0000' || (!effectivePhone.startsWith('UNKNOWN-') && effectivePhone.length < 10);
-  
+  const isInvalidNumeric =
+    !effectivePhone ||
+    effectivePhone === "0000" ||
+    (!effectivePhone.startsWith("UNKNOWN-") && effectivePhone.length < 10);
+
   if (isInvalidNumeric) {
     effectivePhone = `UNKNOWN-${Math.random().toString(36).substring(2, 11).toUpperCase()}`;
   }
@@ -149,7 +152,7 @@ export function verifyAddress(phone, addressData) {
     );
 
     update.distance = parseFloat(miles.toFixed(2));
-    logger.debug('Computed delivery distance for verified address', {
+    logger.debug("Computed delivery distance for verified address", {
       phone: effectivePhone,
       postcode: update.postcode ?? null,
       distance: update.distance,

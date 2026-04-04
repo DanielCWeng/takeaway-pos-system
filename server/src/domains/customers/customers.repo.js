@@ -11,7 +11,7 @@
  *  - No SQLite row objects or driver internals are ever returned to callers.
  */
 
-import { getDb } from '../../infrastructure/db.js';
+import { getDb } from "../../infrastructure/db.js";
 
 // ---------------------------------------------------------------------------
 // Row → domain object mapper
@@ -54,7 +54,7 @@ const stmts = {
 function getStmts() {
   const db = getDb();
   return {
-    findByPhone: (stmts.findByPhone ??= db.prepare('SELECT * FROM customers WHERE phone = ?')),
+    findByPhone: (stmts.findByPhone ??= db.prepare("SELECT * FROM customers WHERE phone = ?")),
     upsert: (stmts.upsert ??= db.prepare(`
       INSERT INTO customers
         (phone, name, postcode, house_number, street, town,
@@ -184,7 +184,7 @@ export function updateAddress(phone, addressData) {
 
   db.prepare(
     `
-    UPDATE customers SET ${updates.join(', ')} WHERE phone = @phone
+    UPDATE customers SET ${updates.join(", ")} WHERE phone = @phone
   `,
   ).run(params);
 }

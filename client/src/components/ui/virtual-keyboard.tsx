@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Delete, ArrowUp, CornerDownLeft } from 'lucide-react';
-import { cn } from '../../lib/utils';
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Delete, ArrowUp, CornerDownLeft } from "lucide-react";
+import { cn } from "../../lib/utils";
 
 export function VirtualKeyboard() {
   const [isVisible, setIsVisible] = useState(false);
@@ -11,15 +11,15 @@ export function VirtualKeyboard() {
   // Toggle body class + CSS var so modals can shrink to accommodate the keyboard
   useEffect(() => {
     if (isVisible) {
-      document.body.classList.add('keyboard-open');
+      document.body.classList.add("keyboard-open");
       // Measure height after the next paint so the DOM node exists
       requestAnimationFrame(() => {
         const h = keyboardRef.current?.offsetHeight ?? 320;
-        document.body.style.setProperty('--kb-height', `${h}px`);
+        document.body.style.setProperty("--kb-height", `${h}px`);
       });
     } else {
-      document.body.classList.remove('keyboard-open');
-      document.body.style.removeProperty('--kb-height');
+      document.body.classList.remove("keyboard-open");
+      document.body.style.removeProperty("--kb-height");
     }
   }, [isVisible]);
 
@@ -29,13 +29,13 @@ export function VirtualKeyboard() {
     const handleFocus = (e: FocusEvent) => {
       clearTimeout(hideTimeout);
       const target = e.target as HTMLElement;
-      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA")) {
         const input = target as HTMLInputElement | HTMLTextAreaElement;
         if (input.readOnly || input.disabled) return;
 
         setIsVisible(true);
         setTimeout(() => {
-          target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          target.scrollIntoView({ behavior: "smooth", block: "center" });
         }, 300);
       }
     };
@@ -43,19 +43,19 @@ export function VirtualKeyboard() {
     const handleBlur = () => {
       hideTimeout = window.setTimeout(() => {
         const active = document.activeElement;
-        if (!active || (active.tagName !== 'INPUT' && active.tagName !== 'TEXTAREA')) {
+        if (!active || (active.tagName !== "INPUT" && active.tagName !== "TEXTAREA")) {
           setIsVisible(false);
           setIsShift(false);
         }
       }, 150);
     };
 
-    document.addEventListener('focusin', handleFocus);
-    document.addEventListener('focusout', handleBlur);
+    document.addEventListener("focusin", handleFocus);
+    document.addEventListener("focusout", handleBlur);
 
     return () => {
-      document.removeEventListener('focusin', handleFocus);
-      document.removeEventListener('focusout', handleBlur);
+      document.removeEventListener("focusin", handleFocus);
+      document.removeEventListener("focusout", handleBlur);
       clearTimeout(hideTimeout);
     };
   }, []);
@@ -63,7 +63,7 @@ export function VirtualKeyboard() {
   const handleKey = (key: string, e: React.MouseEvent) => {
     e.preventDefault(); // Prevents input from losing focus
     const active = document.activeElement as HTMLInputElement | HTMLTextAreaElement;
-    if (!active || (active.tagName !== 'INPUT' && active.tagName !== 'TEXTAREA')) return;
+    if (!active || (active.tagName !== "INPUT" && active.tagName !== "TEXTAREA")) return;
 
     const start = active.selectionStart ?? 0;
     const end = active.selectionEnd ?? 0;
@@ -73,7 +73,7 @@ export function VirtualKeyboard() {
     let newCursorOrig = start;
     let keepShift = isShift;
 
-    if (key === 'BACKSPACE') {
+    if (key === "BACKSPACE") {
       if (start === end && start > 0) {
         newVal = current.slice(0, start - 1) + current.slice(start);
         newCursorOrig = start - 1;
@@ -81,20 +81,22 @@ export function VirtualKeyboard() {
         newVal = current.slice(0, start) + current.slice(end);
         newCursorOrig = start;
       }
-    } else if (key === 'SPACE') {
-      newVal = current.slice(0, start) + ' ' + current.slice(end);
+    } else if (key === "SPACE") {
+      newVal = current.slice(0, start) + " " + current.slice(end);
       newCursorOrig = start + 1;
-    } else if (key === 'ENTER') {
-      if (active.tagName === 'TEXTAREA') {
-        newVal = current.slice(0, start) + '\n' + current.slice(end);
+    } else if (key === "ENTER") {
+      if (active.tagName === "TEXTAREA") {
+        newVal = current.slice(0, start) + "\n" + current.slice(end);
         newCursorOrig = start + 1;
       } else {
-        active.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', bubbles: true }));
+        active.dispatchEvent(
+          new KeyboardEvent("keydown", { key: "Enter", code: "Enter", bubbles: true }),
+        );
         active.blur();
         setIsVisible(false);
         return;
       }
-    } else if (key === 'SHIFT') {
+    } else if (key === "SHIFT") {
       setIsShift(!isShift);
       return;
     } else {
@@ -105,28 +107,30 @@ export function VirtualKeyboard() {
     }
 
     const setter = Object.getOwnPropertyDescriptor(
-      active.tagName === 'TEXTAREA' ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype,
-      'value'
+      active.tagName === "TEXTAREA"
+        ? window.HTMLTextAreaElement.prototype
+        : window.HTMLInputElement.prototype,
+      "value",
     )?.set;
-    
+
     if (setter) {
-        setter.call(active, newVal);
+      setter.call(active, newVal);
     }
 
-    active.dispatchEvent(new Event('input', { bubbles: true }));
+    active.dispatchEvent(new Event("input", { bubbles: true }));
 
     setTimeout(() => {
       active.setSelectionRange(newCursorOrig, newCursorOrig);
     }, 0);
-    
+
     setIsShift(keepShift);
   };
 
   const rows = [
-    ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'],
-    ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
-    ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'],
-    ['z', 'x', 'c', 'v', 'b', 'n', 'm']
+    ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"],
+    ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p"],
+    ["a", "s", "d", "f", "g", "h", "j", "k", "l"],
+    ["z", "x", "c", "v", "b", "n", "m"],
   ];
 
   return (
@@ -134,10 +138,10 @@ export function VirtualKeyboard() {
       {isVisible && (
         <motion.div
           ref={keyboardRef}
-          initial={{ y: '100%' }}
+          initial={{ y: "100%" }}
           animate={{ y: 0 }}
-          exit={{ y: '100%' }}
-          transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+          exit={{ y: "100%" }}
+          transition={{ type: "spring", damping: 25, stiffness: 200 }}
           className="fixed bottom-0 left-0 w-full bg-background/95 backdrop-blur-xl border-t border-border/60 p-3 pb-6 shadow-2xl z-[100]"
         >
           <div className="mx-auto max-w-4xl flex flex-col gap-2">
@@ -148,24 +152,55 @@ export function VirtualKeyboard() {
             </div>
             <div className="flex gap-2 justify-center pl-6">
               {rows[1].map((k) => (
-                <Key key={k} label={isShift ? k.toUpperCase() : k} onClick={(e) => handleKey(k, e)} />
+                <Key
+                  key={k}
+                  label={isShift ? k.toUpperCase() : k}
+                  onClick={(e) => handleKey(k, e)}
+                />
               ))}
             </div>
             <div className="flex gap-2 justify-center pr-6">
               {rows[2].map((k) => (
-                <Key key={k} label={isShift ? k.toUpperCase() : k} onClick={(e) => handleKey(k, e)} />
+                <Key
+                  key={k}
+                  label={isShift ? k.toUpperCase() : k}
+                  onClick={(e) => handleKey(k, e)}
+                />
               ))}
             </div>
             <div className="flex gap-2 justify-center">
-              <Key label="SHIFT" icon={<ArrowUp className={cn("h-6 w-6", isShift && "fill-current")} />} onClick={(e) => handleKey('SHIFT', e)} className="w-[84px] bg-muted/60" />
+              <Key
+                label="SHIFT"
+                icon={<ArrowUp className={cn("h-6 w-6", isShift && "fill-current")} />}
+                onClick={(e) => handleKey("SHIFT", e)}
+                className="w-[84px] bg-muted/60"
+              />
               {rows[3].map((k) => (
-                <Key key={k} label={isShift ? k.toUpperCase() : k} onClick={(e) => handleKey(k, e)} />
+                <Key
+                  key={k}
+                  label={isShift ? k.toUpperCase() : k}
+                  onClick={(e) => handleKey(k, e)}
+                />
               ))}
-              <Key label="BACKSPACE" icon={<Delete className="h-6 w-6" />} onClick={(e) => handleKey('BACKSPACE', e)} className="w-[84px] bg-muted/60" />
+              <Key
+                label="BACKSPACE"
+                icon={<Delete className="h-6 w-6" />}
+                onClick={(e) => handleKey("BACKSPACE", e)}
+                className="w-[84px] bg-muted/60"
+              />
             </div>
             <div className="flex gap-2 justify-center">
-              <Key label="SPACE" className="w-[60%] max-w-lg bg-muted/20" onClick={(e) => handleKey('SPACE', e)} />
-              <Key label="ENTER" icon={<CornerDownLeft className="h-6 w-6" />} onClick={(e) => handleKey('ENTER', e)} className="w-[120px] bg-primary/10 hover:bg-primary/20 text-primary border-primary/20" />
+              <Key
+                label="SPACE"
+                className="w-[60%] max-w-lg bg-muted/20"
+                onClick={(e) => handleKey("SPACE", e)}
+              />
+              <Key
+                label="ENTER"
+                icon={<CornerDownLeft className="h-6 w-6" />}
+                onClick={(e) => handleKey("ENTER", e)}
+                className="w-[120px] bg-primary/10 hover:bg-primary/20 text-primary border-primary/20"
+              />
             </div>
           </div>
         </motion.div>
@@ -174,14 +209,14 @@ export function VirtualKeyboard() {
   );
 }
 
-function Key({ 
-  label, 
-  icon, 
-  onClick, 
-  className 
-}: { 
-  label: string; 
-  icon?: React.ReactNode; 
+function Key({
+  label,
+  icon,
+  onClick,
+  className,
+}: {
+  label: string;
+  icon?: React.ReactNode;
   onClick: (e: React.MouseEvent) => void;
   className?: string;
 }) {
@@ -190,7 +225,7 @@ function Key({
       onMouseDown={onClick}
       className={cn(
         "h-14 min-w-[56px] px-2 rounded-xl border border-border/80 bg-background shadow-sm hover:bg-muted/50 active:scale-95 active:bg-muted transition-all flex items-center justify-center font-bold text-xl uppercase font-mono",
-        className
+        className,
       )}
     >
       {icon || label}

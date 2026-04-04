@@ -1,16 +1,12 @@
 // Polyfill for crypto.randomUUID if not available
 if (!crypto.randomUUID) {
-  crypto.randomUUID =
-    function (): `${string}-${string}-${string}-${string}-${string}` {
-      return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(
-        /[xy]/g,
-        function (c) {
-          const r = (Math.random() * 16) | 0;
-          const v = c === "x" ? r : (r & 0x3) | 0x8;
-          return v.toString(16);
-        },
-      ) as `${string}-${string}-${string}-${string}-${string}`;
-    };
+  crypto.randomUUID = function (): `${string}-${string}-${string}-${string}-${string}` {
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+      const r = (Math.random() * 16) | 0;
+      const v = c === "x" ? r : (r & 0x3) | 0x8;
+      return v.toString(16);
+    }) as `${string}-${string}-${string}-${string}-${string}`;
+  };
 }
 
 import React, { useCallback } from "react";
@@ -31,13 +27,7 @@ import { UIProvider, useUI } from "./context/UIContext";
 import { useCallHandler } from "./hooks/useCallHandler";
 
 // Toast Notification Component
-const CallerIdNotification = ({
-  show,
-  callerData,
-}: {
-  show: boolean;
-  callerData: any;
-}) => {
+const CallerIdNotification = ({ show, callerData }: { show: boolean; callerData: any }) => {
   if (!show || !callerData) return null;
   return (
     <div className="fixed top-4 right-4 bg-blue-600 text-white px-6 py-4 rounded-lg shadow-xl z-50 animate-bounce">
@@ -189,13 +179,7 @@ function AppContent() {
       });
       closeAddressSelectionModal();
     },
-    [
-      activeOrder,
-      activeOrderIndex,
-      customerForSelection,
-      updateOrder,
-      closeAddressSelectionModal,
-    ],
+    [activeOrder, activeOrderIndex, customerForSelection, updateOrder, closeAddressSelectionModal],
   );
 
   // Validating Order before Confirmation
@@ -208,8 +192,7 @@ function AppContent() {
     const isDelivery = activeOrder.orderType === OrderType.Delivery;
     const hasName = activeOrder.customerInfo?.name;
     const hasAddress =
-      activeOrder.customerInfo?.address &&
-      activeOrder.customerInfo.address.trim() !== "";
+      activeOrder.customerInfo?.address && activeOrder.customerInfo.address.trim() !== "";
 
     if (isDelivery && hasName && !hasAddress) {
       setIsDeliveryValidationModalOpen(true);
@@ -267,10 +250,7 @@ function AppContent() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-100 font-sans text-gray-900">
-      <CallerIdNotification
-        show={showNotification}
-        callerData={currentCaller}
-      />
+      <CallerIdNotification show={showNotification} callerData={currentCaller} />
 
       {/* LEFT PANEL: Menu & Categories */}
       <LeftPanel
@@ -334,15 +314,9 @@ function AppContent() {
         onSwitchToCollection={handleSwitchToCollection}
       />
 
-      <MenuRefModal
-        isOpen={isMenuRefModalOpen}
-        onClose={() => setIsMenuRefModalOpen(false)}
-      />
+      <MenuRefModal isOpen={isMenuRefModalOpen} onClose={() => setIsMenuRefModalOpen(false)} />
 
-      <AdminPage
-        isOpen={isAdminPageOpen}
-        onClose={() => setIsAdminPageOpen(false)}
-      />
+      <AdminPage isOpen={isAdminPageOpen} onClose={() => setIsAdminPageOpen(false)} />
 
       <ConfirmationModal
         isOpen={isConfirmationModalOpen}

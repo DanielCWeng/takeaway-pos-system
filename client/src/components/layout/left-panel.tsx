@@ -1,15 +1,15 @@
-import React from 'react';
-import type { CustomerInfo, OrderItem, OrderType } from '../../types';
-import { motion } from 'framer-motion';
-import { Button } from '../ui/button';
-import { ThemeToggle } from '../ui/theme-toggle';
-import { OrderList } from './order-list';
-import { OrderSummary } from './order-summary';
-import { CustomerCard } from './customer-card';
-import { OrderTabs } from './order-tabs';
-import { OrderControls } from './order-controls';
-import { BackendConnectionIndicator } from './backend-connection-indicator';
-import { BackendConnectionBanner } from './backend-connection-banner';
+import React from "react";
+import type { CustomerInfo, OrderItem, OrderType } from "../../types";
+import { motion } from "framer-motion";
+import { Button } from "../ui/button";
+import { ThemeToggle } from "../ui/theme-toggle";
+import { OrderList } from "./order-list";
+import { OrderSummary } from "./order-summary";
+import { CustomerCard } from "./customer-card";
+import { OrderTabs } from "./order-tabs";
+import { OrderControls } from "./order-controls";
+import { BackendConnectionIndicator } from "./backend-connection-indicator";
+import { BackendConnectionBanner } from "./backend-connection-banner";
 
 interface LeftPanelProps {
   orders: { id: number; hasUnreadChanges?: boolean }[];
@@ -29,7 +29,7 @@ interface LeftPanelProps {
   onChangeOrderType: (type: OrderType) => void;
   customerInfo?: CustomerInfo;
   onCustomerInfoClick: () => void;
-  
+
   onDuplicateItem: () => void;
   onModifyItem: () => void;
   onFocItem: () => void;
@@ -83,39 +83,30 @@ export const LeftPanel = React.memo(function LeftPanel({
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, ease: 'easeOut' }}
+        transition={{ duration: 0.35, ease: "easeOut" }}
         className="pos-panel flex flex-col gap-2 p-2"
       >
         <div className="flex items-center justify-between">
-          <OrderTabs 
-            orders={orders} 
-            activeIndex={activeOrderIndex} 
-            onSelectIndex={onSelectOrder} 
-          />
-            <div className="flex items-center gap-2">
-              <BackendConnectionIndicator />
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 px-3 text-xs border-zinc-700 hover:bg-zinc-800"
-                onClick={onOpenAdmin}
-              >
-                Admin
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                className="h-8 px-3 text-xs"
-                onClick={onNewOrder}
-              >
-                New
-              </Button>
-              <ThemeToggle />
-            </div>
+          <OrderTabs orders={orders} activeIndex={activeOrderIndex} onSelectIndex={onSelectOrder} />
+          <div className="flex items-center gap-2">
+            <BackendConnectionIndicator />
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 px-3 text-xs border-zinc-700 hover:bg-zinc-800"
+              onClick={onOpenAdmin}
+            >
+              Admin
+            </Button>
+            <Button variant="secondary" size="sm" className="h-8 px-3 text-xs" onClick={onNewOrder}>
+              New
+            </Button>
+            <ThemeToggle />
+          </div>
         </div>
         <BackendConnectionBanner />
-        
-        <OrderControls 
+
+        <OrderControls
           onDuplicateItem={onDuplicateItem}
           onDecrementItem={onDecrementSelected}
           onModifyItem={onModifyItem}
@@ -135,10 +126,10 @@ export const LeftPanel = React.memo(function LeftPanel({
       </motion.div>
 
       <div className="min-h-0 flex-1">
-        <OrderList 
-          items={items} 
-          selectedIndex={selectedIndex} 
-          onSelect={onSelectIndex} 
+        <OrderList
+          items={items}
+          selectedIndex={selectedIndex}
+          onSelect={onSelectIndex}
           isShortMode={isShortMode}
         />
       </div>
@@ -147,7 +138,7 @@ export const LeftPanel = React.memo(function LeftPanel({
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, ease: 'easeOut', delay: 0.08 }}
+          transition={{ duration: 0.35, ease: "easeOut", delay: 0.08 }}
         >
           <OrderSummary
             subtotal={subtotal}
@@ -159,7 +150,7 @@ export const LeftPanel = React.memo(function LeftPanel({
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, ease: 'easeOut', delay: 0.12 }}
+          transition={{ duration: 0.35, ease: "easeOut", delay: 0.12 }}
           onClick={onCustomerInfoClick}
           className="cursor-pointer"
         >

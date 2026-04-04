@@ -17,7 +17,7 @@ function findJD2000S() {
       (d) =>
         (d.product && d.product.includes("JD-2000S")) ||
         (d.manufacturer && d.manufacturer.includes("KOSEN")) ||
-        (d.vendorId === 0x0483 && d.productId === 0x5750)
+        (d.vendorId === 0x0483 && d.productId === 0x5750),
     );
     if (!match) {
       console.warn("JD-2000S not found in HID devices");
@@ -61,13 +61,16 @@ let postcodeDb;
 
 // Init SQLite DB
 try {
-  postcodeDb = new Database(POSTCODES_DB_PATH, { 
+  postcodeDb = new Database(POSTCODES_DB_PATH, {
     readonly: true,
-    verbose: (msg) => console.log(`[PostcodeDB DEBUG] ${msg}`)
+    verbose: (msg) => console.log(`[PostcodeDB DEBUG] ${msg}`),
   });
   console.log("VALIDATOR: Connected to postcodes.db SQLite database.");
 } catch (err) {
-  console.warn("VALIDATOR: Could not connect to postcodes.db. Proceeding without fast validation.", err.message);
+  console.warn(
+    "VALIDATOR: Could not connect to postcodes.db. Proceeding without fast validation.",
+    err.message,
+  );
 }
 
 // ====================== UTILITIES ======================
@@ -84,12 +87,7 @@ function normalizePostcode(postcode) {
 
 // ====================== EXTRACT PHONE ======================
 function extractPhone(data) {
-  if (DEBUG)
-    logDebug(
-      `Raw data length: ${data.length} Hex: ${data
-        .toString("hex")
-        .slice(0, 50)}`
-    );
+  if (DEBUG) logDebug(`Raw data length: ${data.length} Hex: ${data.toString("hex").slice(0, 50)}`);
   let digits = "";
   for (let i = 0; i < data.length; i++) {
     const byte = data[i];
@@ -105,38 +103,49 @@ function extractPhone(data) {
 // ====================== GET OR CREATE CUSTOMER ======================
 async function getOrCreateCustomer(phone) {
   const db = getDb();
-  
+
   // Try to find existing customer
-  let customer = await db.get('SELECT * FROM customers WHERE phone = ?', phone);
-  
+  let customer = await db.get("SELECT * FROM customers WHERE phone = ?", phone);
+
   if (!customer) {
     console.log("NEW CUSTOMER:", phone);
     const now = new Date().toISOString();
-    
+
     // Insert new customer
     await db.run(
       `INSERT INTO customers 
         (phone, postcode, address, houseNumber, street, town, distance, postcodeData, firstCall, lastCall, callCount) 
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      phone, null, null, null, null, null, null, null, now, now, 1
+      phone,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      now,
+      now,
+      1,
     );
-    
+
     // Fetch the newly created customer
-    customer = await db.get('SELECT * FROM customers WHERE phone = ?', phone);
+    customer = await db.get("SELECT * FROM customers WHERE phone = ?", phone);
   } else {
     console.log("EXISTING CUSTOMER:", phone);
     const now = new Date().toISOString();
-    
+
     // Increment call count and update lastCall
     await db.run(
-      'UPDATE customers SET callCount = callCount + 1, lastCall = ? WHERE phone = ?',
-      now, phone
+      "UPDATE customers SET callCount = callCount + 1, lastCall = ? WHERE phone = ?",
+      now,
+      phone,
     );
-    
+
     // Fetch updated customer
-    customer = await db.get('SELECT * FROM customers WHERE phone = ?', phone);
+    customer = await db.get("SELECT * FROM customers WHERE phone = ?", phone);
   }
-  
+
   // Deserialize JSON fields
   if (customer.distance) {
     try {
@@ -145,7 +154,7 @@ async function getOrCreateCustomer(phone) {
       customer.distance = null;
     }
   }
-  
+
   if (customer.postcodeData) {
     try {
       customer.postcodeData = JSON.parse(customer.postcodeData);
@@ -157,7 +166,7 @@ async function getOrCreateCustomer(phone) {
       customer.postcodeData = null;
     }
   }
-  
+
   if (customer.addresses) {
     try {
       customer.addresses = JSON.parse(customer.addresses);
@@ -165,7 +174,7 @@ async function getOrCreateCustomer(phone) {
       customer.addresses = null;
     }
   }
-  
+
   return customer;
 }
 
@@ -174,12 +183,9 @@ async function lookupAddressesAPI(postcode) {
   const normalized = normalizePostcode(postcode);
   if (!normalized) return null;
   const url = `https://api.getaddress.io/find/${encodeURIComponent(
-    normalized
+    normalized,
   )}?api-key=${GETADDRESS_API_KEY}&expand=true&format=true`;
-  logDebug(
-    "Fetching addresses from API: " +
-      url.replace(GETADDRESS_API_KEY, "KEY_HIDDEN")
-  );
+  logDebug("Fetching addresses from API: " + url.replace(GETADDRESS_API_KEY, "KEY_HIDDEN"));
   try {
     const response = await fetch(url);
     if (!response.ok) {
@@ -190,8 +196,7 @@ async function lookupAddressesAPI(postcode) {
       throw new Error(`HTTP ${response.status}`);
     }
     const data = await response.json();
-    if (!data.addresses || data.addresses.length === 0)
-      throw new Error("No addresses returned");
+    if (!data.addresses || data.addresses.length === 0) throw new Error("No addresses returned");
     const addresses = data.addresses.map((addr, idx) => {
       const parts = addr.split(",").map((p) => p.trim());
       return {
@@ -206,9 +211,7 @@ async function lookupAddressesAPI(postcode) {
       };
     });
     const result = { postcode: data.postcode, addresses, source: "api_find" };
-    console.log(
-      `API: Found ${addresses.length} addresses for ${data.postcode}`
-    );
+    console.log(`API: Found ${addresses.length} addresses for ${data.postcode}`);
     return result;
   } catch (err) {
     console.error("ERROR: Address lookup failed:", err.message);
@@ -218,9 +221,7 @@ async function lookupAddressesAPI(postcode) {
 async function lookupAddressesAutocomplete(postcode) {
   const cleaned = postcode.replace(/\s+/g, "").toUpperCase();
   const url = `https://api.getaddress.io/autocomplete/${cleaned}?api-key=${GETADDRESS_API_KEY}&all=true`;
-  logDebug(
-    "Trying autocomplete API: " + url.replace(GETADDRESS_API_KEY, "KEY_HIDDEN")
-  );
+  logDebug("Trying autocomplete API: " + url.replace(GETADDRESS_API_KEY, "KEY_HIDDEN"));
   try {
     const response = await fetch(url);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -244,9 +245,7 @@ async function lookupAddressesAutocomplete(postcode) {
       };
     });
     const result = { postcode: cleaned, addresses, source: "api_autocomplete" };
-    console.log(
-      `AUTOCOMPLETE: Found ${addresses.length} suggestions for ${cleaned}`
-    );
+    console.log(`AUTOCOMPLETE: Found ${addresses.length} suggestions for ${cleaned}`);
     return result;
   } catch (err) {
     console.error("ERROR: Autocomplete failed:", err.message);
@@ -258,7 +257,7 @@ async function calculateDistance(fromPostcode, toPostcode) {
   const to = normalizePostcode(toPostcode);
   if (!from || !to) return null;
   const url = `https://api.getaddress.io/distance/${encodeURIComponent(
-    from
+    from,
   )}/${encodeURIComponent(to)}?api-key=${GETADDRESS_API_KEY}`;
   logDebug(`Calculating distance: ${from} -> ${to}`);
   try {
@@ -279,12 +278,7 @@ async function calculateDistance(fromPostcode, toPostcode) {
   }
 }
 function isAddressDataComplete(addressData) {
-  if (
-    !addressData ||
-    !addressData.addresses ||
-    addressData.addresses.length === 0
-  )
-    return false;
+  if (!addressData || !addressData.addresses || addressData.addresses.length === 0) return false;
   const firstAddr = addressData.addresses[0];
   return firstAddr.line1 || firstAddr.full;
 }
@@ -293,7 +287,7 @@ function isAddressDataComplete(addressData) {
 export async function lookupAddresses(postcode) {
   const normalized = normalizePostcode(postcode);
   if (!normalized) return null;
-  
+
   // SQLite Validation
   const validatorKey = normalized.replace(/\s/g, "").toUpperCase();
   if (postcodeDb) {
@@ -333,41 +327,39 @@ export async function lookupAddresses(postcode) {
 async function handleCall(phone, onCallHandled) {
   console.log("\n=== INCOMING CALL ===");
   console.log("PHONE:", phone);
-  
+
   const db = getDb();
   const customer = await getOrCreateCustomer(phone);
-  
+
   let addressData = null;
   let distance = null;
-  
+
   if (customer.postcode) {
     if (customer.postcodeData && isAddressDataComplete(customer.postcodeData)) {
-      console.log(
-        `CUSTOMER DATA: Using saved addresses for ${customer.postcode}`
-      );
+      console.log(`CUSTOMER DATA: Using saved addresses for ${customer.postcode}`);
       addressData = customer.postcodeData;
     } else {
       addressData = await lookupAddresses(customer.postcode);
       if (addressData) {
         // Update postcodeData in database
         await db.run(
-          'UPDATE customers SET postcodeData = ? WHERE phone = ?',
+          "UPDATE customers SET postcodeData = ? WHERE phone = ?",
           JSON.stringify(addressData),
-          phone
+          phone,
         );
         customer.postcodeData = addressData;
       }
     }
-    
+
     if (addressData && STORE_POSTCODE) {
       if (!customer.distance) {
         distance = await calculateDistance(STORE_POSTCODE, customer.postcode);
         if (distance) {
           // Update distance in database
           await db.run(
-            'UPDATE customers SET distance = ? WHERE phone = ?',
+            "UPDATE customers SET distance = ? WHERE phone = ?",
             JSON.stringify(distance),
-            phone
+            phone,
           );
           customer.distance = distance;
         }
@@ -377,7 +369,7 @@ async function handleCall(phone, onCallHandled) {
       }
     }
   }
-  
+
   // Pass only the miles value (string or number) to the callback
   const distanceMiles = distance ? distance.miles : null;
   await onCallHandled(customer, addressData, distanceMiles);
@@ -397,18 +389,15 @@ export async function startCallerIdService(onCallHandledCallback) {
     console.log("Configuration:");
     console.log("  Device:", DEVICE_PATH);
     console.log("  Validator DB:", POSTCODES_DB_PATH);
-    console.log(
-      "  API Key:",
-      GETADDRESS_API_KEY.startsWith("YOUR") ? "NOT SET" : "Configured"
-    );
+    console.log("  API Key:", GETADDRESS_API_KEY.startsWith("YOUR") ? "NOT SET" : "Configured");
     console.log("  Store PC:", STORE_POSTCODE);
     console.log("  Debug:", DEBUG ? "ON" : "OFF");
     console.log("");
     device = new HID.HID(DEVICE_PATH);
     console.log("✓ Connected to JD-2000S\n");
-    
+
     // loadPostcodeValidator() call removed -> Now using SQLite DB
-    
+
     if (GETADDRESS_API_KEY.startsWith("YOUR")) {
       console.log("WARNING: API key not set - API fallback disabled\n");
     }
@@ -417,12 +406,12 @@ export async function startCallerIdService(onCallHandledCallback) {
       console.log("HID DATA RAW:", data.toString("hex"));
       const phone = extractPhone(data);
       console.log("EXTRACTED PHONE:", phone);
-      
+
       if (phone?.length === 11) {
         // If we are already waiting for this phone (debounce window active), ignore subsequent signals
         if (activeCallTimers.has(phone)) {
-           console.log(`IGNORING ${phone} - Debounce active`);
-           return;
+          console.log(`IGNORING ${phone} - Debounce active`);
+          return;
         }
 
         console.log(`STARTING TIMER FOR ${phone}`);
@@ -436,15 +425,12 @@ export async function startCallerIdService(onCallHandledCallback) {
 
         activeCallTimers.set(phone, timer);
       } else {
-         console.log("NO VALID PHONE EXTRACTED");
+        console.log("NO VALID PHONE EXTRACTED");
       }
     });
     device.on("error", (err) => console.error("HID ERROR:", err.message));
   } catch (err) {
-    console.error(
-      "🔴 FATAL ERROR during Caller ID Service startup:",
-      err.message
-    );
+    console.error("🔴 FATAL ERROR during Caller ID Service startup:", err.message);
     throw err;
   }
 }

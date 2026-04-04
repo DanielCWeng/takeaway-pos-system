@@ -27,11 +27,7 @@ class MockWebSocket {
 
 function Providers({ children }: { children: ReactNode }) {
   return (
-    <CallerProvider
-      socketFactory={(url) =>
-        new MockWebSocket(url) as unknown as WebSocket
-      }
-    >
+    <CallerProvider socketFactory={(url) => new MockWebSocket(url) as unknown as WebSocket}>
       <OrderProvider>{children}</OrderProvider>
     </CallerProvider>
   );

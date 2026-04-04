@@ -19,9 +19,7 @@ interface CallerIdContextType {
 }
 
 // Create the context with a default value
-const CallerIdContext = createContext<CallerIdContextType | undefined>(
-  undefined
-);
+const CallerIdContext = createContext<CallerIdContextType | undefined>(undefined);
 
 // Create the Provider component
 export function CallerIdProvider({ children }: { children: ReactNode }) {
@@ -31,16 +29,11 @@ export function CallerIdProvider({ children }: { children: ReactNode }) {
   const { lastMessage, isConnected } = useWebSocket<IncomingCallPayload>(wsUrl);
 
   // We only care about messages of type 'incoming_call'
-  const lastCall =
-    lastMessage?.type === "incoming_call" ? lastMessage.payload : null;
+  const lastCall = lastMessage?.type === "incoming_call" ? lastMessage.payload : null;
 
   const value = { lastCall, isConnected };
 
-  return (
-    <CallerIdContext.Provider value={value}>
-      {children}
-    </CallerIdContext.Provider>
-  );
+  return <CallerIdContext.Provider value={value}>{children}</CallerIdContext.Provider>;
 }
 
 // Create a custom hook to easily consume the context

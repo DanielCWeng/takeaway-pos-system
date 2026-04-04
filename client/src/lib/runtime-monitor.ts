@@ -42,7 +42,9 @@ function isChunkLoadFailure(message: string, source?: string) {
 function reportClientError(payload: ClientErrorPayload) {
   const sameOrigin = (() => {
     try {
-      return new URL(CLIENT_ERROR_ENDPOINT, window.location.origin).origin === window.location.origin;
+      return (
+        new URL(CLIENT_ERROR_ENDPOINT, window.location.origin).origin === window.location.origin
+      );
     } catch {
       return false;
     }
@@ -89,9 +91,7 @@ function attemptSingleChunkRecovery() {
 function handleGlobalError(event: ErrorEvent | Event) {
   const isErrorEvent = event instanceof ErrorEvent;
   const message = isErrorEvent ? event.message : "Resource load error";
-  const source = isErrorEvent
-    ? event.filename
-    : (event.target as HTMLScriptElement | null)?.src;
+  const source = isErrorEvent ? event.filename : (event.target as HTMLScriptElement | null)?.src;
   const stack = isErrorEvent && event.error instanceof Error ? event.error.stack : undefined;
 
   reportClientError({ type: "window.error", message, source, stack });

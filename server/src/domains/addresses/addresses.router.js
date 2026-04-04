@@ -8,10 +8,10 @@
  *  - Delegation to addresses.service.js for all business logic
  */
 
-import { Router } from 'express';
-import { z } from 'zod';
-import * as service from './addresses.service.js';
-import { sendValidationError } from '../../shared/middleware/sendValidationError.js';
+import { Router } from "express";
+import { z } from "zod";
+import * as service from "./addresses.service.js";
+import { sendValidationError } from "../../shared/middleware/sendValidationError.js";
 
 export const addressesRouter = Router();
 
@@ -34,7 +34,7 @@ const verifySchema = z.object({
 /**
  * POST /api/addresses/lookup
  */
-addressesRouter.post('/lookup', async (req, res, next) => {
+addressesRouter.post("/lookup", async (req, res, next) => {
   const parsed = lookupSchema.safeParse(req.body);
   if (!parsed.success) {
     const details = parsed.error.flatten().fieldErrors;
@@ -52,7 +52,7 @@ addressesRouter.post('/lookup', async (req, res, next) => {
 /**
  * POST /api/addresses/verify
  */
-addressesRouter.post('/verify', (req, res, next) => {
+addressesRouter.post("/verify", (req, res, next) => {
   const parsed = verifySchema.safeParse(req.body);
   if (!parsed.success) {
     const details = parsed.error.flatten().fieldErrors;

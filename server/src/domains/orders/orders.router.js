@@ -10,10 +10,10 @@
  *  - No business logic in this file
  */
 
-import { Router } from 'express';
-import { z } from 'zod';
-import * as service from './orders.service.js';
-import { sendValidationError } from '../../shared/middleware/sendValidationError.js';
+import { Router } from "express";
+import { z } from "zod";
+import * as service from "./orders.service.js";
+import { sendValidationError } from "../../shared/middleware/sendValidationError.js";
 
 export const ordersRouter = Router();
 
@@ -34,11 +34,11 @@ const orderItemSchema = z.object({
 });
 
 const printOrderTypeSchema = z
-  .enum(['collection', 'delivery', 'Collection', 'Delivery'])
+  .enum(["collection", "delivery", "Collection", "Delivery"])
   .transform((value) => value.toLowerCase());
 
 const printPaymentMethodSchema = z
-  .enum(['cash', 'card', 'Cash', 'Card'])
+  .enum(["cash", "card", "Cash", "Card"])
   .transform((value) => value.toLowerCase());
 
 const modifierSchema = z.union([
@@ -71,8 +71,8 @@ const customerInfoSchema = z
   .optional();
 
 const createOrderSchema = z.object({
-  orderType: z.enum(['collection', 'delivery']),
-  items: z.array(orderItemSchema).min(1, 'Order must contain at least one item'),
+  orderType: z.enum(["collection", "delivery"]),
+  items: z.array(orderItemSchema).min(1, "Order must contain at least one item"),
   customerInfo: customerInfoSchema,
   subtotal: z.number().nonnegative().optional(),
   total: z.number().nonnegative().optional(),
@@ -165,7 +165,7 @@ function parseId(raw) {
  * POST /api/orders
  * Create and archive a new order.
  */
-ordersRouter.post('/', (req, res, next) => {
+ordersRouter.post("/", (req, res, next) => {
   const parsed = createOrderSchema.safeParse(req.body);
   if (!parsed.success) {
     const details = parsed.error.flatten().fieldErrors;
@@ -186,7 +186,7 @@ ordersRouter.post('/', (req, res, next) => {
  *
  * Printing is best-effort: the order is always saved first; failures return { printed: false }.
  */
-ordersRouter.post('/print', async (req, res, next) => {
+ordersRouter.post("/print", async (req, res, next) => {
   const parsed = printOrderRequestSchema.safeParse(req.body);
   if (!parsed.success) {
     const details = parsed.error.flatten().fieldErrors;
@@ -197,7 +197,7 @@ ordersRouter.post('/print', async (req, res, next) => {
   const orderData = { ...order, payment: payment ?? order.payment };
 
   if (!orderData.payment) {
-    return sendValidationError(res, { payment: ['Payment details are required'] });
+    return sendValidationError(res, { payment: ["Payment details are required"] });
   }
 
   try {
@@ -212,7 +212,7 @@ ordersRouter.post('/print', async (req, res, next) => {
  * GET /api/orders
  * List archived orders, optionally filtered by date (?date=YYYY-MM-DD).
  */
-ordersRouter.get('/', (req, res, next) => {
+ordersRouter.get("/", (req, res, next) => {
   const { date } = req.query;
   try {
     const orders = service.listOrders(date);
@@ -226,10 +226,10 @@ ordersRouter.get('/', (req, res, next) => {
  * GET /api/orders/:id
  * Fetch a single order by ID.
  */
-ordersRouter.get('/:id', (req, res, next) => {
+ordersRouter.get("/:id", (req, res, next) => {
   const id = parseId(req.params.id);
   if (!id) {
-    return sendValidationError(res, {}, 'Order id must be a positive integer');
+    return sendValidationError(res, {}, "Order id must be a positive integer");
   }
 
   try {
@@ -244,7 +244,7 @@ ordersRouter.get('/:id', (req, res, next) => {
  * DELETE /api/orders/:id OR DELETE /api/orders?date=YYYY-MM-DD
  * Delete specific order or all orders for a day.
  */
-ordersRouter.delete(['/', '/:id'], (req, res, next) => {
+ordersRouter.delete(["/", "/:id"], (req, res, next) => {
   const { id: idParam } = req.params;
   const { date } = req.query;
 
@@ -252,13 +252,13 @@ ordersRouter.delete(['/', '/:id'], (req, res, next) => {
     if (idParam) {
       const id = parseId(idParam);
       if (!id) {
-        return sendValidationError(res, {}, 'Order id must be a positive integer');
+        return sendValidationError(res, {}, "Order id must be a positive integer");
       }
       service.deleteOrder(id);
     } else if (date) {
       service.deleteOrdersByDate(date);
     } else {
-      return sendValidationError(res, {}, 'Must provide either an order ID or a date');
+      return sendValidationError(res, {}, "Must provide either an order ID or a date");
     }
     return res.status(204).send();
   } catch (err) {
@@ -270,10 +270,10 @@ ordersRouter.delete(['/', '/:id'], (req, res, next) => {
  * POST /api/orders/:id/reprint
  * Reprint an archived order. Phase 2 stub — returns 501.
  */
-ordersRouter.post('/:id/reprint', async (req, res, next) => {
+ordersRouter.post("/:id/reprint", async (req, res, next) => {
   const id = parseId(req.params.id);
   if (!id) {
-    return sendValidationError(res, {}, 'Order id must be a positive integer');
+    return sendValidationError(res, {}, "Order id must be a positive integer");
   }
 
   try {

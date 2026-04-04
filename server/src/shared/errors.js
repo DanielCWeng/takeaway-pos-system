@@ -27,7 +27,7 @@ export class AppError extends Error {
    * @param {string} code     - Machine-readable enum string (e.g. 'VALIDATION_ERROR')
    * @param {object} [details] - Optional structured details (e.g. field-level validation info)
    */
-  constructor(message, code = 'INTERNAL_ERROR', details = Object.freeze({})) {
+  constructor(message, code = "INTERNAL_ERROR", details = Object.freeze({})) {
     super(message);
     this.name = this.constructor.name;
     this.code = code;
@@ -49,7 +49,7 @@ export class AppError extends Error {
  */
 export class ValidationError extends AppError {
   constructor(message, details = {}) {
-    super(message, 'VALIDATION_ERROR', details);
+    super(message, "VALIDATION_ERROR", details);
   }
 }
 
@@ -59,7 +59,7 @@ export class ValidationError extends AppError {
  */
 export class NotFoundError extends AppError {
   constructor(message, details = {}) {
-    super(message, 'NOT_FOUND', details);
+    super(message, "NOT_FOUND", details);
   }
 }
 
@@ -70,7 +70,7 @@ export class NotFoundError extends AppError {
  */
 export class HardwareError extends AppError {
   constructor(message, details = {}) {
-    super(message, 'HARDWARE_ERROR', details);
+    super(message, "HARDWARE_ERROR", details);
   }
 }
 
@@ -80,7 +80,7 @@ export class HardwareError extends AppError {
  */
 export class ExternalServiceError extends AppError {
   constructor(message, details = {}) {
-    super(message, 'EXTERNAL_SERVICE_ERROR', details);
+    super(message, "EXTERNAL_SERVICE_ERROR", details);
   }
 }
 
@@ -89,7 +89,7 @@ export class ExternalServiceError extends AppError {
  * Any route that calls a stub function will receive a 501.
  */
 export class NotImplementedError extends AppError {
-  constructor(message = 'This feature is not yet implemented (Phase 2)') {
-    super(message, 'NOT_IMPLEMENTED');
+  constructor(message = "This feature is not yet implemented (Phase 2)") {
+    super(message, "NOT_IMPLEMENTED");
   }
 }

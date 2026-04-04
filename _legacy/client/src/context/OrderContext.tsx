@@ -82,10 +82,7 @@ interface OrderContextType {
   // Actions
   setActiveOrderIndex: (index: number) => void;
   setSelectedOrderItemId: (id: string | null) => void;
-  createNewOrder: (
-    autoCreated?: boolean,
-    initialData?: Partial<FullOrder>,
-  ) => void;
+  createNewOrder: (autoCreated?: boolean, initialData?: Partial<FullOrder>) => void;
   deleteOrder: () => void; // Deletes active order
   updateOrder: (orderIndex: number, updatedOrder: Partial<FullOrder>) => void;
 
@@ -127,31 +124,18 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   const [menuItems] = useState<MenuItem[]>(menuData as MenuItem[]);
   const [orders, setOrders] = useState<FullOrder[]>([createNewOrderHelper(1)]);
   const [activeOrderIndex, setActiveOrderIndex] = useState(0);
-  const [selectedOrderItemId, setSelectedOrderItemId] = useState<string | null>(
-    null,
-  );
-  const [completedOrdersSessionCount, setCompletedOrdersSessionCount] =
-    useState(0);
+  const [selectedOrderItemId, setSelectedOrderItemId] = useState<string | null>(null);
+  const [completedOrdersSessionCount, setCompletedOrdersSessionCount] = useState(0);
 
   const [isZeroPriceMode, setIsZeroPriceMode] = useState(false);
   const [isSwapMode, setIsSwapMode] = useState(false);
 
-  const activeOrder = useMemo(
-    () => orders[activeOrderIndex],
-    [orders, activeOrderIndex],
-  );
+  const activeOrder = useMemo(() => orders[activeOrderIndex], [orders, activeOrderIndex]);
 
-  const currentOrderItems = useMemo(
-    () => activeOrder?.items || [],
-    [activeOrder],
-  );
+  const currentOrderItems = useMemo(() => activeOrder?.items || [], [activeOrder]);
 
   const subtotal = useMemo(
-    () =>
-      currentOrderItems.reduce(
-        (acc, item) => acc + item.finalPrice * item.quantity,
-        0,
-      ),
+    () => currentOrderItems.reduce((acc, item) => acc + item.finalPrice * item.quantity, 0),
     [currentOrderItems],
   );
 
@@ -164,18 +148,15 @@ export function OrderProvider({ children }: { children: ReactNode }) {
     return subtotal + delivery - activeOrder.discount;
   }, [subtotal, activeOrder]);
 
-  const updateOrder = useCallback(
-    (orderIndex: number, updatedOrder: Partial<FullOrder>) => {
-      setOrders((prevOrders) => {
-        const newOrders = [...prevOrders];
-        if (newOrders[orderIndex]) {
-          newOrders[orderIndex] = { ...newOrders[orderIndex], ...updatedOrder };
-        }
-        return newOrders;
-      });
-    },
-    [],
-  );
+  const updateOrder = useCallback((orderIndex: number, updatedOrder: Partial<FullOrder>) => {
+    setOrders((prevOrders) => {
+      const newOrders = [...prevOrders];
+      if (newOrders[orderIndex]) {
+        newOrders[orderIndex] = { ...newOrders[orderIndex], ...updatedOrder };
+      }
+      return newOrders;
+    });
+  }, []);
 
   // --- Actions ---
 
@@ -186,8 +167,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
         return;
       }
       setOrders((prev) => {
-        const nextId =
-          prev.length > 0 ? Math.max(...prev.map((o) => o.id)) + 1 : 1;
+        const nextId = prev.length > 0 ? Math.max(...prev.map((o) => o.id)) + 1 : 1;
         let newOrder = createNewOrderHelper(nextId, autoCreated);
 
         // If initialData provided, merge it. Ensure we preserve the ID and other core flags if not strictly overridden.
@@ -217,9 +197,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
     const removingIndex = activeOrderIndex;
 
     setOrders((prevOrders) => {
-      const newOrders = prevOrders.filter(
-        (_, index) => index !== removingIndex,
-      );
+      const newOrders = prevOrders.filter((_, index) => index !== removingIndex);
       return newOrders.length > 0 ? newOrders : [createNewOrderHelper(1)];
     });
 
@@ -232,10 +210,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
     setSelectedOrderItemId(null);
   }, [activeOrderIndex, orders]);
 
-  const toggleZeroPriceMode = useCallback(
-    () => setIsZeroPriceMode((p) => !p),
-    [],
-  );
+  const toggleZeroPriceMode = useCallback(() => setIsZeroPriceMode((p) => !p), []);
   const toggleSwapMode = useCallback(() => setIsSwapMode((p) => !p), []);
 
   const addItem = useCallback(
@@ -276,11 +251,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
           })
           .filter((i): i is OrderItem => i !== null);
 
-        const newOrderItems = [
-          ...currentOrderItems,
-          setMealItem,
-          ...componentItems,
-        ];
+        const newOrderItems = [...currentOrderItems, setMealItem, ...componentItems];
         updateOrder(activeOrderIndex, {
           items: newOrderItems,
           lastActivityTime: Date.now(),
@@ -293,9 +264,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
       if (isSwapMode) {
         // Option A: Replacing an item in a Set Meal
         if (selectedOrderItemId) {
-          const selectedIndex = currentOrderItems.findIndex(
-            (i) => i.id === selectedOrderItemId,
-          );
+          const selectedIndex = currentOrderItems.findIndex((i) => i.id === selectedOrderItemId);
           const selectedItem = currentOrderItems[selectedIndex];
 
           if (selectedItem && selectedItem.isPartOfSet) {
@@ -384,9 +353,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
 
   const removeItem = useCallback(() => {
     if (!selectedOrderItemId) return;
-    const itemIndex = currentOrderItems.findIndex(
-      (item) => item.id === selectedOrderItemId,
-    );
+    const itemIndex = currentOrderItems.findIndex((item) => item.id === selectedOrderItemId);
     if (itemIndex === -1) return;
 
     const itemToRemove = currentOrderItems[itemIndex];
@@ -402,9 +369,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
 
     if (itemToRemove.quantity > 1 && setMealChildrenIds.length === 0) {
       newItems = currentOrderItems.map((item) =>
-        item.id === selectedOrderItemId
-          ? { ...item, quantity: item.quantity - 1 }
-          : item,
+        item.id === selectedOrderItemId ? { ...item, quantity: item.quantity - 1 } : item,
       );
       updateOrder(activeOrderIndex, {
         items: newItems,
@@ -428,9 +393,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   const duplicateItem = useCallback(() => {
     if (!selectedOrderItemId) return;
     const newItems = currentOrderItems.map((item) =>
-      item.id === selectedOrderItemId
-        ? { ...item, quantity: item.quantity + 1 }
-        : item,
+      item.id === selectedOrderItemId ? { ...item, quantity: item.quantity + 1 } : item,
     );
     updateOrder(activeOrderIndex, {
       items: newItems,
@@ -482,8 +445,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
         });
 
         if (ordersKeep.length !== prevOrders.length) {
-          const finalOrders =
-            ordersKeep.length > 0 ? ordersKeep : [createNewOrderHelper(1)];
+          const finalOrders = ordersKeep.length > 0 ? ordersKeep : [createNewOrderHelper(1)];
 
           setActiveOrderIndex((prevIndex) => {
             if (prevIndex >= finalOrders.length) {
@@ -504,10 +466,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   // Actually, functional state update `prevOrders` handles it. Empty dep array is better for performance if possible.
 
   const printOrder = useCallback(
-    async (
-      order: FullOrder,
-      paymentDetails: { amountPaid: number; changeDue: number },
-    ) => {
+    async (order: FullOrder, paymentDetails: { amountPaid: number; changeDue: number }) => {
       const orderPayload = {
         ...order,
         subtotal,
@@ -593,9 +552,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
     printOrder,
   };
 
-  return (
-    <OrderContext.Provider value={value}>{children}</OrderContext.Provider>
-  );
+  return <OrderContext.Provider value={value}>{children}</OrderContext.Provider>;
 }
 
 export function useOrder() {

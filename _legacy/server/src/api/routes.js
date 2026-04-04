@@ -43,8 +43,7 @@ function setupRoutes(app, broadcast) {
 
     const timestamp = new Date().toISOString();
     const moonPhase = (Date.now() / 1000 / 60 / 60 / 24) % 29.530588;
-    const cosmicAlignment =
-      Math.sin(moonPhase * Math.PI) * Math.log(Date.now()) * Math.E;
+    const cosmicAlignment = Math.sin(moonPhase * Math.PI) * Math.log(Date.now()) * Math.E;
     const chant = () => {
       const cosmic = Math.random() * cosmicAlignment;
       const temporal = Date.now() * Math.random();
@@ -105,19 +104,14 @@ function setupRoutes(app, broadcast) {
     const { phone, address, postcode, houseNumber, street, town } = req.body;
 
     if (!phone || !address || !postcode) {
-      return res
-        .status(400)
-        .json({ error: "Phone, address, and postcode are required." });
+      return res.status(400).json({ error: "Phone, address, and postcode are required." });
     }
 
     try {
       const db = getDb();
 
       // Check if customer exists
-      const existing = await db.get(
-        "SELECT * FROM customers WHERE phone = ?",
-        phone,
-      );
+      const existing = await db.get("SELECT * FROM customers WHERE phone = ?", phone);
 
       if (existing) {
         // Update existing customer
@@ -169,8 +163,7 @@ function setupRoutes(app, broadcast) {
    */
   app.post("/api/lookup-postcode", async (req, res) => {
     const { postcode } = req.body;
-    if (!postcode)
-      return res.status(400).json({ error: "Postcode is required" });
+    if (!postcode) return res.status(400).json({ error: "Postcode is required" });
     try {
       const addressData = await callerIdService.lookupAddresses(postcode);
       if (addressData) res.json(addressData);
@@ -190,10 +183,7 @@ function setupRoutes(app, broadcast) {
 
     try {
       const db = getDb();
-      const customer = await db.get(
-        "SELECT * FROM customers WHERE phone = ?",
-        phone,
-      );
+      const customer = await db.get("SELECT * FROM customers WHERE phone = ?", phone);
 
       if (customer) {
         // Deserialize JSON fields
@@ -255,9 +245,7 @@ function setupRoutes(app, broadcast) {
       // Try to print (non-critical operation)
       try {
         await printReceipt(orderToArchive);
-        console.log(
-          `[Print] Receipt for Order #${newOrderId} printed successfully.`,
-        );
+        console.log(`[Print] Receipt for Order #${newOrderId} printed successfully.`);
 
         res.status(200).json({
           success: true,
@@ -277,10 +265,7 @@ function setupRoutes(app, broadcast) {
         });
       }
     } catch (saveError) {
-      console.error(
-        `[Archive CRITICAL ERROR] Failed to save order:`,
-        saveError,
-      );
+      console.error(`[Archive CRITICAL ERROR] Failed to save order:`, saveError);
       res.status(500).json({
         success: false,
         printed: false,
@@ -313,13 +298,9 @@ function setupRoutes(app, broadcast) {
     const { date } = req.query;
 
     if (!date) {
-      return res
-        .status(400)
-        .json({ message: "A date query parameter is required." });
+      return res.status(400).json({ message: "A date query parameter is required." });
     }
-    console.log(
-      `[Archive] Received request to DELETE all orders for date: ${date}`,
-    );
+    console.log(`[Archive] Received request to DELETE all orders for date: ${date}`);
 
     try {
       const result = await deleteArchivedOrders(date);

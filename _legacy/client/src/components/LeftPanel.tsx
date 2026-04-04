@@ -1,10 +1,10 @@
 // client/src/components/LeftPanel.tsx
 
-import React from 'react';
-import { Order, OrderItem, OrderType, CustomerInfo } from '../types';
-import OrderSummary from './OrderSummary';
-import OrderControls from './OrderControls';
-import CustomerInfoPanel from './CustomerInfoPanel';
+import React from "react";
+import { Order, OrderItem, OrderType, CustomerInfo } from "../types";
+import OrderSummary from "./OrderSummary";
+import OrderControls from "./OrderControls";
+import CustomerInfoPanel from "./CustomerInfoPanel";
 
 // --- START: MODIFIED PROPS ---
 interface LeftPanelProps {
@@ -16,16 +16,16 @@ interface LeftPanelProps {
   onRemoveItem: () => void;
   onDuplicateItem: () => void;
   onModifyItem: (id: string) => void;
-  
+
   // 'setOrderType' is now 'onSelectOrderType' to reflect the new smart logic
-  onSelectOrderType: (type: OrderType) => void; 
-  
+  onSelectOrderType: (type: OrderType) => void;
+
   setCustomerInfo: (info: CustomerInfo) => void;
   subtotal: number;
   total: number;
   deliveryCharge: number;
   onEditDeliveryCharge: () => void;
-  onOpenCustomerModal: (focus: 'postcode' | 'name') => void;
+  onOpenCustomerModal: (focus: "postcode" | "name") => void;
   onNewOrder: () => void;
   onSetActiveOrder: (index: number) => void;
   isZeroPriceMode: boolean;
@@ -38,7 +38,6 @@ interface LeftPanelProps {
 }
 // --- END: MODIFIED PROPS ---
 
-
 const OrderTab: React.FC<{
   orderId: number;
   isActive: boolean;
@@ -48,9 +47,10 @@ const OrderTab: React.FC<{
   <button
     onClick={onClick}
     className={`w-10 h-8 border-2 flex items-center justify-center font-bold text-lg relative
-      ${isActive
-        ? 'bg-blue-600 text-white border-l-gray-700 border-t-gray-700 border-r-blue-400 border-b-blue-400'
-        : 'bg-gray-300 border-r-gray-500 border-b-gray-500 border-l-gray-100 border-t-gray-100'
+      ${
+        isActive
+          ? "bg-blue-600 text-white border-l-gray-700 border-t-gray-700 border-r-blue-400 border-b-blue-400"
+          : "bg-gray-300 border-r-gray-500 border-b-gray-500 border-l-gray-100 border-t-gray-100"
       }`}
   >
     {orderId}
@@ -62,7 +62,6 @@ const OrderTab: React.FC<{
   </button>
 );
 
-
 const LeftPanel: React.FC<LeftPanelProps> = ({
   orders,
   activeOrder,
@@ -72,10 +71,10 @@ const LeftPanel: React.FC<LeftPanelProps> = ({
   onRemoveItem,
   onDuplicateItem,
   onModifyItem,
-  
+
   // Destructure the new prop name
-  onSelectOrderType, 
-  
+  onSelectOrderType,
+
   setCustomerInfo,
   subtotal,
   total,
@@ -92,10 +91,10 @@ const LeftPanel: React.FC<LeftPanelProps> = ({
   isSwapMode,
   onToggleSwapMode,
 }) => {
-  const selectedItem = orderItems.find(i => i.id === selectedOrderItemId);
-  // HM1 is Happy Meal. 
+  const selectedItem = orderItems.find((i) => i.id === selectedOrderItemId);
+  // HM1 is Happy Meal.
   // We also enable swap if the selected item is part of a set.
-  const isHappyMealSelected = selectedItem?.menuItem.id === 'HM1';
+  const isHappyMealSelected = selectedItem?.menuItem.id === "HM1";
   const isSetMealItemSelected = !!selectedItem?.isPartOfSet;
 
   return (
@@ -139,19 +138,17 @@ const LeftPanel: React.FC<LeftPanelProps> = ({
         orderType={activeOrder.orderType}
         discount={activeOrder.discount}
       />
-      
+
       {/* --- START: PASS THE NEW PROP DOWN --- */}
       <CustomerInfoPanel
         orderType={activeOrder.orderType}
-        
         // Pass the new handler down to CustomerInfoPanel
-        setOrderType={onSelectOrderType} 
-        
+        setOrderType={onSelectOrderType}
         customerInfo={activeOrder.customerInfo}
         setCustomerInfo={setCustomerInfo}
         onOpenCustomerModal={onOpenCustomerModal}
         onNewOrder={onNewOrder}
-        onAcceptOrder={onAcceptOrder} 
+        onAcceptOrder={onAcceptOrder}
       />
       {/* --- END: PASS THE NEW PROP DOWN --- */}
     </div>

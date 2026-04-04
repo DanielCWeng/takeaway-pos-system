@@ -158,9 +158,7 @@ function normalizeOrderItem(raw: unknown): OrderItem | null {
   const id = typeof item.id === "string" && item.id ? item.id : "CUSTOM";
   const name = typeof item.name === "string" && item.name ? item.name : "Item";
   const uniqueId =
-    typeof item.uniqueId === "string" && item.uniqueId
-      ? item.uniqueId
-      : generateUniqueId();
+    typeof item.uniqueId === "string" && item.uniqueId ? item.uniqueId : generateUniqueId();
   const price = Number.isFinite(item.price) ? Number(item.price) : 0;
   const quantity =
     Number.isFinite(item.quantity) && Number(item.quantity) > 0
@@ -188,9 +186,7 @@ function normalizeOrderItem(raw: unknown): OrderItem | null {
   };
 }
 
-function loadOrderDraft():
-  | { orders: OrderState[]; activeOrderIndex: number }
-  | null {
+function loadOrderDraft(): { orders: OrderState[]; activeOrderIndex: number } | null {
   if (typeof window === "undefined") return null;
 
   try {
@@ -251,9 +247,7 @@ function loadOrderDraft():
             (order.payment.method === "cash" || order.payment.method === "card")
               ? {
                   method: order.payment.method,
-                  amount: Number.isFinite(order.payment.amount)
-                    ? Number(order.payment.amount)
-                    : 0,
+                  amount: Number.isFinite(order.payment.amount) ? Number(order.payment.amount) : 0,
                 }
               : { method: "cash", amount: 0 },
           subtotal: Number.isFinite(order.subtotal) ? Number(order.subtotal) : subtotal,
@@ -319,14 +313,9 @@ const generateInitialOrder = (id: number): OrderState => ({
 const OrderContext = createContext<OrderContextType | undefined>(undefined);
 
 function deriveTotals(order: OrderState) {
-  const subtotal = order.items.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0,
-  );
+  const subtotal = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const deliveryCharge =
-    order.orderType === "delivery"
-      ? calculateDeliveryCharge(order.customerInfo?.distance)
-      : 0;
+    order.orderType === "delivery" ? calculateDeliveryCharge(order.customerInfo?.distance) : 0;
 
   return {
     subtotal,
@@ -357,10 +346,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   const queueFlushInFlight = useRef(false);
 
   // Safety mechanism to ensure index is valid
-  const safeIndex = Math.min(
-    Math.max(0, activeOrderIndex),
-    Math.max(0, orders.length - 1),
-  );
+  const safeIndex = Math.min(Math.max(0, activeOrderIndex), Math.max(0, orders.length - 1));
   const order = orders[safeIndex] || generateInitialOrder(1);
 
   const setActiveOrderIndex = useCallback((index: number) => {
@@ -421,8 +407,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
 
   const createNewOrder = useCallback(() => {
     setOrders((prev) => {
-      const nextId =
-        prev.length > 0 ? Math.max(...prev.map((o) => o.id)) + 1 : 1;
+      const nextId = prev.length > 0 ? Math.max(...prev.map((o) => o.id)) + 1 : 1;
       return [...prev, generateInitialOrder(nextId)];
     });
     // Set timeout to allow render cycle to pick up new array length
@@ -446,27 +431,14 @@ export function OrderProvider({ children }: { children: ReactNode }) {
     (item: AddableItem, options: AddItemOptions = {}) => {
       const quantity =
         options.quantity ??
-        ("quantity" in item && typeof item.quantity === "number"
-          ? item.quantity
-          : 1);
-      const isNameObject =
-        typeof item.name === "object" &&
-        item.name !== null &&
-        "en" in item.name;
+        ("quantity" in item && typeof item.quantity === "number" ? item.quantity : 1);
+      const isNameObject = typeof item.name === "object" && item.name !== null && "en" in item.name;
       const baseName: { en: string; zh?: string } = isNameObject
         ? (item.name as { en: string; zh?: string })
         : { en: String(item.name), zh: undefined };
-      const uniqueId =
-        "uniqueId" in item && item.uniqueId
-          ? item.uniqueId
-          : generateUniqueId();
-      const zhName = isNameObject
-        ? baseName.zh
-        : "zhName" in item
-          ? item.zhName
-          : undefined;
-      const price =
-        "price" in item && typeof item.price === "number" ? item.price : 0;
+      const uniqueId = "uniqueId" in item && item.uniqueId ? item.uniqueId : generateUniqueId();
+      const zhName = isNameObject ? baseName.zh : "zhName" in item ? item.zhName : undefined;
+      const price = "price" in item && typeof item.price === "number" ? item.price : 0;
       const normalizedItem: OrderItem = {
         uniqueId,
         id: item.id || "CUSTOM",
@@ -570,9 +542,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
           return {};
         }
 
-        const nextItems = prev.items.map((item, idx) =>
-          idx === index ? updater(item) : item,
-        );
+        const nextItems = prev.items.map((item, idx) => (idx === index ? updater(item) : item));
         return { items: nextItems };
       });
     },
@@ -599,7 +569,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
       updateOrderState((prev) => {
         if (index < 0 || index >= prev.items.length) return {};
         const item = prev.items[index];
-        
+
         if (item.quantity <= 1) {
           // Fallback to removeItem if quantity is 1
           const idToRemove = item.uniqueId;
@@ -619,7 +589,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
         return { items: nextItems };
       });
     },
-    [updateOrderState]
+    [updateOrderState],
   );
 
   const setFocItem = useCallback(
@@ -629,7 +599,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
         const nextItems = [...prev.items];
         const item = nextItems[index];
 
-        if (item.isFoc && item.name.endsWith(' (FOC)')) {
+        if (item.isFoc && item.name.endsWith(" (FOC)")) {
           return {};
         }
 
@@ -637,7 +607,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
           ...item,
           price: 0,
           isFoc: true,
-          name: item.name.endsWith(' (FOC)') ? item.name : `${item.name} (FOC)`,
+          name: item.name.endsWith(" (FOC)") ? item.name : `${item.name} (FOC)`,
         };
         return { items: nextItems };
       });
@@ -651,8 +621,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   );
 
   const setCustomerInfo = useCallback(
-    (info: CustomerInfo | undefined) =>
-      updateOrderState(() => ({ customerInfo: info })),
+    (info: CustomerInfo | undefined) => updateOrderState(() => ({ customerInfo: info })),
     [updateOrderState],
   );
 
@@ -753,9 +722,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
         deliveryCharge: totals.deliveryCharge,
         total: totals.total,
       };
-      const clientOrderId = orderToPrint
-        ? generateClientOrderId()
-        : order.clientOrderId;
+      const clientOrderId = orderToPrint ? generateClientOrderId() : order.clientOrderId;
 
       try {
         const result = await apiClient.submitOrder(payload);
@@ -763,9 +730,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
           clearOrder();
         }
         if (!result.printed) {
-          setLastPrintAlert(
-            `Order #${result.orderId} was saved, but printer confirmation failed.`,
-          );
+          setLastPrintAlert(`Order #${result.orderId} was saved, but printer confirmation failed.`);
           return { status: "saved_not_printed", orderId: result.orderId };
         }
         return { status: "printed", orderId: result.orderId };

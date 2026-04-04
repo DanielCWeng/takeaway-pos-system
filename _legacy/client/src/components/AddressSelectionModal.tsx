@@ -24,11 +24,7 @@ interface Props {
   onClose: () => void;
 }
 
-const PosButton = ({
-  children,
-  className = "",
-  ...props
-}: React.ComponentProps<"button">) => (
+const PosButton = ({ children, className = "", ...props }: React.ComponentProps<"button">) => (
   <button
     className={`px-4 py-2 bg-gray-300 border-2 border-r-gray-500 border-b-gray-500 border-l-gray-100 border-t-gray-100 active:border-l-gray-500 active:border-t-gray-500 active:border-r-gray-100 active:border-b-gray-100 ${className}`}
     {...props}
@@ -38,12 +34,7 @@ const PosButton = ({
 );
 
 // The component now accepts '{ isOpen, customer, onSelect, onClose }'
-export default function AddressSelectionModal({
-  isOpen,
-  customer,
-  onSelect,
-  onClose,
-}: Props) {
+export default function AddressSelectionModal({ isOpen, customer, onSelect, onClose }: Props) {
   if (!isOpen) return null;
 
   // ================== THE GUARD CLAUSE FIX ==================
@@ -67,17 +58,13 @@ export default function AddressSelectionModal({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40">
       <div className="bg-gray-300 p-1 border-2 border-t-gray-100 border-l-gray-100 border-b-gray-500 border-r-gray-500 w-1/3">
         <div className="bg-blue-800 text-white p-2 flex justify-between items-center">
-          <h2 className="text-lg font-bold">
-            Select Address for {customer.name}
-          </h2>
+          <h2 className="text-lg font-bold">Select Address for {customer.name}</h2>
           <button onClick={onClose} className="font-bold text-xl">
             &times;
           </button>
         </div>
         <div className="p-4 bg-white border-2 border-gray-500 m-1">
-          <p className="mb-4">
-            This customer has multiple saved addresses. Please select one:
-          </p>
+          <p className="mb-4">This customer has multiple saved addresses. Please select one:</p>
           <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">
             {/* Now, this code will only run if the guard clause above passes */}
             {customer.addresses.map((addr, index) => (

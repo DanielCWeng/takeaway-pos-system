@@ -48,9 +48,7 @@ const UIContext = createContext<UIContextType | undefined>(undefined);
 
 export function UIProvider({ children }: { children: ReactNode }) {
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
-  const [initialFocusField, setInitialFocusField] = useState<
-    "postcode" | "name"
-  >("postcode");
+  const [initialFocusField, setInitialFocusField] = useState<"postcode" | "name">("postcode");
 
   const [isModificationModalOpen, setIsModificationModalOpen] = useState(false);
   const [itemToModify, setItemToModify] = useState<OrderItem | null>(null);
@@ -61,16 +59,11 @@ export function UIProvider({ children }: { children: ReactNode }) {
   const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false);
   const [orderToConfirm, setOrderToConfirm] = useState<FullOrder | null>(null);
 
-  const [isAddressSelectionModalOpen, setIsAddressSelectionModalOpen] =
-    useState(false);
-  const [customerForSelection, setCustomerForSelection] = useState<any | null>(
-    null,
-  );
+  const [isAddressSelectionModalOpen, setIsAddressSelectionModalOpen] = useState(false);
+  const [customerForSelection, setCustomerForSelection] = useState<any | null>(null);
 
-  const [isDeliveryValidationModalOpen, setIsDeliveryValidationModalOpen] =
-    useState(false);
-  const [isDeliveryPriceModalOpen, setIsDeliveryPriceModalOpen] =
-    useState(false);
+  const [isDeliveryValidationModalOpen, setIsDeliveryValidationModalOpen] = useState(false);
+  const [isDeliveryPriceModalOpen, setIsDeliveryPriceModalOpen] = useState(false);
 
   // Actions
   const openCustomerModal = (focus: "postcode" | "name" = "postcode") => {

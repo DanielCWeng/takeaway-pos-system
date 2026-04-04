@@ -14,9 +14,7 @@ export function calculateDeliveryCharge(distanceInMiles?: number): number {
     return DELIVERY_BASE_CHARGE;
   }
 
-  const milesOverThreshold = Math.floor(
-    distanceInMiles - DELIVERY_DISTANCE_THRESHOLD_MILES,
-  );
+  const milesOverThreshold = Math.floor(distanceInMiles - DELIVERY_DISTANCE_THRESHOLD_MILES);
 
   return DELIVERY_BASE_CHARGE + milesOverThreshold * DELIVERY_RATE_PER_MILE_OVER_THRESHOLD;
 }

@@ -14,9 +14,9 @@
  * See domains/callerIdService/addressClient.js for the remote API variant.
  */
 
-import Database from 'better-sqlite3';
-import { config } from '../config/index.js';
-import { logger } from '../infrastructure/logger.js';
+import Database from "better-sqlite3";
+import { config } from "../config/index.js";
+import { logger } from "../infrastructure/logger.js";
 
 /** @type {import('better-sqlite3').Database | null} */
 let _db = null;
@@ -51,16 +51,16 @@ function getPostcodeDb() {
     `);
     // Ensure columns exist for existing installations
     try {
-      _db.exec('ALTER TABLE addresses ADD COLUMN town TEXT');
+      _db.exec("ALTER TABLE addresses ADD COLUMN town TEXT");
     } catch {
       // Column already exists, ignore
     }
     try {
-      _db.exec('ALTER TABLE addresses ADD COLUMN data TEXT');
+      _db.exec("ALTER TABLE addresses ADD COLUMN data TEXT");
     } catch {
       // Column already exists, ignore
     }
-    logger.info('Postcodes database opened', { path: config.db.postcodesPath });
+    logger.info("Postcodes database opened", { path: config.db.postcodesPath });
   }
   return _db;
 }
@@ -70,7 +70,7 @@ function getPostcodeDb() {
  * @returns {import('better-sqlite3').Statement}
  */
 function getIsValidStmt() {
-  return (_stmtIsValid ??= getPostcodeDb().prepare('SELECT 1 FROM addresses WHERE postcode = ?'));
+  return (_stmtIsValid ??= getPostcodeDb().prepare("SELECT 1 FROM addresses WHERE postcode = ?"));
 }
 
 // ---------------------------------------------------------------------------
@@ -88,15 +88,15 @@ const UK_POSTCODE_RE = /^[A-Z]{1,2}\d[A-Z\d]? \d[A-Z]{2}$/;
  * @returns {string}
  */
 export function normalisePostcode(postcode) {
-  if (!postcode) return '';
+  if (!postcode) return "";
 
-  const clean = postcode.replace(/\s/g, '').toUpperCase();
+  const clean = postcode.replace(/\s/g, "").toUpperCase();
 
   // Insert space before the last 3 characters (standard UK postcode structure)
-  const spaced = clean.slice(0, -3) + ' ' + clean.slice(-3);
+  const spaced = clean.slice(0, -3) + " " + clean.slice(-3);
 
   if (!UK_POSTCODE_RE.test(spaced)) {
-    logger.warn('normalisePostcode: input does not match UK postcode format', { postcode });
+    logger.warn("normalisePostcode: input does not match UK postcode format", { postcode });
     return clean; // Return cleaned but un-spaced so callers can detect malformed input
   }
 
@@ -125,7 +125,7 @@ export function isValidPostcode(postcode) {
 export function findAddressesLocally(postcode) {
   const norm = normalisePostcode(postcode);
   const db = getPostcodeDb();
-  const row = db.prepare('SELECT * FROM addresses WHERE postcode = ?').get(norm);
+  const row = db.prepare("SELECT * FROM addresses WHERE postcode = ?").get(norm);
 
   if (!row) return [];
 
@@ -136,13 +136,13 @@ export function findAddressesLocally(postcode) {
       if (Array.isArray(parsedData)) {
         return parsedData;
       }
-      logger.warn('findAddressesLocally: Stored data is not an array for postcode', {
+      logger.warn("findAddressesLocally: Stored data is not an array for postcode", {
         postcode: norm,
         data: row.data,
       });
       // Fall through to legacy if JSON is not an array
     } catch (e) {
-      logger.warn('findAddressesLocally: Failed to parse JSON data for postcode', {
+      logger.warn("findAddressesLocally: Failed to parse JSON data for postcode", {
         postcode: norm,
         error: e.message,
       });
@@ -176,10 +176,10 @@ export function saveAddresses(postcode, bestMatch, fullList = []) {
   // Hardening: Ensure we have the minimum required fields before a write
   if (
     !bestMatch ||
-    typeof bestMatch.latitude !== 'number' ||
-    typeof bestMatch.longitude !== 'number'
+    typeof bestMatch.latitude !== "number" ||
+    typeof bestMatch.longitude !== "number"
   ) {
-    logger.warn('Failed to save postcode data: missing or invalid coordinates', {
+    logger.warn("Failed to save postcode data: missing or invalid coordinates", {
       postcode: norm,
       bestMatch,
     });
@@ -200,15 +200,15 @@ export function saveAddresses(postcode, bestMatch, fullList = []) {
 
     upsert.run(
       norm,
-      bestMatch.street || '',
-      bestMatch.town || '',
+      bestMatch.street || "",
+      bestMatch.town || "",
       bestMatch.latitude,
       bestMatch.longitude,
       fullList && fullList.length > 0 ? JSON.stringify(fullList) : null,
     );
-    logger.debug('Postcode data saved locally', { postcode: norm });
+    logger.debug("Postcode data saved locally", { postcode: norm });
   } catch (err) {
-    logger.error('Failed to save postcode data', {
+    logger.error("Failed to save postcode data", {
       postcode: norm,
       error: err.message,
     });
@@ -224,6 +224,6 @@ export function closePostcodeDb() {
     _db.close();
     _db = null;
     _stmtIsValid = null;
-    logger.info('Postcodes database closed');
+    logger.info("Postcodes database closed");
   }
 }

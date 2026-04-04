@@ -106,9 +106,7 @@ export function OrderControls({
         disabled={!isSwapMode && !isHappyMealSelected && !isSetMealItemSelected}
       >
         <span className="text-xs">{isHappyMealSelected ? "Inc" : "Swap"}</span>
-        <span className="text-[10px] opacity-80">
-          {isHappyMealSelected ? "包餐" : "换餐"}
-        </span>
+        <span className="text-[10px] opacity-80">{isHappyMealSelected ? "包餐" : "换餐"}</span>
       </Button>
     </div>
   );

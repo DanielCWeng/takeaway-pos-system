@@ -31,7 +31,7 @@ function getActiveLevel() {
   try {
     // Dynamic import would be async — use synchronous re-read from process.env
     // Config has already validated LOG_LEVEL by the time the server boots.
-    const raw = process.env.LOG_LEVEL ?? 'info';
+    const raw = process.env.LOG_LEVEL ?? "info";
     _resolvedLevel = LEVELS[raw] ?? LEVELS.info;
   } catch {
     _resolvedLevel = LEVELS.info;
@@ -61,7 +61,7 @@ function emit(level, message, context = {}) {
 
   // Always write to stdout — callers can pipe/redirect as needed
   // eslint-disable-next-line no-console
-  process.stdout.write(line + '\n');
+  process.stdout.write(line + "\n");
 }
 
 // ---------------------------------------------------------------------------
@@ -70,14 +70,14 @@ function emit(level, message, context = {}) {
 
 export const logger = {
   /** Debug-level — developer diagnostic information */
-  debug: (message, context) => emit('debug', message, context),
+  debug: (message, context) => emit("debug", message, context),
 
   /** Info-level — normal operational events */
-  info: (message, context) => emit('info', message, context),
+  info: (message, context) => emit("info", message, context),
 
   /** Warn-level — degraded state, recoverable */
-  warn: (message, context) => emit('warn', message, context),
+  warn: (message, context) => emit("warn", message, context),
 
   /** Error-level — unexpected failures */
-  error: (message, context) => emit('error', message, context),
+  error: (message, context) => emit("error", message, context),
 };

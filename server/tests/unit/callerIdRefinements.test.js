@@ -1,19 +1,19 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   init,
   handlePhoneDetected,
   clearDebounceMap,
-} from '../../src/domains/callerIdService/callerIdService.service.js';
-import * as customerService from '../../src/domains/customers/customers.service.js';
-import * as postcodes from '../../src/shared/postcodes.js';
+} from "../../src/domains/callerIdService/callerIdService.service.js";
+import * as customerService from "../../src/domains/customers/customers.service.js";
+import * as postcodes from "../../src/shared/postcodes.js";
 
-vi.mock('../../src/domains/customers/customers.service.js');
-vi.mock('../../src/shared/postcodes.js');
-vi.mock('../../src/infrastructure/logger.js');
+vi.mock("../../src/domains/customers/customers.service.js");
+vi.mock("../../src/shared/postcodes.js");
+vi.mock("../../src/infrastructure/logger.js");
 
 const broadcast = vi.fn();
 
-describe('CallerID Service Refinements', () => {
+describe("CallerID Service Refinements", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     broadcast.mockReset();
@@ -26,8 +26,8 @@ describe('CallerID Service Refinements', () => {
     vi.useRealTimers();
   });
 
-  it('evicts entries from debounce map after DEBOUNCE_MS', async () => {
-    const phone = '0123456789';
+  it("evicts entries from debounce map after DEBOUNCE_MS", async () => {
+    const phone = "0123456789";
     customerService.getOrCreateCustomer.mockResolvedValue({ phone });
     postcodes.findAddressesLocally.mockReturnValue([]);
 
@@ -47,10 +47,10 @@ describe('CallerID Service Refinements', () => {
     expect(customerService.getOrCreateCustomer).toHaveBeenCalledTimes(2);
   });
 
-  it('uses the new findAddressesLocally array contract', async () => {
-    const phone = '0123456789';
-    const mockCustomer = { phone, postcode: 'NG9 8GF' };
-    const mockAddresses = [{ line1: '123 Fake St', town: 'Springfield' }];
+  it("uses the new findAddressesLocally array contract", async () => {
+    const phone = "0123456789";
+    const mockCustomer = { phone, postcode: "NG9 8GF" };
+    const mockAddresses = [{ line1: "123 Fake St", town: "Springfield" }];
 
     customerService.getOrCreateCustomer.mockResolvedValue(mockCustomer);
     customerService.enrichCustomerAddress.mockResolvedValue({
@@ -61,30 +61,30 @@ describe('CallerID Service Refinements', () => {
     await handlePhoneDetected(phone);
 
     expect(broadcast).toHaveBeenCalledWith(
-      'incoming_call',
+      "incoming_call",
       expect.objectContaining({
         addresses: mockAddresses,
       }),
     );
   });
 
-  it('broadcasts even if customer lookup fails', async () => {
-    const phone = '01150000000';
-    customerService.getOrCreateCustomer.mockRejectedValue(new Error('DB Down'));
+  it("broadcasts even if customer lookup fails", async () => {
+    const phone = "01150000000";
+    customerService.getOrCreateCustomer.mockRejectedValue(new Error("DB Down"));
 
     await handlePhoneDetected(phone);
 
     expect(broadcast).toHaveBeenCalledWith(
-      'incoming_call',
+      "incoming_call",
       expect.objectContaining({
-        phone: '01150000000',
+        phone: "01150000000",
         addresses: [],
       }),
     );
   });
 
-  it('clearDebounceMap cancels pending eviction timers so they do not fire after clear', async () => {
-    const phone = '07700900001';
+  it("clearDebounceMap cancels pending eviction timers so they do not fire after clear", async () => {
+    const phone = "07700900001";
     customerService.getOrCreateCustomer.mockResolvedValue({ phone });
 
     await handlePhoneDetected(phone);
@@ -100,7 +100,7 @@ describe('CallerID Service Refinements', () => {
     expect(customerService.getOrCreateCustomer).toHaveBeenCalledTimes(2);
   });
 
-  it('gracefully handles null phone input (hardware noise)', async () => {
+  it("gracefully handles null phone input (hardware noise)", async () => {
     await expect(handlePhoneDetected(null)).resolves.not.toThrow();
     expect(customerService.getOrCreateCustomer).not.toHaveBeenCalled();
   });

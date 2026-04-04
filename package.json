@@ -1,0 +1,9 @@
+{
+  "name": "takeaway-pos-workspace",
+  "private": true,
+  "scripts": {
+    "format": "npx prettier --write .",
+    "format:client": "npm run format --prefix client",
+    "format:server": "npm run format --prefix server"
+  }
+}

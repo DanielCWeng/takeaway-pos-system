@@ -9,10 +9,7 @@ import { cn } from "../../lib/utils";
 
 interface ItemOptionsModalProps {
   item: MenuItem;
-  onConfirm: (finalizedItem: {
-    name: string | { en: string; zh: string };
-    price: number;
-  }) => void;
+  onConfirm: (finalizedItem: { name: string | { en: string; zh: string }; price: number }) => void;
   onClose: () => void;
 }
 
@@ -33,11 +30,7 @@ function translateOption(opt: string): string {
   return OPTION_TRANSLATIONS[opt] || opt;
 }
 
-export function ItemOptionsModal({
-  item,
-  onConfirm,
-  onClose,
-}: ItemOptionsModalProps) {
+export function ItemOptionsModal({ item, onConfirm, onClose }: ItemOptionsModalProps) {
   const [selections, setSelections] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -46,11 +39,7 @@ export function ItemOptionsModal({
       initialSelections["main"] = item.options[0].name;
     }
     item.contents?.forEach((content) => {
-      if (
-        content.type === "choice" &&
-        content.options?.length &&
-        content.description
-      ) {
+      if (content.type === "choice" && content.options?.length && content.description) {
         initialSelections[content.description] = content.options[0];
       }
     });
@@ -65,18 +54,13 @@ export function ItemOptionsModal({
 
   const handleConfirm = () => {
     const selectionValues = Object.values(selections);
-    const suffixEn =
-      selectionValues.length > 0 ? ` (${selectionValues.join(", ")})` : "";
+    const suffixEn = selectionValues.length > 0 ? ` (${selectionValues.join(", ")})` : "";
     const suffixZh =
-      selectionValues.length > 0
-        ? ` (${selectionValues.map(translateOption).join(", ")})`
-        : "";
+      selectionValues.length > 0 ? ` (${selectionValues.map(translateOption).join(", ")})` : "";
 
     let price = item.price ?? 0;
     if (item.options) {
-      const selectedOption = item.options.find(
-        (opt) => opt.name === selections["main"],
-      );
+      const selectedOption = item.options.find((opt) => opt.name === selections["main"]);
       if (selectedOption?.price !== undefined) {
         price = selectedOption.price;
       }
@@ -112,12 +96,7 @@ export function ItemOptionsModal({
               {item.name.en}
             </span>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="rounded-full"
-          >
+          <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full">
             <X className="h-5 w-5" />
           </Button>
         </div>
@@ -160,18 +139,11 @@ export function ItemOptionsModal({
                     key={index}
                     className="rounded-lg bg-primary/5 p-3 text-sm text-muted-foreground border border-border/40"
                   >
-                    Includes:{" "}
-                    <span className="text-foreground font-medium">
-                      {content.item}
-                    </span>
+                    Includes: <span className="text-foreground font-medium">{content.item}</span>
                   </div>
                 );
               }
-              if (
-                content.type === "choice" &&
-                content.description &&
-                content.options
-              ) {
+              if (content.type === "choice" && content.description && content.options) {
                 return (
                   <div key={index} className="space-y-3">
                     <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
@@ -181,9 +153,7 @@ export function ItemOptionsModal({
                       {content.options.map((opt) => (
                         <button
                           key={opt}
-                          onClick={() =>
-                            handleSelectionChange(content.description!, opt)
-                          }
+                          onClick={() => handleSelectionChange(content.description!, opt)}
                           className={cn(
                             "flex h-16 items-center justify-center px-3 rounded-xl border transition-all text-sm font-medium",
                             selections[content.description!] === opt
@@ -204,11 +174,7 @@ export function ItemOptionsModal({
         </ScrollArea>
 
         <div className="flex gap-3 border-t border-border/60 bg-muted/20 p-6">
-          <Button
-            variant="outline"
-            className="flex-1 h-12 text-base"
-            onClick={onClose}
-          >
+          <Button variant="outline" className="flex-1 h-12 text-base" onClick={onClose}>
             Cancel
           </Button>
           <Button

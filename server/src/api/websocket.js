@@ -10,9 +10,9 @@
  *  - Handle basic ping/pong/heartbeat to keep connections alive on LAN.
  */
 
-import { WebSocketServer, WebSocket } from 'ws';
-import { logger } from '../infrastructure/logger.js';
-import { config } from '../config/index.js';
+import { WebSocketServer, WebSocket } from "ws";
+import { logger } from "../infrastructure/logger.js";
+import { config } from "../config/index.js";
 
 /** @type {WebSocketServer | null} */
 let wss = null;
@@ -34,7 +34,7 @@ const aliveMap = new WeakMap();
  */
 export function createWsServer(httpServer) {
   if (wss) {
-    throw new Error('WS server already initialised — createWsServer() must only be called once');
+    throw new Error("WS server already initialised — createWsServer() must only be called once");
   }
 
   // Read at call time, not module load time — avoids setInterval(fn, undefined) if the
@@ -43,27 +43,27 @@ export function createWsServer(httpServer) {
 
   wss = new WebSocketServer({ server: httpServer });
 
-  wss.on('connection', (ws, req) => {
+  wss.on("connection", (ws, req) => {
     const ip = req.socket.remoteAddress;
-    logger.info('WS Client connected', { ip });
+    logger.info("WS Client connected", { ip });
 
     aliveMap.set(ws, true);
 
-    ws.on('error', (err) => {
-      logger.error('WS Client error', { ip, error: err.message });
+    ws.on("error", (err) => {
+      logger.error("WS Client error", { ip, error: err.message });
     });
 
-    ws.on('pong', () => {
+    ws.on("pong", () => {
       aliveMap.set(ws, true);
     });
 
-    ws.on('message', (data) => {
-      logger.debug('WS Message received (unhandled)', { ip, data: data.toString() });
+    ws.on("message", (data) => {
+      logger.debug("WS Message received (unhandled)", { ip, data: data.toString() });
     });
 
-    ws.on('close', () => {
+    ws.on("close", () => {
       aliveMap.delete(ws);
-      logger.info('WS Client disconnected', { ip });
+      logger.info("WS Client disconnected", { ip });
     });
   });
 
@@ -71,7 +71,7 @@ export function createWsServer(httpServer) {
   heartbeatInterval = setInterval(() => {
     wss.clients.forEach((ws) => {
       if (aliveMap.get(ws) === false) {
-        logger.debug('WS Terminating inactive client');
+        logger.debug("WS Terminating inactive client");
         return ws.terminate();
       }
 
@@ -83,14 +83,14 @@ export function createWsServer(httpServer) {
   // Do not keep the process alive solely for the heartbeat (helps tests/tooling).
   heartbeatInterval.unref?.();
 
-  wss.on('close', () => {
+  wss.on("close", () => {
     if (heartbeatInterval) {
       clearInterval(heartbeatInterval);
       heartbeatInterval = null;
     }
   });
 
-  logger.info('WebSocket server initialised', { heartbeatIntervalMs: HEARTBEAT_INTERVAL_MS });
+  logger.info("WebSocket server initialised", { heartbeatIntervalMs: HEARTBEAT_INTERVAL_MS });
 }
 
 /**
@@ -102,7 +102,7 @@ export function createWsServer(httpServer) {
  */
 export function broadcast(type, payload) {
   if (!wss) {
-    logger.warn('WS Broadcast attempted before server initialised');
+    logger.warn("WS Broadcast attempted before server initialised");
     return -1;
   }
 
@@ -113,7 +113,7 @@ export function broadcast(type, payload) {
     if (client.readyState === WebSocket.OPEN) {
       client.send(message, (err) => {
         if (err) {
-          logger.error('WS Send failed', { type, error: err.message });
+          logger.error("WS Send failed", { type, error: err.message });
         }
       });
       count++;
@@ -121,7 +121,7 @@ export function broadcast(type, payload) {
   });
 
   if (count > 0) {
-    logger.debug('WS Broadcast sent', { type, clientCount: count });
+    logger.debug("WS Broadcast sent", { type, clientCount: count });
   }
 
   return count;

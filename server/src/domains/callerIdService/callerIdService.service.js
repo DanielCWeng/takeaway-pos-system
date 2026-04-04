@@ -14,8 +14,8 @@
  * and makes the dependency explicit and testable.
  */
 
-import * as customerService from '../customers/customers.service.js';
-import { logger } from '../../infrastructure/logger.js';
+import * as customerService from "../customers/customers.service.js";
+import { logger } from "../../infrastructure/logger.js";
 
 // Debounce map: phone -> timestamp
 const lastCallSeen = new Map();
@@ -33,8 +33,8 @@ let broadcastFn = null;
  * @param {{ broadcast: (type: string, payload: object) => void }} deps
  */
 export function init({ broadcast }) {
-  if (typeof broadcast !== 'function') {
-    throw new TypeError('callerIdService.init() requires a broadcast function');
+  if (typeof broadcast !== "function") {
+    throw new TypeError("callerIdService.init() requires a broadcast function");
   }
   broadcastFn = broadcast;
 }
@@ -48,10 +48,10 @@ export async function handlePhoneDetected(phone) {
   if (!phone) return;
   // Normalise: Strip all non-digit characters (except maybe leading + for future-proofing)
   // This ensures "(0115) 123 4567" and "01151234567" are treated identically.
-  const normPhone = phone.replace(/[^\d+]/g, '');
+  const normPhone = phone.replace(/[^\d+]/g, "");
 
   if (!normPhone) {
-    logger.warn('Received empty phone number');
+    logger.warn("Received empty phone number");
     return;
   }
 
@@ -59,7 +59,7 @@ export async function handlePhoneDetected(phone) {
   const lastSeen = lastCallSeen.get(normPhone) || 0;
 
   if (now - lastSeen < DEBOUNCE_MS) {
-    logger.debug('Call debounced', { phone: normPhone });
+    logger.debug("Call debounced", { phone: normPhone });
     return;
   }
 
@@ -71,7 +71,7 @@ export async function handlePhoneDetected(phone) {
   }, DEBOUNCE_MS);
   evictionTimers.set(normPhone, evictTimer);
 
-  logger.info('Handling incoming call', { phone: normPhone });
+  logger.info("Handling incoming call", { phone: normPhone });
 
   let customer = null;
   let enrichedCustomer = null;
@@ -92,7 +92,7 @@ export async function handlePhoneDetected(phone) {
       addresses = enrichedResult.addresses || [];
     }
   } catch (err) {
-    logger.error('Failed to lookup/enrich customer for incoming call', {
+    logger.error("Failed to lookup/enrich customer for incoming call", {
       phone: normPhone,
       error: err.message,
     });
@@ -110,12 +110,12 @@ export async function handlePhoneDetected(phone) {
 
     // 4. Push to all connected UIs
     if (!broadcastFn) {
-      logger.error('callerIdService.broadcast is not initialised — call init() at startup');
+      logger.error("callerIdService.broadcast is not initialised — call init() at startup");
       return;
     }
-    broadcastFn('incoming_call', payload);
+    broadcastFn("incoming_call", payload);
   } catch (err) {
-    logger.error('Failed to broadcast incoming call', {
+    logger.error("Failed to broadcast incoming call", {
       phone: normPhone,
       error: err.message,
       stack: err.stack,

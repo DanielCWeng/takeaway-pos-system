@@ -1,6 +1,6 @@
-import type { CustomerInfo, OrderType } from '../../types';
-import { Button } from '../ui/button';
-import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
+import type { CustomerInfo, OrderType } from "../../types";
+import { Button } from "../ui/button";
+import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
 
 interface CustomerCardProps {
   orderType: OrderType;
@@ -9,11 +9,16 @@ interface CustomerCardProps {
 }
 
 export function CustomerCard({ orderType, onChangeOrderType, customerInfo }: CustomerCardProps) {
-  const empty = '\u2014';
+  const empty = "\u2014";
   const infoRows = [
-    { label: 'Name', value: customerInfo?.name || empty },
-    { label: 'Phone', value: customerInfo?.phone?.startsWith('UNKNOWN-') ? 'Anonymous' : (customerInfo?.phone || empty) },
-    { label: 'Address', value: customerInfo?.address || customerInfo?.postcode || empty },
+    { label: "Name", value: customerInfo?.name || empty },
+    {
+      label: "Phone",
+      value: customerInfo?.phone?.startsWith("UNKNOWN-")
+        ? "Anonymous"
+        : customerInfo?.phone || empty,
+    },
+    { label: "Address", value: customerInfo?.address || customerInfo?.postcode || empty },
   ];
 
   return (
@@ -32,21 +37,27 @@ export function CustomerCard({ orderType, onChangeOrderType, customerInfo }: Cus
 
       <Tabs
         value={orderType}
-        onValueChange={value => onChangeOrderType(value as OrderType)}
+        onValueChange={(value) => onChangeOrderType(value as OrderType)}
         className="mt-2"
       >
         <TabsList className="h-11 w-full pos-tabs-list">
-          <TabsTrigger className="flex-1 text-sm tracking-[0.05em] pos-tabs-trigger" value="collection">
+          <TabsTrigger
+            className="flex-1 text-sm tracking-[0.05em] pos-tabs-trigger"
+            value="collection"
+          >
             Collection
           </TabsTrigger>
-          <TabsTrigger className="flex-1 text-sm tracking-[0.05em] pos-tabs-trigger" value="delivery">
+          <TabsTrigger
+            className="flex-1 text-sm tracking-[0.05em] pos-tabs-trigger"
+            value="delivery"
+          >
             Delivery
           </TabsTrigger>
         </TabsList>
       </Tabs>
 
       <div className="mt-2 grid gap-1 text-xs flex-1">
-        {infoRows.map(row => {
+        {infoRows.map((row) => {
           const isEmpty = row.value === empty;
           return (
             <div key={row.label} className="flex items-center justify-between">
@@ -54,8 +65,8 @@ export function CustomerCard({ orderType, onChangeOrderType, customerInfo }: Cus
               <span
                 className={
                   isEmpty
-                    ? 'pos-value font-mono text-muted-foreground'
-                    : 'pos-value font-mono text-foreground'
+                    ? "pos-value font-mono text-muted-foreground"
+                    : "pos-value font-mono text-foreground"
                 }
               >
                 {row.value}

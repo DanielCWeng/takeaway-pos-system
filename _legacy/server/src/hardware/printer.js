@@ -61,8 +61,7 @@ function textToBitmap(text, fontSize, align, bold) {
 
   ctx.fillStyle = "black";
   const weight = bold ? "500 " : "";
-  ctx.font =
-    weight + fontSize + 'px "Noto Sans SC", "WenQuanYi Micro Hei", sans-serif';
+  ctx.font = weight + fontSize + 'px "Noto Sans SC", "WenQuanYi Micro Hei", sans-serif';
   ctx.textBaseline = "top";
 
   let xPos = 0;
@@ -82,10 +81,7 @@ function textToBitmap(text, fontSize, align, bold) {
     for (let x = 0; x < canvas.width; x++) {
       const idx = (y * canvas.width + x) * 4;
       const brightness =
-        (imageData.data[idx] +
-          imageData.data[idx + 1] +
-          imageData.data[idx + 2]) /
-        3;
+        (imageData.data[idx] + imageData.data[idx + 1] + imageData.data[idx + 2]) / 3;
       if (brightness < 128) {
         maxY = y;
       }
@@ -105,10 +101,7 @@ function textToBitmap(text, fontSize, align, bold) {
         if (x < width) {
           const idx = (y * canvas.width + x) * 4;
           const brightness =
-            (imageData.data[idx] +
-              imageData.data[idx + 1] +
-              imageData.data[idx + 2]) /
-            3;
+            (imageData.data[idx] + imageData.data[idx + 1] + imageData.data[idx + 2]) / 3;
           if (brightness < 128) {
             byte |= 1 << (7 - bit);
           }
@@ -247,10 +240,7 @@ function printReceipt(orderData) {
             .join(" ");
           chineseModifierString = item.modifiers
             .map(
-              (mod) =>
-                `(${commandTranslations[mod.command] || mod.command} ${
-                  mod.ingredient.zh
-                })`,
+              (mod) => `(${commandTranslations[mod.command] || mod.command} ${mod.ingredient.zh})`,
             )
             .join(" ");
         }
@@ -286,10 +276,7 @@ function printReceipt(orderData) {
       receiptParts.push(Buffer.from("-".repeat(42) + "\n"));
 
       // ---- "X Items" centered on its own line (2x width, 2x height + bold) ----
-      const itemCount = orderData.items.reduce(
-        (sum, item) => sum + item.quantity,
-        0,
-      );
+      const itemCount = orderData.items.reduce((sum, item) => sum + item.quantity, 0);
       receiptParts.push(
         Buffer.from([
           ESC,
@@ -307,14 +294,10 @@ function printReceipt(orderData) {
       );
 
       // ---- Totals (left aligned) ----
-      receiptParts.push(
-        Buffer.from(rightAlign("Sub-total", orderData.subtotal)),
-      );
+      receiptParts.push(Buffer.from(rightAlign("Sub-total", orderData.subtotal)));
 
       if (orderData.orderType === "Delivery") {
-        receiptParts.push(
-          Buffer.from(rightAlign("+Delivery", orderData.deliveryCharge)),
-        );
+        receiptParts.push(Buffer.from(rightAlign("+Delivery", orderData.deliveryCharge)));
       }
 
       receiptParts.push(Buffer.from(rightAlign("", "--------------")));
@@ -353,23 +336,14 @@ function printReceipt(orderData) {
 
       // Map reference (if available)
       if (orderData.customerInfo.mapRef) {
-        receiptParts.push(
-          Buffer.from(`Map ref: ${orderData.customerInfo.mapRef}\n`),
-        );
+        receiptParts.push(Buffer.from(`Map ref: ${orderData.customerInfo.mapRef}\n`));
       }
 
       // Mileage as bitmap (if available and is delivery)
-      if (
-        orderData.orderType === "Delivery" &&
-        orderData.customerInfo.distance
-      ) {
-        console.log(
-          `Rendering: Mileage: ${orderData.customerInfo.distance} 公里`,
-        );
+      if (orderData.orderType === "Delivery" && orderData.customerInfo.distance) {
+        console.log(`Rendering: Mileage: ${orderData.customerInfo.distance} 公里`);
         const mileageBitmap = textToBitmap(
-          `Mileage: ${parseFloat(orderData.customerInfo.distance).toFixed(
-            2,
-          )} 公里`,
+          `Mileage: ${parseFloat(orderData.customerInfo.distance).toFixed(2)} 公里`,
           28 * 2,
           "left",
         );
@@ -383,9 +357,7 @@ function printReceipt(orderData) {
 
       if (orderData.customerInfo.houseNumber && orderData.customerInfo.street) {
         receiptParts.push(
-          Buffer.from(
-            `${orderData.customerInfo.houseNumber}, ${orderData.customerInfo.street}\n`,
-          ),
+          Buffer.from(`${orderData.customerInfo.houseNumber}, ${orderData.customerInfo.street}\n`),
         );
       } else if (orderData.customerInfo.address) {
         receiptParts.push(Buffer.from(`${orderData.customerInfo.address}\n`));
@@ -396,9 +368,7 @@ function printReceipt(orderData) {
       }
 
       if (orderData.customerInfo.postcode) {
-        receiptParts.push(
-          Buffer.from(`${orderData.customerInfo.postcode.toUpperCase()}\n`),
-        );
+        receiptParts.push(Buffer.from(`${orderData.customerInfo.postcode.toUpperCase()}\n`));
       }
 
       if (orderData.customerInfo.phone) {
@@ -407,15 +377,9 @@ function printReceipt(orderData) {
 
       if (orderData.customerInfo.deliveryTime) {
         receiptParts.push(Buffer.from("\n"));
-        receiptParts.push(
-          Buffer.from([ESC, 0x61, 0x01, GS, 0x21, 0x11, ESC, 0x45, 0x01]),
-        ); // Center, Double size, Bold
-        receiptParts.push(
-          Buffer.from(`Time: ${orderData.customerInfo.deliveryTime}\n`),
-        );
-        receiptParts.push(
-          Buffer.from([ESC, 0x61, 0x00, GS, 0x21, 0x00, ESC, 0x45, 0x00]),
-        ); // Reset
+        receiptParts.push(Buffer.from([ESC, 0x61, 0x01, GS, 0x21, 0x11, ESC, 0x45, 0x01])); // Center, Double size, Bold
+        receiptParts.push(Buffer.from(`Time: ${orderData.customerInfo.deliveryTime}\n`));
+        receiptParts.push(Buffer.from([ESC, 0x61, 0x00, GS, 0x21, 0x00, ESC, 0x45, 0x00])); // Reset
       }
 
       receiptParts.push(Buffer.from("\n")); // Gap
@@ -446,9 +410,7 @@ function printReceipt(orderData) {
         iface.release(true, () => {
           device.close();
           if (error) {
-            reject(
-              new Error("Failed to send data to printer: " + error.message),
-            );
+            reject(new Error("Failed to send data to printer: " + error.message));
           } else {
             console.log("Print successful!");
             resolve("Print successful");

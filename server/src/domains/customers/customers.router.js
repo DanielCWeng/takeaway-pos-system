@@ -9,9 +9,9 @@
  *  - No business logic in this file
  */
 
-import { Router } from 'express';
-import { z } from 'zod';
-import * as service from './customers.service.js';
+import { Router } from "express";
+import { z } from "zod";
+import * as service from "./customers.service.js";
 
 export const customersRouter = Router();
 
@@ -42,16 +42,16 @@ const updateAddressSchema = z.object({
  * GET /api/customers/:phone
  * Fetch a customer by phone number. Returns 404 if not found.
  */
-customersRouter.get('/:phone', (req, res, next) => {
+customersRouter.get("/:phone", (req, res, next) => {
   const { phone } = req.params;
 
   // Basic sanity check before hitting service
   if (!phone || phone.length < 10) {
     return res.status(400).json({
       error: {
-        code: 'VALIDATION_ERROR',
-        message: 'Phone number must contain between 10 and 13 digits',
-        details: { phone: ['Phone number is too short or missing'] },
+        code: "VALIDATION_ERROR",
+        message: "Phone number must contain between 10 and 13 digits",
+        details: { phone: ["Phone number is too short or missing"] },
       },
     });
   }
@@ -68,13 +68,13 @@ customersRouter.get('/:phone', (req, res, next) => {
  * POST /api/customers/:phone/address
  * Update address fields for an existing customer.
  */
-customersRouter.post('/:phone/address', (req, res, next) => {
+customersRouter.post("/:phone/address", (req, res, next) => {
   const parsed = updateAddressSchema.safeParse(req.body);
   if (!parsed.success) {
     const details = parsed.error.flatten().fieldErrors;
     return res
       .status(400)
-      .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid request body', details } });
+      .json({ error: { code: "VALIDATION_ERROR", message: "Invalid request body", details } });
   }
 
   try {

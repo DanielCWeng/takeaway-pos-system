@@ -121,8 +121,7 @@ const ItemOptionsModal = ({
     if (item.options) initialSelections["main"] = item.options[0]?.name || "";
     if (item.contents) {
       item.contents.forEach((content) => {
-        if (content.type === "choice")
-          initialSelections[content.description] = content.options[0];
+        if (content.type === "choice") initialSelections[content.description] = content.options[0];
       });
     }
     setSelections(initialSelections);
@@ -134,11 +133,8 @@ const ItemOptionsModal = ({
       finalizedItem.name.en = `${item.name.en} (${selectionValues.join(", ")})`;
     finalizedItem.selections = selections;
     if (item.options) {
-      const selectedOption = item.options.find(
-        (opt) => opt.name === selections["main"]
-      );
-      if (selectedOption && selectedOption.price)
-        finalizedItem.price = selectedOption.price;
+      const selectedOption = item.options.find((opt) => opt.name === selections["main"]);
+      if (selectedOption && selectedOption.price) finalizedItem.price = selectedOption.price;
     }
     onConfirm(finalizedItem);
   };
@@ -165,9 +161,7 @@ const ItemOptionsModal = ({
                   >
                     <span className="text-lg">{opt.name}</span>
                     {opt.price != null && (
-                      <span className="font-bold text-2xl">
-                        £{opt.price.toFixed(2)}
-                      </span>
+                      <span className="font-bold text-2xl">£{opt.price.toFixed(2)}</span>
                     )}
                   </button>
                 ))}
@@ -175,21 +169,16 @@ const ItemOptionsModal = ({
             </div>
           )}
           {item.contents?.map((content, index) => {
-            if (content.type === "item")
-              return <p key={index}>Includes: {content.item}</p>;
+            if (content.type === "item") return <p key={index}>Includes: {content.item}</p>;
             if (content.type === "choice")
               return (
                 <div key={index}>
-                  <h3 className="font-bold text-xl mb-2">
-                    {content.description}:
-                  </h3>
+                  <h3 className="font-bold text-xl mb-2">{content.description}:</h3>
                   <div className="grid grid-cols-3 gap-3">
                     {content.options.map((opt) => (
                       <button
                         key={opt}
-                        onClick={() =>
-                          handleSelectionChange(content.description, opt)
-                        }
+                        onClick={() => handleSelectionChange(content.description, opt)}
                         className={`h-24 flex items-center justify-center p-2 border-2 text-lg ${
                           selections[content.description] === opt
                             ? "bg-blue-600 text-white border-blue-400"
@@ -261,10 +250,10 @@ const DishStyleButton = ({
         isEmpty
           ? "bg-gray-200 border-gray-400 cursor-not-allowed"
           : isSelected
-          ? "bg-blue-600 text-white border-l-gray-700 border-t-gray-700 border-r-blue-400 border-b-blue-400"
-          : label.en === "Show All"
-          ? "bg-red-400 border-r-gray-600 border-b-gray-600 border-l-gray-100 border-t-gray-100"
-          : "bg-green-400 border-r-gray-600 border-b-gray-600 border-l-gray-100 border-t-gray-100"
+            ? "bg-blue-600 text-white border-l-gray-700 border-t-gray-700 border-r-blue-400 border-b-blue-400"
+            : label.en === "Show All"
+              ? "bg-red-400 border-r-gray-600 border-b-gray-600 border-l-gray-100 border-t-gray-100"
+              : "bg-green-400 border-r-gray-600 border-b-gray-600 border-l-gray-100 border-t-gray-100"
       }`}
       onClick={onClick}
     >
@@ -274,15 +263,9 @@ const DishStyleButton = ({
   );
 };
 
-const RightPanel: React.FC<RightPanelProps> = ({
-  menuItems,
-  onAddItem,
-  onOpenMenuRef,
-}) => {
+const RightPanel: React.FC<RightPanelProps> = ({ menuItems, onAddItem, onOpenMenuRef }) => {
   const [selectedPrimary, setSelectedPrimary] = useState<string | null>(null);
-  const [selectedSecondary, setSelectedSecondary] = useState<string | null>(
-    null
-  );
+  const [selectedSecondary, setSelectedSecondary] = useState<string | null>(null);
   const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
   const [secondaryPage, setSecondaryPage] = useState(0);
   const [itemForModal, setItemForModal] = useState<MenuItem | null>(null);
@@ -295,8 +278,7 @@ const RightPanel: React.FC<RightPanelProps> = ({
     return menuItems.filter((item: any) => {
       const primaryMatch = selectedPrimary
         ? item.primaryCategory === selectedPrimary ||
-          (item.primaryCategories &&
-            item.primaryCategories.includes(selectedPrimary))
+          (item.primaryCategories && item.primaryCategories.includes(selectedPrimary))
         : true;
       const secondaryMatch =
         selectedSecondary && selectedSecondary !== "Show All"
@@ -307,10 +289,7 @@ const RightPanel: React.FC<RightPanelProps> = ({
   }, [menuItems, selectedPrimary, selectedSecondary]);
 
   useEffect(() => {
-    if (
-      filteredResults.length > 0 &&
-      !filteredResults.find((i) => i.id === selectedResultId)
-    )
+    if (filteredResults.length > 0 && !filteredResults.find((i) => i.id === selectedResultId))
       setSelectedResultId(filteredResults[0].id);
     else if (filteredResults.length === 0) setSelectedResultId(null);
   }, [filteredResults, selectedResultId]);
@@ -318,9 +297,7 @@ const RightPanel: React.FC<RightPanelProps> = ({
   // 2. ADD THE AUTO-SCROLLING useEffect
   useEffect(() => {
     if (!selectedResultId || !scrollContainerRef.current) return;
-    const activeRow = scrollContainerRef.current.querySelector(
-      `[data-id="${selectedResultId}"]`
-    );
+    const activeRow = scrollContainerRef.current.querySelector(`[data-id="${selectedResultId}"]`);
     if (activeRow) {
       activeRow.scrollIntoView({
         behavior: "smooth",
@@ -356,20 +333,17 @@ const RightPanel: React.FC<RightPanelProps> = ({
   };
   const handleNavigate = (direction: "up" | "down") => {
     if (!selectedResultId || filteredResults.length === 0) return;
-    const currentIndex = filteredResults.findIndex(
-      (item) => item.id === selectedResultId
-    );
+    const currentIndex = filteredResults.findIndex((item) => item.id === selectedResultId);
     if (currentIndex === -1) return;
     let newIndex = currentIndex;
     if (direction === "up") newIndex = Math.max(0, currentIndex - 1);
     else newIndex = Math.min(filteredResults.length - 1, currentIndex + 1);
-    if (newIndex !== currentIndex)
-      setSelectedResultId(filteredResults[newIndex].id);
+    if (newIndex !== currentIndex) setSelectedResultId(filteredResults[newIndex].id);
   };
   const currentSecondaryGrid = SECONDARY_CATEGORIES_PAGES[secondaryPage] || [];
   const selectedItem = useMemo(
     () => filteredResults.find((i) => i.id === selectedResultId),
-    [filteredResults, selectedResultId]
+    [filteredResults, selectedResultId],
   );
   return (
     <div className="w-[62%] bg-gray-300 flex flex-col gap-2">
@@ -409,8 +383,8 @@ const RightPanel: React.FC<RightPanelProps> = ({
                   {item.price != null
                     ? `£${item.price.toFixed(2)}`
                     : item.options || item.contents
-                    ? "OPTS"
-                    : "£0.00"}
+                      ? "OPTS"
+                      : "£0.00"}
                 </div>
               </div>
             ))}
@@ -461,10 +435,7 @@ const RightPanel: React.FC<RightPanelProps> = ({
             if (cat.en === "<<" || cat.en === ">>") {
               const newPage =
                 cat.en === ">>"
-                  ? Math.min(
-                      SECONDARY_CATEGORIES_PAGES.length - 1,
-                      secondaryPage + 1
-                    )
+                  ? Math.min(SECONDARY_CATEGORIES_PAGES.length - 1, secondaryPage + 1)
                   : Math.max(0, secondaryPage - 1);
               return (
                 <DishStyleButton

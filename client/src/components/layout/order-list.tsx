@@ -1,10 +1,10 @@
-import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import type { OrderItem } from '../../types';
-import { formatCurrency } from '../../lib/format';
-import { cn } from '../../lib/utils';
-import { ScrollArea } from '../ui/scroll-area';
-import { Badge } from '../ui/badge';
+import React from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import type { OrderItem } from "../../types";
+import { formatCurrency } from "../../lib/format";
+import { cn } from "../../lib/utils";
+import { ScrollArea } from "../ui/scroll-area";
+import { Badge } from "../ui/badge";
 
 interface OrderListProps {
   items: OrderItem[];
@@ -13,9 +13,12 @@ interface OrderListProps {
   isShortMode?: boolean;
 }
 
-export const OrderList = React.memo(function OrderList({ items, selectedIndex, onSelect, isShortMode }: OrderListProps) {
-
-
+export const OrderList = React.memo(function OrderList({
+  items,
+  selectedIndex,
+  onSelect,
+  isShortMode,
+}: OrderListProps) {
   return (
     <div className="pos-panel flex h-full flex-col">
       <div className="flex items-center justify-between border-b border-border/60 px-3 py-2">
@@ -30,10 +33,7 @@ export const OrderList = React.memo(function OrderList({ items, selectedIndex, o
         </Badge>
       </div>
       <ScrollArea className="min-h-0 flex-1">
-        <motion.div
-          layout
-          className="flex flex-col gap-1.5 p-2"
-        >
+        <motion.div layout className="flex flex-col gap-1.5 p-2">
           <AnimatePresence initial={false} mode="popLayout">
             {items.map((item, index) => {
               const isSelected = selectedIndex === index;
@@ -47,39 +47,53 @@ export const OrderList = React.memo(function OrderList({ items, selectedIndex, o
                   layout
                   key={item.uniqueId || `${item.name}-${index}`}
                   initial={{ opacity: 0, height: 0, marginBottom: 0 }}
-                  animate={{ opacity: 1, height: 'auto', marginBottom: 6 }}
+                  animate={{ opacity: 1, height: "auto", marginBottom: 6 }}
                   exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-                  transition={{ 
-                    duration: 0.2, 
-                    ease: "circOut"
+                  transition={{
+                    duration: 0.2,
+                    ease: "circOut",
                   }}
                   className="overflow-hidden"
                 >
                   <motion.button
                     onClick={() => onSelect(index)}
                     className={cn(
-                      'group relative flex w-full items-center justify-between rounded-lg border px-3 py-2.5 text-left text-xs transition-all duration-200 pos-order-row',
+                      "group relative flex w-full items-center justify-between rounded-lg border px-3 py-2.5 text-left text-xs transition-all duration-200 pos-order-row",
                       isSelected
-                        ? 'border-primary/40 bg-primary/10 text-foreground font-semibold shadow-sm'
-                        : 'border-border/40 bg-transparent text-foreground hover:bg-muted/50 hover:border-border/60',
-                      isChild && 'ml-4 w-[calc(100%-1rem)] border-dashed border-border/30 bg-muted/20'
+                        ? "border-primary/40 bg-primary/10 text-foreground font-semibold shadow-sm"
+                        : "border-border/40 bg-transparent text-foreground hover:bg-muted/50 hover:border-border/60",
+                      isChild &&
+                        "ml-4 w-[calc(100%-1rem)] border-dashed border-border/30 bg-muted/20",
                     )}
                   >
                     <span
                       className={cn(
-                        'absolute left-0 top-2 h-[calc(100%-1rem)] w-[4px] rounded-full opacity-0 transition-all',
-                        isSelected ? 'bg-primary opacity-100 scale-y-100' : 'bg-primary/30 group-hover:opacity-40 scale-y-50',
-                        isChild && 'left-[-4px] w-[2px] h-[calc(100%+8px)] top-[-4px] rounded-none opacity-10 bg-foreground/20'
+                        "absolute left-0 top-2 h-[calc(100%-1rem)] w-[4px] rounded-full opacity-0 transition-all",
+                        isSelected
+                          ? "bg-primary opacity-100 scale-y-100"
+                          : "bg-primary/30 group-hover:opacity-40 scale-y-50",
+                        isChild &&
+                          "left-[-4px] w-[2px] h-[calc(100%+8px)] top-[-4px] rounded-none opacity-10 bg-foreground/20",
                       )}
                     />
                     <div className="min-w-0 pr-2">
                       <div className="flex items-center gap-1.5">
                         <p className="truncate text-xs font-semibold">{item.name}</p>
                         {item.isFoc && !item.isIncluded && (
-                          <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20 px-1 py-0 h-3 text-[8px] uppercase font-bold">FOC</Badge>
+                          <Badge
+                            variant="outline"
+                            className="bg-green-500/10 text-green-500 border-green-500/20 px-1 py-0 h-3 text-[8px] uppercase font-bold"
+                          >
+                            FOC
+                          </Badge>
                         )}
                         {item.isIncluded && (
-                          <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/20 px-1 py-0 h-3 text-[8px] uppercase font-bold">Inc</Badge>
+                          <Badge
+                            variant="outline"
+                            className="bg-blue-500/10 text-blue-500 border-blue-500/20 px-1 py-0 h-3 text-[8px] uppercase font-bold"
+                          >
+                            Inc
+                          </Badge>
                         )}
                       </div>
                       <p className="text-[10px] text-muted-foreground">

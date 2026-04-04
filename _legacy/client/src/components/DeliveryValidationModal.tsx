@@ -71,10 +71,7 @@ const DeliveryValidationModal: React.FC<DeliveryValidationModalProps> = ({
           </PosButton>
         </div>
 
-        <PosButton
-          onClick={onClose}
-          className="bg-gray-400 text-black hover:bg-gray-500"
-        >
+        <PosButton onClick={onClose} className="bg-gray-400 text-black hover:bg-gray-500">
           Cancel 取消
         </PosButton>
       </div>

@@ -23,10 +23,7 @@ const PosButton = ({
   </button>
 );
 const InputField = React.forwardRef<HTMLInputElement, any>(
-  (
-    { label, value, onFocus, onChange, onClear, className, readOnly = false },
-    ref
-  ) => (
+  ({ label, value, onFocus, onChange, onClear, className, readOnly = false }, ref) => (
     <div className={`flex items-center ${className}`}>
       <label className="w-24 text-right pr-2">{label}</label>
       <div className="flex-grow relative flex items-center">
@@ -50,7 +47,7 @@ const InputField = React.forwardRef<HTMLInputElement, any>(
         )}
       </div>
     </div>
-  )
+  ),
 );
 const keyboardLayout = [
   ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "Exit"],
@@ -108,13 +105,8 @@ const DeliveryAddressModal: React.FC<DeliveryAddressModalProps> = ({
     phone: "",
     instructions: "",
   });
-  const [activeField, setActiveField] = useState<keyof typeof formState | null>(
-    initialFocusField
-  );
-  const [postcodeDB, setPostcodeDB] = useState<Record<
-    string,
-    LocationData
-  > | null>(null);
+  const [activeField, setActiveField] = useState<keyof typeof formState | null>(initialFocusField);
+  const [postcodeDB, setPostcodeDB] = useState<Record<string, LocationData> | null>(null);
   const [distance, setDistance] = useState<number>(0);
   const [isCaps, setIsCaps] = useState(false);
   const [isTimeModified, setIsTimeModified] = useState(false);
@@ -127,15 +119,10 @@ const DeliveryAddressModal: React.FC<DeliveryAddressModalProps> = ({
   const nameRef = useRef<HTMLInputElement>(null);
   const houseNumberRef = useRef<HTMLInputElement>(null);
 
-  const calculateDistance = (
-    customerEasting: number,
-    customerNorthing: number
-  ) => {
+  const calculateDistance = (customerEasting: number, customerNorthing: number) => {
     const eastingDiff = RESTAURANT_COORDS.easting - customerEasting;
     const northingDiff = RESTAURANT_COORDS.northing - customerNorthing;
-    const distanceInMeters = Math.sqrt(
-      Math.pow(eastingDiff, 2) + Math.pow(northingDiff, 2)
-    );
+    const distanceInMeters = Math.sqrt(Math.pow(eastingDiff, 2) + Math.pow(northingDiff, 2));
     const distanceInMiles = distanceInMeters / 1609.34;
     setDistance(distanceInMiles);
   };
@@ -164,8 +151,7 @@ const DeliveryAddressModal: React.FC<DeliveryAddressModalProps> = ({
       }
       // If no distance was provided, THEN try to calculate it as a fallback.
       else if (customerInfo.postcode) {
-        const locationData =
-          postcodeDB[customerInfo.postcode.replace(/\s/g, "")];
+        const locationData = postcodeDB[customerInfo.postcode.replace(/\s/g, "")];
         if (locationData) {
           calculateDistance(locationData.easting, locationData.northing);
         } else {
@@ -221,9 +207,7 @@ const DeliveryAddressModal: React.FC<DeliveryAddressModalProps> = ({
       setDistance(0);
     }
   };
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormState((prev) => ({ ...prev, [name]: value }));
   };
@@ -308,9 +292,7 @@ const DeliveryAddressModal: React.FC<DeliveryAddressModalProps> = ({
     setSaveError(null);
 
     const addressParts = [];
-    const houseAndStreet = [formState.houseNumber, formState.street]
-      .filter(Boolean)
-      .join(" ");
+    const houseAndStreet = [formState.houseNumber, formState.street].filter(Boolean).join(" ");
     if (houseAndStreet) {
       addressParts.push(houseAndStreet);
     }
@@ -355,9 +337,7 @@ const DeliveryAddressModal: React.FC<DeliveryAddressModalProps> = ({
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(
-            errorData.error || "Failed to save to customer database."
-          );
+          throw new Error(errorData.error || "Failed to save to customer database.");
         }
         console.log(`[CRM] Address for ${savedInfo.phone} saved successfully.`);
       }
@@ -428,9 +408,7 @@ const DeliveryAddressModal: React.FC<DeliveryAddressModalProps> = ({
                 label="Street 街道"
                 value={formState.street}
                 onFocus={() => setActiveField("street")}
-                onChange={(e: any) =>
-                  setFormState((prev) => ({ ...prev, street: e.target.value }))
-                }
+                onChange={(e: any) => setFormState((prev) => ({ ...prev, street: e.target.value }))}
                 onClear={() => handleClearField("street")}
               />
 
@@ -448,18 +426,14 @@ const DeliveryAddressModal: React.FC<DeliveryAddressModalProps> = ({
                 label="Name 姓名"
                 value={formState.name}
                 onFocus={() => setActiveField("name")}
-                onChange={(e: any) =>
-                  setFormState((prev) => ({ ...prev, name: e.target.value }))
-                }
+                onChange={(e: any) => setFormState((prev) => ({ ...prev, name: e.target.value }))}
                 onClear={() => handleClearField("name")}
               />
               <InputField
                 label="电话"
                 value={formState.phone}
                 onFocus={() => setActiveField("phone")}
-                onChange={(e: any) =>
-                  setFormState((prev) => ({ ...prev, phone: e.target.value }))
-                }
+                onChange={(e: any) => setFormState((prev) => ({ ...prev, phone: e.target.value }))}
                 onClear={() => handleClearField("phone")}
               />
               <div className="flex items-center gap-2 mt-1">
@@ -475,27 +449,19 @@ const DeliveryAddressModal: React.FC<DeliveryAddressModalProps> = ({
                   ))}
                 </div>
                 <div className="flex items-center gap-1">
-                  <PosButton
-                    className="w-8 h-10 text-xl"
-                    onClick={() => handleAdjustTime(-5)}
-                  >
+                  <PosButton className="w-8 h-10 text-xl" onClick={() => handleAdjustTime(-5)}>
                     -
                   </PosButton>
                   <div className="w-20 h-10 bg-black text-yellow-400 text-2xl font-mono flex items-center justify-center">
                     {formatTime(deliveryDateTime)}
                   </div>
-                  <PosButton
-                    className="w-8 h-10 text-xl"
-                    onClick={() => handleAdjustTime(5)}
-                  >
+                  <PosButton className="w-8 h-10 text-xl" onClick={() => handleAdjustTime(5)}>
                     +
                   </PosButton>
                 </div>
               </div>
               <div className="flex">
-                <label className="w-24 text-right pr-2 pt-1">
-                  Instruction 指示
-                </label>
+                <label className="w-24 text-right pr-2 pt-1">Instruction 指示</label>
                 <textarea
                   name="instructions"
                   value={formState.instructions}

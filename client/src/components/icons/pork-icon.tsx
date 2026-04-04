@@ -144,15 +144,7 @@ export function PorkIcon({ isAnimating, ...props }: AnimatedIconProps) {
         </ellipse>
 
         <g>
-          <ellipse
-            cx="24"
-            cy="28.5"
-            rx="7"
-            ry="5"
-            fill="#FFB3C6"
-            stroke="#422B29"
-            stroke-width="2"
-          >
+          <ellipse cx="24" cy="28.5" rx="7" ry="5" fill="#FFB3C6" stroke="#422B29" stroke-width="2">
             {isAnimating && (
               <animate
                 attributeName="ry"

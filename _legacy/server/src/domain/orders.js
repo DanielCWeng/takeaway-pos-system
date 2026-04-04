@@ -23,14 +23,10 @@ function validateDeliveryOrder(orderData) {
   if (orderData.orderType === "Delivery") {
     const { customerInfo } = orderData;
     const hasAddress =
-      customerInfo &&
-      (customerInfo.address ||
-        (customerInfo.houseNumber && customerInfo.street));
+      customerInfo && (customerInfo.address || (customerInfo.houseNumber && customerInfo.street));
 
     if (!hasAddress) {
-      console.log(
-        "[Orders] Delivery order missing address - enforcing Collection type.",
-      );
+      console.log("[Orders] Delivery order missing address - enforcing Collection type.");
       orderData.orderType = "Collection";
       if (orderData.deliveryCharge) {
         orderData.total -= orderData.deliveryCharge;
@@ -120,9 +116,7 @@ async function deleteArchivedOrders(date) {
 
   await db.run("DELETE FROM orders WHERE archivedAt LIKE ?", `${date}%`);
 
-  console.log(
-    `[Orders] Successfully deleted ${countResult.count} orders for ${date}.`,
-  );
+  console.log(`[Orders] Successfully deleted ${countResult.count} orders for ${date}.`);
 
   return {
     success: true,
@@ -134,9 +128,4 @@ async function deleteArchivedOrders(date) {
 // ===================================================================
 //                      EXPORTS
 // ===================================================================
-export {
-  validateDeliveryOrder,
-  createOrder,
-  getArchivedOrders,
-  deleteArchivedOrders,
-};
+export { validateDeliveryOrder, createOrder, getArchivedOrders, deleteArchivedOrders };

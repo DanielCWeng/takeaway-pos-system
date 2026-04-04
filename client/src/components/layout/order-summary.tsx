@@ -1,6 +1,6 @@
-import { formatCurrency } from '../../lib/format';
-import { Button } from '../ui/button';
-import { Separator } from '../ui/separator';
+import { formatCurrency } from "../../lib/format";
+import { Button } from "../ui/button";
+import { Separator } from "../ui/separator";
 
 interface OrderSummaryProps {
   subtotal: number;
@@ -34,7 +34,11 @@ export function OrderSummary({ subtotal, deliveryFee, total, onAccept }: OrderSu
           <span className="pos-value font-mono text-foreground">{formatCurrency(deliveryFee)}</span>
         </div>
       </div>
-      <Button variant="positive" className="mt-auto h-11 w-full text-sm tracking-[0.14em] pos-menu-action uppercase shadow-md" onClick={onAccept}>
+      <Button
+        variant="positive"
+        className="mt-auto h-11 w-full text-sm tracking-[0.14em] pos-menu-action uppercase shadow-md"
+        onClick={onAccept}
+      >
         Accept Order
       </Button>
     </div>

@@ -150,24 +150,9 @@ export function BeefIcon({ isAnimating, ...props }: AnimatedIconProps) {
                 />
               </g>
 
-              <rect
-                x="6"
-                y="11"
-                width="12"
-                height="14"
-                rx="4"
-                fill="#F4EFEA"
-                stroke="#42342A"
-              />
+              <rect x="6" y="11" width="12" height="14" rx="4" fill="#F4EFEA" stroke="#42342A" />
 
-              <ellipse
-                cx="9"
-                cy="15.5"
-                rx="1"
-                ry="1.5"
-                fill="#42342A"
-                stroke="none"
-              >
+              <ellipse cx="9" cy="15.5" rx="1" ry="1.5" fill="#42342A" stroke="none">
                 {isAnimating && (
                   <animate
                     attributeName="ry"
@@ -179,14 +164,7 @@ export function BeefIcon({ isAnimating, ...props }: AnimatedIconProps) {
                 )}
               </ellipse>
 
-              <ellipse
-                cx="15"
-                cy="15.5"
-                rx="1"
-                ry="1.5"
-                fill="#42342A"
-                stroke="none"
-              >
+              <ellipse cx="15" cy="15.5" rx="1" ry="1.5" fill="#42342A" stroke="none">
                 {isAnimating && (
                   <animate
                     attributeName="ry"
@@ -198,15 +176,7 @@ export function BeefIcon({ isAnimating, ...props }: AnimatedIconProps) {
                 )}
               </ellipse>
 
-              <rect
-                x="5"
-                y="19"
-                width="14"
-                height="7"
-                rx="3.5"
-                fill="#F2B8B8"
-                stroke="#42342A"
-              />
+              <rect x="5" y="19" width="14" height="7" rx="3.5" fill="#F2B8B8" stroke="#42342A" />
 
               <circle cx="9" cy="22.5" r="0.75" fill="#42342A" stroke="none" />
               <circle cx="15" cy="22.5" r="0.75" fill="#42342A" stroke="none" />

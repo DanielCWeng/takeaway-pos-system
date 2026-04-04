@@ -5,10 +5,10 @@
  * are visible in server logs.
  */
 
-import { Router } from 'express';
-import { z } from 'zod';
-import { logger } from '../../infrastructure/logger.js';
-import { sendValidationError } from '../../shared/middleware/sendValidationError.js';
+import { Router } from "express";
+import { z } from "zod";
+import { logger } from "../../infrastructure/logger.js";
+import { sendValidationError } from "../../shared/middleware/sendValidationError.js";
 
 export const telemetryRouter = Router();
 
@@ -22,14 +22,14 @@ const clientErrorSchema = z.object({
   time: z.string().max(64).optional(),
 });
 
-telemetryRouter.post('/client-error', (req, res) => {
+telemetryRouter.post("/client-error", (req, res) => {
   const parsed = clientErrorSchema.safeParse(req.body);
   if (!parsed.success) {
     return sendValidationError(res, parsed.error.flatten().fieldErrors);
   }
 
   const payload = parsed.data;
-  logger.error('Client runtime error reported', {
+  logger.error("Client runtime error reported", {
     requestId: req.requestId,
     client: true,
     errorType: payload.type,
