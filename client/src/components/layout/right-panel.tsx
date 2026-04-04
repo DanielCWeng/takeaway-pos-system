@@ -60,9 +60,15 @@ export const RightPanel = React.memo(function RightPanel({
     [filteredItems, activeSelectedId],
   );
 
-  const handleSelectPrimary = useCallback((category: string) => {
-    setSelectedPrimary((prev) => (prev === category ? null : category));
-  }, []);
+  const handleSelectPrimary = useCallback(
+    (category: string) => {
+      if (category === "Rice" || category === "Chips") {
+        setSelectedSecondary(null);
+      }
+      setSelectedPrimary((prev) => (prev === category ? null : category));
+    },
+    [setSelectedSecondary],
+  );
 
   const handleSelectSecondary = useCallback((category: string) => {
     if (category === "Show All") {
@@ -75,8 +81,8 @@ export const RightPanel = React.memo(function RightPanel({
 
   const handleHeightAdjust = useCallback((adjustment: number) => {
     setHeightAdjustment((prev) => {
-      // Prevent infinite loops or micro-oscillation by only updating if difference is significant
-      return Math.abs(prev - adjustment) > 1 ? adjustment : prev;
+      // Prevent infinite loops or micro-oscillation by only updating if difference is significant (e.g. > 2px)
+      return Math.abs(prev - adjustment) > 2 ? adjustment : prev;
     });
   }, []);
 

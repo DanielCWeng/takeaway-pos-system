@@ -1,5 +1,5 @@
 import React, { useRef, useState, useLayoutEffect, useEffect, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import type { MenuItem } from "../../types";
 import { ChevronDown, ChevronUp, Plus, BookOpen } from "lucide-react";
 import { formatCurrency } from "../../lib/format";
@@ -118,63 +118,60 @@ const MenuTableComponent = React.forwardRef<HTMLDivElement, MenuTableProps>((pro
       </div>
 
       <ScrollArea viewportRef={viewportRef} className="min-h-0 flex-1">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={pageKey}
-            initial={{ opacity: 0, y: 5 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -5 }}
-            transition={{ duration: 0.15, ease: "easeOut" }}
-            className="divide-y divide-border/40"
-          >
-            {items.map((item, index) => {
-              const isSelected = item.id === selectedId;
-              const showOptions = !!item.options || !!item.contents;
+        <motion.div
+          key={pageKey}
+          initial={{ opacity: 0.6, y: 3 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.15, ease: "easeOut" }}
+          className="divide-y divide-border/40"
+        >
+          {items.map((item, index) => {
+            const isSelected = item.id === selectedId;
+            const showOptions = !!item.options || !!item.contents;
 
-              return (
-                <button
-                  key={item.id}
-                  ref={index === 0 ? firstRowRef : null}
-                  data-id={item.id}
-                  onClick={() => {
-                    onSelect(item.id);
-                    onAddItem(item);
-                  }}
+            return (
+              <button
+                key={item.id}
+                ref={index === 0 ? firstRowRef : null}
+                data-id={item.id}
+                onClick={() => {
+                  onSelect(item.id);
+                  onAddItem(item);
+                }}
+                className={cn(
+                  "group relative grid w-full grid-cols-[3.25rem_1fr_4.5rem_4.5rem] items-center gap-2 px-3 py-2 text-left text-xs transition-all duration-300 pos-menu-row",
+                  isSelected ? "bg-primary/10 text-foreground" : "hover:bg-white/5",
+                )}
+              >
+                <span
                   className={cn(
-                    "group relative grid w-full grid-cols-[3.25rem_1fr_4.5rem_4.5rem] items-center gap-2 px-3 py-2 text-left text-xs transition-all duration-300 pos-menu-row",
-                    isSelected ? "bg-primary/10 text-foreground" : "hover:bg-white/5",
+                    "absolute left-0 top-0 h-full w-[3px] opacity-0 transition-opacity",
+                    isSelected
+                      ? "bg-primary opacity-100 shadow-[0_0_15px_hsl(var(--primary))]"
+                      : "bg-primary opacity-0 group-hover:opacity-20",
                   )}
-                >
-                  <span
-                    className={cn(
-                      "absolute left-0 top-0 h-full w-[3px] opacity-0 transition-opacity",
-                      isSelected
-                        ? "bg-primary opacity-100 shadow-[0_0_15px_hsl(var(--primary))]"
-                        : "bg-primary opacity-0 group-hover:opacity-20",
-                    )}
-                  />
-                  <span className="pos-value font-mono text-[11px] font-semibold text-muted-foreground">
-                    {item.id}
-                  </span>
-                  <div className="min-w-0">
-                    <p className="truncate font-semibold">{item.name.en}</p>
-                    <p className="truncate text-[10px] text-muted-foreground">
-                      {item.secondaryCategory || empty}
-                    </p>
-                  </div>
-                  <span className="truncate text-[11px] text-muted-foreground">{item.name.zh}</span>
-                  <span className="pos-value text-right font-mono text-xs font-semibold">
-                    {item.price != null
-                      ? formatCurrency(item.price)
-                      : showOptions
-                        ? "OPTS"
-                        : formatCurrency(0)}
-                  </span>
-                </button>
-              );
-            })}
-          </motion.div>
-        </AnimatePresence>
+                />
+                <span className="pos-value font-mono text-[11px] font-semibold text-muted-foreground">
+                  {item.id}
+                </span>
+                <div className="min-w-0">
+                  <p className="truncate font-semibold">{item.name.en}</p>
+                  <p className="truncate text-[10px] text-muted-foreground">
+                    {item.secondaryCategory || empty}
+                  </p>
+                </div>
+                <span className="truncate text-[11px] text-muted-foreground">{item.name.zh}</span>
+                <span className="pos-value text-right font-mono text-xs font-semibold">
+                  {item.price != null
+                    ? formatCurrency(item.price)
+                    : showOptions
+                      ? "OPTS"
+                      : formatCurrency(0)}
+                </span>
+              </button>
+            );
+          })}
+        </motion.div>
       </ScrollArea>
 
       <div className="flex items-center gap-2 border-t border-border/60 px-3 py-2">
