@@ -19,6 +19,7 @@ export const RightPanel = React.memo(function RightPanel({
   const [selectedSecondary, setSelectedSecondary] = useState<string | null>(null);
   const [page, setPage] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [heightAdjustment, setHeightAdjustment] = useState(0);
 
   const filteredItems = useMemo(() => {
     return menuItems.filter((item) => {
@@ -46,13 +47,13 @@ export const RightPanel = React.memo(function RightPanel({
   }, [filteredItems, activeSelectedId, onAddItem]);
 
   const handleNavigate = useCallback(
-    (direction: "up" | "down") => {
+    (direction: "up" | "down", pageSize: number = 1) => {
       if (!filteredItems.length) return;
       const currentIndex = filteredItems.findIndex((item) => item.id === activeSelectedId);
       const nextIndex =
         direction === "up"
-          ? Math.max(0, currentIndex - 1)
-          : Math.min(filteredItems.length - 1, currentIndex + 1);
+          ? Math.max(0, currentIndex - pageSize)
+          : Math.min(filteredItems.length - 1, currentIndex + pageSize);
       const nextItem = filteredItems[nextIndex];
       if (nextItem) setSelectedId(nextItem.id);
     },
@@ -72,6 +73,13 @@ export const RightPanel = React.memo(function RightPanel({
     setSelectedSecondary((prev) => (prev === category ? null : category));
   }, []);
 
+  const handleHeightAdjust = useCallback((adjustment: number) => {
+    setHeightAdjustment((prev) => {
+      // Prevent infinite loops or micro-oscillation by only updating if difference is significant
+      return Math.abs(prev - adjustment) > 1 ? adjustment : prev;
+    });
+  }, []);
+
   return (
     <div className="flex h-full min-h-0 flex-col gap-2">
       <MenuTable
@@ -82,7 +90,11 @@ export const RightPanel = React.memo(function RightPanel({
         onNavigate={handleNavigate}
         onOpenMenuRef={onOpenMenuRef}
         onAddItem={onAddItem}
-        className="flex-[0_0_40%]"
+        onHeightAdjust={handleHeightAdjust}
+        className="transition-all duration-300 ease-in-out"
+        style={{
+          flex: `0 0 calc(40% + ${heightAdjustment}px)`,
+        }}
       />
       <CategoryStrip selectedPrimary={selectedPrimary} onSelectPrimary={handleSelectPrimary} />
       <div className="pos-panel min-h-0 flex-1 p-2">
