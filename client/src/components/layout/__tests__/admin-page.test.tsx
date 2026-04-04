@@ -19,6 +19,7 @@ vi.mock("../../../config", () => ({
 
 import { AdminPage } from "../admin-page";
 import { apiClient } from "../../../api/client";
+import type { ArchivedOrder } from "../../../types";
 
 const ordersPayload = {
   orders: [
@@ -43,14 +44,14 @@ const ordersPayload = {
       },
     },
   ],
-};
+} satisfies { orders: ArchivedOrder[] };
 
 describe("AdminPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    (apiClient.fetchOrders as any).mockResolvedValue(ordersPayload);
-    (apiClient.deleteOrdersByDate as any).mockResolvedValue({});
-    (apiClient.reprintOrder as any).mockResolvedValue({ printed: true });
+    vi.mocked(apiClient.fetchOrders).mockResolvedValue(ordersPayload);
+    vi.mocked(apiClient.deleteOrdersByDate).mockResolvedValue(undefined);
+    vi.mocked(apiClient.reprintOrder).mockResolvedValue({ printed: true });
   });
 
   it("handles login, fetch/filter, delete day, and reprint workflow", async () => {

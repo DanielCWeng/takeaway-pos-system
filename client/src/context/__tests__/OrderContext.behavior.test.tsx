@@ -47,9 +47,9 @@ describe("OrderContext behaviors", () => {
         name: "Set Meal",
         price: 10,
         uniqueId: "parent-1",
-      } as any);
+      });
       result.current.addItem(
-        { id: "CHILD", name: "Included Rice", price: 0, uniqueId: "child-1" } as any,
+        { id: "CHILD", name: "Included Rice", price: 0, uniqueId: "child-1" },
         { parentId: "parent-1", isIncluded: true },
       );
     });
@@ -114,7 +114,7 @@ describe("OrderContext behaviors", () => {
     const { result } = renderHook(() => useOrder(), { wrapper: Providers });
 
     act(() => {
-      result.current.addItem({ id: "I1", name: "Queue Me", price: 8, uniqueId: "i1" } as any);
+      result.current.addItem({ id: "I1", name: "Queue Me", price: 8, uniqueId: "i1" });
     });
 
     submitSpy.mockRejectedValueOnce(queueableError);
@@ -137,7 +137,7 @@ describe("OrderContext behaviors", () => {
     const { result } = renderHook(() => useOrder(), { wrapper: Providers });
 
     act(() => {
-      result.current.addItem({ id: "I2", name: "Bad Request", price: 9, uniqueId: "i2" } as any);
+      result.current.addItem({ id: "I2", name: "Bad Request", price: 9, uniqueId: "i2" });
     });
 
     await act(async () => {

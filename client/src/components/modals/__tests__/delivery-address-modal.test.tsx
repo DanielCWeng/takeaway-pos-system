@@ -19,7 +19,7 @@ describe("DeliveryAddressModal", () => {
   });
 
   it("applies lookup result when postcode resolves to a single address", async () => {
-    (apiClient.lookupPostcode as any).mockResolvedValue({
+    vi.mocked(apiClient.lookupPostcode).mockResolvedValue({
       addresses: [
         {
           line1: "10 High Street",
@@ -45,7 +45,7 @@ describe("DeliveryAddressModal", () => {
 
   it("falls back to saving local form data when verify returns 404", async () => {
     const onSave = vi.fn();
-    (apiClient.verifyAddress as any).mockRejectedValue(
+    vi.mocked(apiClient.verifyAddress).mockRejectedValue(
       Object.assign(new Error("missing"), { status: 404 }),
     );
 
