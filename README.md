@@ -82,6 +82,14 @@ npm run format:client
 npm run format:server
 ```
 
+Auto-format on commit (recommended):
+
+```bash
+git config core.hooksPath .githooks
+```
+
+This enables the repo pre-commit hook that runs Prettier on staged files before each commit.
+
 ## Where To Go Next
 
 - Backend details: [server/README.md](server/README.md)
