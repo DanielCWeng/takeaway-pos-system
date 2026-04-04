@@ -75,6 +75,7 @@ export const RightPanel = React.memo(function RightPanel({ menuItems, onAddItem,
         onAddSelected={handleAddSelected}
         onNavigate={handleNavigate}
         onOpenMenuRef={onOpenMenuRef}
+        onAddItem={onAddItem}
         className="flex-[0_0_40%]"
       />
       <CategoryStrip selectedPrimary={selectedPrimary} onSelectPrimary={handleSelectPrimary} />

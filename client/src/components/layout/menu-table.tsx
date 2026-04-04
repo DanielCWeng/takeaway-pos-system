@@ -14,6 +14,7 @@ interface MenuTableProps {
   onAddSelected: () => void;
   onNavigate: (direction: 'up' | 'down') => void;
   onOpenMenuRef: () => void;
+  onAddItem: (item: MenuItem) => void;
   className?: string;
 }
 
@@ -24,6 +25,7 @@ export const MenuTable = React.memo(function MenuTable({
   onAddSelected,
   onNavigate,
   onOpenMenuRef,
+  onAddItem,
   className,
 }: MenuTableProps) {
   const empty = '\u2014';
@@ -64,7 +66,10 @@ export const MenuTable = React.memo(function MenuTable({
               <button
                 key={item.id}
                 data-id={item.id}
-                onClick={() => onSelect(item.id)}
+                onClick={() => {
+                  onSelect(item.id);
+                  onAddItem(item);
+                }}
                 className={cn(
                   'group relative grid w-full grid-cols-[3.25rem_1fr_4.5rem_4.5rem] items-center gap-2 px-3 py-2 text-left text-xs transition-all duration-300 pos-menu-row',
                   isSelected
