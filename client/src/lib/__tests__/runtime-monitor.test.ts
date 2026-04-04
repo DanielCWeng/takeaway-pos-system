@@ -1,11 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 describe("runtime-monitor", () => {
+  let fetchMock: ReturnType<typeof vi.fn>;
+
   beforeEach(() => {
     vi.resetModules();
     vi.restoreAllMocks();
     sessionStorage.clear();
-    global.fetch = vi.fn().mockResolvedValue({ ok: true } as Response);
+    fetchMock = vi.fn().mockResolvedValue({ ok: true } as Response);
+    global.fetch = fetchMock as unknown as typeof fetch;
   });
 
   it("reports render errors through telemetry fetch fallback", async () => {
@@ -19,7 +22,7 @@ describe("runtime-monitor", () => {
       expect.objectContaining({ method: "POST" }),
     );
 
-    const body = JSON.parse((global.fetch as any).mock.calls[0][1].body);
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
     expect(body.type).toBe("react.error-boundary");
     expect(body.message).toContain("render failed");
     expect(body.stack).toContain("ComponentStack");

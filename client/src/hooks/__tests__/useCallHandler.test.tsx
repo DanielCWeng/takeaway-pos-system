@@ -5,7 +5,7 @@ import { OrderProvider } from "../../context/OrderContext";
 import { useOrder } from "../../context/OrderContext";
 import { UIProvider, useUI } from "../../context/UIContext";
 import { useCallHandler } from "../useCallHandler";
-import type { WebSocketMessage } from "../../types";
+import type { Customer, Address, WebSocketMessage } from "../../types";
 
 class MockWebSocket {
   static instances: MockWebSocket[] = [];
@@ -51,6 +51,34 @@ const useCombined = () => {
   const order = useOrder();
   return { call, ui, order };
 };
+
+function makeCustomer(overrides: Partial<Customer> = {}): Customer {
+  return {
+    phone: "07000",
+    name: null,
+    postcode: null,
+    houseNumber: null,
+    street: null,
+    town: null,
+    latitude: null,
+    longitude: null,
+    distance: null,
+    firstCall: "",
+    lastCall: "",
+    callCount: 1,
+    ...overrides,
+  };
+}
+
+function makeAddress(overrides: Partial<Address> = {}): Address {
+  return {
+    line1: "1 High St",
+    postcode: "NG1 1AA",
+    latitude: 52.95,
+    longitude: -1.15,
+    ...overrides,
+  };
+}
 
 describe("useCallHandler", () => {
   beforeEach(() => {
@@ -111,15 +139,16 @@ describe("useCallHandler", () => {
     await waitFor(() => expect(MockWebSocket.instances.length).toBe(1));
 
     act(() => {
-      MockWebSocket.instances[0].triggerMessage({
+      const payload: WebSocketMessage = {
         type: "incoming_call",
         payload: {
           phone: "07111",
-          customer: { phone: "07111", name: "Sam", postcode: null },
-          addresses: [{ line1: "10 High St", town: "Nottingham", postcode: "NG9 8GF" }],
+          customer: makeCustomer({ phone: "07111", name: "Sam", postcode: null }),
+          addresses: [makeAddress({ line1: "10 High St", town: "Nottingham", postcode: "NG9 8GF" })],
           distance: 1.2,
         },
-      } as WebSocketMessage);
+      };
+      MockWebSocket.instances[0].triggerMessage(payload);
     });
 
     expect(result.current.call.pendingCall).toBeNull();
@@ -133,15 +162,16 @@ describe("useCallHandler", () => {
     await waitFor(() => expect(MockWebSocket.instances.length).toBe(1));
 
     act(() => {
-      MockWebSocket.instances[0].triggerMessage({
+      const payload: WebSocketMessage = {
         type: "incoming_call",
         payload: {
           phone: "07222",
-          customer: { phone: "07222", name: "No Address" },
+          customer: makeCustomer({ phone: "07222", name: "No Address" }),
           addresses: [],
           distance: null,
         },
-      } as WebSocketMessage);
+      };
+      MockWebSocket.instances[0].triggerMessage(payload);
     });
 
     expect(result.current.order.order.customerInfo?.phone).toBe("07222");
@@ -162,15 +192,16 @@ describe("useCallHandler", () => {
     });
 
     act(() => {
-      MockWebSocket.instances[0].triggerMessage({
+      const payload: WebSocketMessage = {
         type: "incoming_call",
         payload: {
           phone: "07333",
-          customer: { phone: "07333", name: "Busy Order" },
-          addresses: [{ line1: "1 Test", postcode: "NG1 1AA" }],
+          customer: makeCustomer({ phone: "07333", name: "Busy Order" }),
+          addresses: [makeAddress({ line1: "1 Test", postcode: "NG1 1AA" })],
           distance: null,
         },
-      } as WebSocketMessage);
+      };
+      MockWebSocket.instances[0].triggerMessage(payload);
     });
 
     expect(result.current.call.pendingCall?.phone).toBe("07333");
@@ -182,25 +213,31 @@ describe("useCallHandler", () => {
     await waitFor(() => expect(MockWebSocket.instances.length).toBe(1));
 
     act(() => {
-      MockWebSocket.instances[0].triggerMessage({
+      const payload: WebSocketMessage = {
         type: "incoming_call",
         payload: {
           phone: "07444",
-          customer: { phone: "07444", name: "Choice User" },
+          customer: makeCustomer({ phone: "07444", name: "Choice User" }),
           addresses: [
-            { line1: "1 High St", postcode: "NG1 1AA" },
-            { line1: "2 Low St", postcode: "NG1 1AB" },
+            makeAddress({ line1: "1 High St", postcode: "NG1 1AA" }),
+            makeAddress({ line1: "2 Low St", postcode: "NG1 1AB" }),
           ],
           distance: null,
         },
-      } as WebSocketMessage);
+      };
+      MockWebSocket.instances[0].triggerMessage(payload);
     });
 
     expect(result.current.call.pendingCall?.phone).toBe("07444");
     expect(result.current.call.addressOptions).toHaveLength(2);
 
     act(() => {
-      result.current.call.selectAddress({ line1: "2 Low St", postcode: "NG1 1AB" } as any);
+      result.current.call.selectAddress({
+        line1: "2 Low St",
+        postcode: "NG1 1AB",
+        latitude: 52.95,
+        longitude: -1.15,
+      });
     });
 
     expect(result.current.call.pendingCall).toBeNull();

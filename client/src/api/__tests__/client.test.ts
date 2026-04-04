@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { apiClient } from "../client";
+import type { FullOrder } from "../../types";
 
 describe("apiClient", () => {
   beforeEach(() => {
@@ -18,7 +19,7 @@ describe("apiClient", () => {
       items: [],
       payment: { method: "cash", amount: 10 },
       total: 10,
-    } as any);
+    } as FullOrder);
 
     expect(result).toEqual({ orderId: 12, printed: true });
     expect(global.fetch).toHaveBeenCalledWith(
