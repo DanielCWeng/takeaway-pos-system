@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, lazy, Suspense } from "react";
+import { useState, useEffect, useCallback, lazy, Suspense, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { MenuItem, OrderItem, MenuContent } from "../../types";
 import { useOrder } from "../../context/OrderContext";
@@ -106,7 +106,6 @@ export function PosDashboard() {
     deliveryCharge,
     total,
     addItem,
-    removeItem,
     isIncMode,
     setIsIncMode,
     duplicateItem,
@@ -137,6 +136,15 @@ export function PosDashboard() {
   );
   const selectedItem =
     selectedOrderIndex !== null ? order.items[selectedOrderIndex] : undefined;
+  const prevItemsLengthRef = useRef(order.items.length);
+  
+  // Auto-select latest item when added
+  useEffect(() => {
+    if (order.items.length > prevItemsLengthRef.current) {
+      setSelectedOrderIndex(order.items.length - 1);
+    }
+    prevItemsLengthRef.current = order.items.length;
+  }, [order.items.length]);
 
   // Lazy-load menu data to keep the entry bundle small and show loader long enough to avoid flicker.
   const MIN_LOADER_MS = 1500;
@@ -330,12 +338,6 @@ export function PosDashboard() {
     }
   }, [modifyingItem, updateItem]);
 
-  const handleRemoveSelected = useCallback(() => {
-    if (selectedOrderIndex === null) return;
-    removeItem(selectedOrderIndex);
-    setSelectedOrderIndex(null);
-  }, [selectedOrderIndex, removeItem]);
-
   const handleDecrementSelected = useCallback(() => {
     if (selectedOrderIndex !== null) decrementItem(selectedOrderIndex);
   }, [selectedOrderIndex, decrementItem]);
@@ -381,7 +383,6 @@ export function PosDashboard() {
               items={order.items}
               selectedIndex={selectedOrderIndex}
               onSelectIndex={setSelectedOrderIndex}
-              onRemoveSelected={handleRemoveSelected}
               onDecrementSelected={handleDecrementSelected}
               onClearOrder={clearOrder}
               subtotal={subtotal}

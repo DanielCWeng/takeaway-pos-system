@@ -1,9 +1,8 @@
-import { Button } from '../ui/button';
+import { Button } from "../ui/button";
 
 interface OrderControlsProps {
   onDuplicateItem: () => void;
   onDecrementItem: () => void;
-  onRemoveItem: () => void;
   onModifyItem: () => void;
   onFocItem: () => void;
   isItemSelected: boolean;
@@ -22,7 +21,6 @@ interface OrderControlsProps {
 export function OrderControls({
   onDuplicateItem,
   onDecrementItem,
-  onRemoveItem,
   onModifyItem,
   onFocItem,
   isItemSelected,
@@ -97,8 +95,8 @@ export function OrderControls({
         className="flex h-full flex-col gap-0 leading-none"
         onClick={onDeleteOrder}
       >
-        <span className="text-xs font-semibold">Delete</span>
-        <span className="text-[10px] opacity-80">删除</span>
+        <span className="text-xs font-semibold">Clear</span>
+        <span className="text-[10px] opacity-80">清空</span>
       </Button>
 
       <Button
@@ -107,8 +105,10 @@ export function OrderControls({
         onClick={onToggleSwapMode}
         disabled={!isSwapMode && !isHappyMealSelected && !isSetMealItemSelected}
       >
-        <span className="text-xs">{isHappyMealSelected ? 'Inc' : 'Swap'}</span>
-        <span className="text-[10px] opacity-80">{isHappyMealSelected ? '包餐' : '换餐'}</span>
+        <span className="text-xs">{isHappyMealSelected ? "Inc" : "Swap"}</span>
+        <span className="text-[10px] opacity-80">
+          {isHappyMealSelected ? "包餐" : "换餐"}
+        </span>
       </Button>
     </div>
   );
