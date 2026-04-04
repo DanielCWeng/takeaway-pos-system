@@ -17,7 +17,8 @@ import { logger } from '../infrastructure/logger.js';
 const DEFAULT_VENDOR_ID = 0x0483;
 const DEFAULT_PRODUCT_ID = 0x5750;
 
-const RECONNECT_DELAY_MS = 3000;
+const INITIAL_RECONNECT_DELAY_MS = 3000;
+const MAX_RECONNECT_DELAY_MS = 30000;
 
 /** @type {any | null} */
 let hid = null;
@@ -27,6 +28,8 @@ let device = null;
 
 /** @type {ReturnType<typeof setTimeout> | null} */
 let reconnectTimer = null;
+
+let reconnectAttempt = 0;
 
 /** @type {((phone: string) => void) | null} */
 let onPhoneDetected = null;
@@ -121,16 +124,24 @@ function scheduleReconnect(reason) {
   if (stopped) return;
   if (reconnectTimer) return;
 
+  const delayMs = Math.min(
+    INITIAL_RECONNECT_DELAY_MS * Math.pow(2, reconnectAttempt),
+    MAX_RECONNECT_DELAY_MS,
+  );
+
   logger.warn('Scheduling caller ID device reconnect', {
     hardware: true,
     reason,
-    delayMs: RECONNECT_DELAY_MS,
+    delayMs,
+    attempt: reconnectAttempt + 1,
   });
+
+  reconnectAttempt++;
 
   reconnectTimer = setTimeout(() => {
     reconnectTimer = null;
     void connect();
-  }, RECONNECT_DELAY_MS);
+  }, delayMs);
 }
 
 async function connect() {
@@ -168,6 +179,7 @@ async function connect() {
   }
 
   logger.info('Caller ID device connected', { hardware: true, path });
+  reconnectAttempt = 0;
 
   device.on('data', (data) => {
     const phone = extractPhone(data);
@@ -211,6 +223,7 @@ export async function startListening(handler) {
 
   onPhoneDetected = handler;
   stopped = false;
+  reconnectAttempt = 0;
 
   await connect();
 }
