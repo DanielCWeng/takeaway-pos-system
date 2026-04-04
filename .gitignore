@@ -21,3 +21,7 @@ server/data/*.db
 
 !server/data/.gitkeep
 *.md
+!README.md
+!client/README.md
+!server/README.md
+!_legacy/README.md
