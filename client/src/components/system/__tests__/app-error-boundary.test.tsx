@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+import type { FC } from "react";
 import { AppErrorBoundary } from "../app-error-boundary";
 
 vi.mock("../../../lib/runtime-monitor", () => ({
@@ -8,9 +9,9 @@ vi.mock("../../../lib/runtime-monitor", () => ({
 
 import { reportRenderError } from "../../../lib/runtime-monitor";
 
-function Thrower() {
+const Thrower: FC = () => {
   throw new Error("kaboom");
-}
+};
 
 describe("AppErrorBoundary", () => {
   it("renders fallback UI and reports caught errors", () => {

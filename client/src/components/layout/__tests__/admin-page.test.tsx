@@ -19,29 +19,47 @@ vi.mock("../../../config", () => ({
 
 import { AdminPage } from "../admin-page";
 import { apiClient } from "../../../api/client";
-import type { ArchivedOrder } from "../../../types";
+import type { ArchivedOrder, FullOrder, OrderItem } from "../../../types";
+
+function makeItem(overrides: Partial<OrderItem> = {}): OrderItem {
+  return {
+    uniqueId: "line-1",
+    id: "ITEM-1",
+    name: "Chips",
+    quantity: 1,
+    price: 3,
+    ...overrides,
+  };
+}
+
+function makeOrder(overrides: Partial<FullOrder> = {}): FullOrder {
+  return {
+    orderType: "collection",
+    customerInfo: { name: "Alice", phone: "0700" },
+    items: [makeItem()],
+    payment: { method: "cash", amount: 3 },
+    total: 3,
+    ...overrides,
+  };
+}
 
 const ordersPayload = {
   orders: [
     {
       id: 1,
       archivedAt: "2026-04-04T10:00:00.000Z",
-      data: {
-        orderType: "collection",
-        customerInfo: { name: "Alice", phone: "0700" },
-        items: [{ name: "Chips", quantity: 1, price: 3 }],
-        total: 3,
-      },
+      data: makeOrder(),
     },
     {
       id: 2,
       archivedAt: "2026-04-04T10:30:00.000Z",
-      data: {
+      data: makeOrder({
         orderType: "delivery",
         customerInfo: { name: "Bob", phone: "0711", street: "Main", postcode: "NG9" },
-        items: [{ name: "Rice", quantity: 1, price: 4 }],
+        items: [makeItem({ uniqueId: "line-2", id: "ITEM-2", name: "Rice", price: 4 })],
+        payment: { method: "card", amount: 4 },
         total: 4,
-      },
+      }),
     },
   ],
 } satisfies { orders: ArchivedOrder[] };

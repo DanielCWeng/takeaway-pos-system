@@ -2,17 +2,21 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { apiClient } from "../client";
 import type { FullOrder } from "../../types";
 
+function jsonResponse(body: unknown, init?: ResponseInit): Response {
+  return new Response(JSON.stringify(body), {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+    ...init,
+  });
+}
+
 describe("apiClient", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
   });
 
   it("submits orders to /orders/print and returns parsed payload", async () => {
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: async () => ({ orderId: 12, printed: true }),
-    } as Response);
+    global.fetch = vi.fn().mockResolvedValue(jsonResponse({ orderId: 12, printed: true }));
 
     const result = await apiClient.submitOrder({
       orderType: "collection",
@@ -29,11 +33,7 @@ describe("apiClient", () => {
   });
 
   it("returns void for 204 responses", async () => {
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      status: 204,
-      json: async () => ({}),
-    } as Response);
+    global.fetch = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
 
     const result = await apiClient.deleteOrdersByDate("2026-04-04");
     expect(result).toEqual({});
@@ -49,18 +49,18 @@ describe("apiClient", () => {
   });
 
   it("maps backend error envelope code/details/status", async () => {
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: false,
-      status: 400,
-      statusText: "Bad Request",
-      json: async () => ({
-        error: {
-          code: "VALIDATION_ERROR",
-          message: "Invalid payload",
-          details: { field: "postcode" },
+    global.fetch = vi.fn().mockResolvedValue(
+      jsonResponse(
+        {
+          error: {
+            code: "VALIDATION_ERROR",
+            message: "Invalid payload",
+            details: { field: "postcode" },
+          },
         },
-      }),
-    } as Response);
+        { status: 400, statusText: "Bad Request" },
+      ),
+    );
 
     await expect(apiClient.lookupPostcode("bad")).rejects.toMatchObject({
       code: "VALIDATION_ERROR",
@@ -71,14 +71,9 @@ describe("apiClient", () => {
   });
 
   it("falls back to UNKNOWN_ERROR when backend response is not json", async () => {
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: false,
-      status: 500,
-      statusText: "Internal Server Error",
-      json: async () => {
-        throw new Error("not json");
-      },
-    } as Response);
+    global.fetch = vi
+      .fn()
+      .mockResolvedValue(new Response("not-json", { status: 500, statusText: "Internal Server Error" }));
 
     await expect(apiClient.fetchOrders()).rejects.toMatchObject({
       code: "UNKNOWN_ERROR",

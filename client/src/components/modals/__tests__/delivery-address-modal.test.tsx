@@ -25,6 +25,8 @@ describe("DeliveryAddressModal", () => {
           line1: "10 High Street",
           town: "Nottingham",
           postcode: "NG9 8GF",
+          latitude: 52.95,
+          longitude: -1.18,
         },
       ],
       source: "api",
