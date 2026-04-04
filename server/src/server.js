@@ -133,13 +133,19 @@ function shutdown(signal) {
   // 1. Run explicit cleanup immediately
   try {
     stopCallerIdListening();
-  } catch (e) {}
+  } catch (e) {
+    // ignore shutdown cleanup errors
+  }
   try {
     closePostcodeDb();
-  } catch (e) {}
+  } catch (e) {
+    // ignore shutdown cleanup errors
+  }
   try {
     closeWsServer();
-  } catch (e) {}
+  } catch (e) {
+    // ignore shutdown cleanup errors
+  }
 
   // 2. Force close any idle keep-alive connections on Node 18+
   server.closeAllConnections?.();
@@ -150,7 +156,9 @@ function shutdown(signal) {
     logger.info("HTTP server closed");
     try {
       closeDb();
-    } catch (e) {}
+    } catch (e) {
+      // ignore shutdown cleanup errors
+    }
     process.exit(0);
   });
 
