@@ -598,10 +598,17 @@ export function OrderProvider({ children }: { children: ReactNode }) {
       updateOrderState((prev) => {
         if (index < 0 || index >= prev.items.length) return {};
         const nextItems = [...prev.items];
+        const item = nextItems[index];
+
+        if (item.isFoc && item.name.endsWith(' (FOC)')) {
+          return {};
+        }
+
         nextItems[index] = {
-          ...nextItems[index],
+          ...item,
           price: 0,
-          name: `${nextItems[index].name} (FOC)`,
+          isFoc: true,
+          name: item.name.endsWith(' (FOC)') ? item.name : `${item.name} (FOC)`,
         };
         return { items: nextItems };
       });
