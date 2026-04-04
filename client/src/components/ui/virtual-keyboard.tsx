@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Delete, ArrowUp, CornerDownLeft } from 'lucide-react';
 import { cn } from '../../lib/utils';
@@ -6,6 +6,22 @@ import { cn } from '../../lib/utils';
 export function VirtualKeyboard() {
   const [isVisible, setIsVisible] = useState(false);
   const [isShift, setIsShift] = useState(false);
+  const keyboardRef = useRef<HTMLDivElement>(null);
+
+  // Toggle body class + CSS var so modals can shrink to accommodate the keyboard
+  useEffect(() => {
+    if (isVisible) {
+      document.body.classList.add('keyboard-open');
+      // Measure height after the next paint so the DOM node exists
+      requestAnimationFrame(() => {
+        const h = keyboardRef.current?.offsetHeight ?? 320;
+        document.body.style.setProperty('--kb-height', `${h}px`);
+      });
+    } else {
+      document.body.classList.remove('keyboard-open');
+      document.body.style.removeProperty('--kb-height');
+    }
+  }, [isVisible]);
 
   useEffect(() => {
     let hideTimeout: number;
@@ -15,9 +31,8 @@ export function VirtualKeyboard() {
       const target = e.target as HTMLElement;
       if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
         const input = target as HTMLInputElement | HTMLTextAreaElement;
-        // Ignore disabled or readonly fields
         if (input.readOnly || input.disabled) return;
-        
+
         setIsVisible(true);
         setTimeout(() => {
           target.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -118,6 +133,7 @@ export function VirtualKeyboard() {
     <AnimatePresence>
       {isVisible && (
         <motion.div
+          ref={keyboardRef}
           initial={{ y: '100%' }}
           animate={{ y: 0 }}
           exit={{ y: '100%' }}

@@ -166,7 +166,7 @@ export function DeliveryAddressModal({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4"
+      className="modal-keyboard-aware fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4"
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 30 }}
@@ -199,9 +199,8 @@ export function DeliveryAddressModal({
 
         <div className="flex-1 flex flex-col md:flex-row min-h-0">
           <ScrollArea className="flex-1 p-6 md:border-r border-border/40">
-            <div className="has-[input:focus]:pb-[320px] has-[textarea:focus]:pb-[320px] transition-all duration-300">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-6">
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
                       <Phone className="h-3 w-3" /> Phone Number
@@ -373,7 +372,6 @@ export function DeliveryAddressModal({
                   </div>
                 </div>
               </div>
-            </div>
           </ScrollArea>
 
           <div className="w-full md:w-80 bg-muted/10 p-6 flex flex-col gap-6">
