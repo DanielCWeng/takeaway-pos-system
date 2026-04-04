@@ -360,19 +360,18 @@
 
 /* ─── On-screen keyboard: intelligent modal avoidance ─── */
 /* When the virtual keyboard is open, modals marked with .modal-keyboard-aware:
-   - align to the top of the screen (instead of centred)
+   - align to the center of the available space above the keyboard
    - shrink their height to stop exactly where the keyboard begins
    Transitions are smooth so the resize feels native.
 */
 body.keyboard-open .modal-keyboard-aware {
-  align-items: flex-start !important;
+  align-items: center !important;
   padding-top: 8px;
   padding-bottom: calc(var(--kb-height, 320px) + 8px);
 }
 
 body.keyboard-open .modal-keyboard-aware > * {
   max-height: calc(100dvh - var(--kb-height, 320px) - 16px) !important;
-  height: calc(100dvh - var(--kb-height, 320px) - 16px) !important;
   transition: max-height 0.25s cubic-bezier(0.4, 0, 0.2, 1),
               height 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
