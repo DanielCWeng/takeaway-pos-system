@@ -523,7 +523,7 @@
     "id": "C4",
     "name": {
       "en": "Three Special Roast",
-      "zh": "三烧"      
+      "zh": "三烧"
     },
     "price": 6.6,
     "primaryCategory": "Special",
@@ -993,7 +993,7 @@
     "id": "T1",
     "name": {
       "en": "Chicken in Thai Curry",
-      "zh": "泰加喱鸡"    
+      "zh": "泰加喱鸡"
     },
     "primaryCategory": "Chicken",
     "secondaryCategory": "Thai-Curry",
@@ -2302,7 +2302,12 @@
     },
     "price": 6.2,
     "primaryCategory": "Chicken",
-    "secondaryCategory": "Chow Mein"
+    "secondaryCategory": "Chow Mein",
+    "primaryStation": "noodle_machine",
+    "primaryCookTime": 300,
+    "secondaryStation": "wet_wok",
+    "secondaryCookTime": 60,
+    "portionCapacity": 1
   },
   {
     "id": "192",
@@ -2708,7 +2713,10 @@
       "en": "Egg Fried Rice",
       "zh": "蛋炒饭"
     },
-    "primaryCategories": ["Btn 1", "Rice"],
+    "primaryCategories": [
+      "Btn 1",
+      "Rice"
+    ],
     "secondaryCategory": "Rice",
     "options": [
       {
@@ -2727,7 +2735,10 @@
       "en": "Boiled Rice",
       "zh": "白饭"
     },
-    "primaryCategories": ["Btn 1", "Rice"],
+    "primaryCategories": [
+      "Btn 1",
+      "Rice"
+    ],
     "secondaryCategory": "Rice",
     "options": [
       {
@@ -2746,7 +2757,10 @@
       "en": "Chips",
       "zh": "薯条"
     },
-    "primaryCategories": ["Btn 1", "Chips"],
+    "primaryCategories": [
+      "Btn 1",
+      "Chips"
+    ],
     "secondaryCategory": "English",
     "options": [
       {
@@ -2769,7 +2783,9 @@
       "en": "Fried Soft Noodles",
       "zh": "炒软面"
     },
-    "primaryCategories": ["Btn 1"],
+    "primaryCategories": [
+      "Btn 1"
+    ],
     "secondaryCategory": "Chow Mein",
     "options": [
       {
@@ -2789,7 +2805,10 @@
       "zh": "香肠薯条"
     },
     "price": 4.5,
-    "primaryCategories": ["Btn 1", "Chips"],
+    "primaryCategories": [
+      "Btn 1",
+      "Chips"
+    ],
     "secondaryCategory": "English"
   },
   {
@@ -2799,7 +2818,10 @@
       "zh": "鸡块(10)"
     },
     "price": 4.5,
-    "primaryCategories": ["Btn 1", "Chicken"],
+    "primaryCategories": [
+      "Btn 1",
+      "Chicken"
+    ],
     "secondaryCategory": "English"
   },
   {
@@ -2809,7 +2831,11 @@
       "zh": "鸡块薯条"
     },
     "price": 4.5,
-    "primaryCategories": ["Btn 1", "Chicken", "Chips"],
+    "primaryCategories": [
+      "Btn 1",
+      "Chicken",
+      "Chips"
+    ],
     "secondaryCategory": "English"
   },
   {
@@ -2819,7 +2845,10 @@
       "zh": "洋冲圈"
     },
     "price": 3,
-    "primaryCategories": ["Btn 1", "Veg"],
+    "primaryCategories": [
+      "Btn 1",
+      "Veg"
+    ],
     "secondaryCategory": "Starter"
   },
   {
@@ -2828,7 +2857,10 @@
       "en": "Prawn Crackers",
       "zh": "虾片"
     },
-    "primaryCategories": ["Btn 1", "Shrimp"],
+    "primaryCategories": [
+      "Btn 1",
+      "Shrimp"
+    ],
     "secondaryCategory": "Starter",
     "options": [
       {
@@ -2851,7 +2883,10 @@
       "en": "Sauce",
       "zh": "汁"
     },
-    "primaryCategories": ["Btn 1", "Special"],
+    "primaryCategories": [
+      "Btn 1",
+      "Special"
+    ],
     "secondaryCategory": "Chef's",
     "options": [
       {
@@ -2899,7 +2934,9 @@
       "zh": "炸Mars Bar"
     },
     "price": 3.2,
-    "primaryCategories": ["Special"],
+    "primaryCategories": [
+      "Special"
+    ],
     "secondaryCategory": "English"
   },
   {
@@ -2909,7 +2946,9 @@
       "zh": "炸蕉"
     },
     "price": 3.2,
-    "primaryCategories": ["Veg"],
+    "primaryCategories": [
+      "Veg"
+    ],
     "secondaryCategory": "English"
   },
   {
@@ -2919,7 +2958,9 @@
       "zh": "炸菠萝"
     },
     "price": 3.2,
-    "primaryCategories": ["Veg"],
+    "primaryCategories": [
+      "Veg"
+    ],
     "secondaryCategory": "English"
   },
   {
@@ -2928,7 +2969,9 @@
       "en": "Cans",
       "zh": "罐装"
     },
-    "primaryCategories": ["Btn 1"],
+    "primaryCategories": [
+      "Btn 1"
+    ],
     "secondaryCategory": "English",
     "options": [
       {
@@ -2964,7 +3007,9 @@
       "zh": "瓶装"
     },
     "price": 2.6,
-    "primaryCategories": ["Btn 1"],
+    "primaryCategories": [
+      "Btn 1"
+    ],
     "secondaryCategory": "English",
     "options": [
       {

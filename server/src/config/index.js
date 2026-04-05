@@ -202,5 +202,12 @@ export const config = {
   ws: {
     heartbeatInterval: env.WS_HEARTBEAT_MS,
   },
+
+  kitchen: {
+    // Number of active orders that triggers busy mode on the kitchen screen.
+    // Tune this after observing real usage — 4 is a conservative starting point.
+    busyThreshold: 4,
+  },
+
   logLevel: env.LOG_LEVEL,
 };

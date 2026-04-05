@@ -95,7 +95,7 @@ function validateOrder(order) {
  * @returns {{ id: number, data: object, archivedAt: string }}
  * @throws {ValidationError} if the order fails business rules
  */
-export function createOrder(orderData) {
+export function createOrder(orderData, clientOrderId) {
   validateOrder(orderData);
 
   // Auto-sync the customer profile so that Name/Address aren't missing in future searches/exports
@@ -103,23 +103,37 @@ export function createOrder(orderData) {
     customers.syncCustomerFromOrder(orderData.customerInfo);
   }
 
-  return repo.createOrder({ data: orderData });
+  return repo.createOrder({ data: orderData, clientOrderId });
 }
 
 /**
  * Archive an order and attempt to print it.
+ * Also initialises the kitchen workflow status row.
  *
  * Saving the order is the critical operation; printing is best-effort (mirrors legacy behaviour).
  *
  * @param {object} orderData - Raw order payload from the route handler
- * @returns {Promise<{ orderId: number, printed: boolean }>}
+ * @param {string} [clientOrderId]
+ * @returns {Promise<{ orderId: number, printed: boolean, status: string, archivedAt: string }>}
  */
-export async function printAndArchiveOrder(orderData) {
-  const archived = createOrder(orderData);
+export async function printAndArchiveOrder(orderData, clientOrderId) {
+  const archived = createOrder(orderData, clientOrderId);
 
+  // Determine initial kitchen status:
+  //  - Collection + empty kitchen → auto-start cooking (no one needs to accept it)
+  //  - Everything else → 'new' (staff decide, or hold delivery for batching)
+  const activeOrders = repo.getActiveOrders();
+  const initialStatus =
+    orderData.orderType === "collection" && activeOrders.length === 0
+      ? "cooking"
+      : "new";
+
+  repo.initOrderStatus(archived.id, initialStatus, null);
+
+  let printed = false;
   try {
     const result = await printReceipt(archived);
-    return { orderId: archived.id, printed: result.printed === true };
+    printed = result.printed === true;
   } catch (err) {
     const isHardwareError = err instanceof HardwareError;
     logger.error("Order saved but printing failed", {
@@ -128,8 +142,52 @@ export async function printAndArchiveOrder(orderData) {
       error: err?.message ?? String(err),
       ...(isHardwareError ? { details: err.details } : {}),
     });
-    return { orderId: archived.id, printed: false };
   }
+
+  return { orderId: archived.id, printed, status: initialStatus, archivedAt: archived.archivedAt };
+}
+
+// ---------------------------------------------------------------------------
+// Kitchen screen
+// ---------------------------------------------------------------------------
+
+/**
+ * Return all active (non-complete, non-cancelled) orders for the kitchen screen.
+ *
+ * @returns {Array<object>}
+ */
+export function getActiveOrders() {
+  return repo.getActiveOrders();
+}
+
+const VALID_STATUSES = ["new", "accepted", "cooking", "ready", "complete", "cancelled"];
+
+/**
+ * Transition an order to a new kitchen status.
+ * Returns the previous status so the caller can broadcast the change.
+ *
+ * @param {number} id
+ * @param {string} status
+ * @param {string} [updatedBy]
+ * @returns {{ previousStatus: string|null, updatedAt: string }}
+ * @throws {ValidationError} if status is not one of the 6 valid values
+ * @throws {NotFoundError} if the order has no status row
+ */
+export function setKitchenStatus(id, status, updatedBy = "kitchen") {
+  if (!VALID_STATUSES.includes(status)) {
+    throw new ValidationError(
+      `Invalid status '${status}'. Must be one of: ${VALID_STATUSES.join(", ")}`,
+      { field: "status", received: status },
+    );
+  }
+
+  const previousStatus = repo.getPreviousStatus(id);
+  if (previousStatus === null) {
+    throw new NotFoundError(`No kitchen status found for order ${id}`, { id });
+  }
+
+  repo.setOrderStatus(id, status, updatedBy);
+  return { previousStatus, updatedAt: new Date().toISOString() };
 }
 
 /**

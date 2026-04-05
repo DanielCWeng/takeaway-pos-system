@@ -28,6 +28,7 @@ import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { ScrollArea } from "../ui/scroll-area";
+import { MenuEditorTab } from "./menu-editor-tab";
 
 interface AdminPageProps {
   onClose: () => void;
@@ -44,6 +45,10 @@ function getAdminApiErrorMessage(err: unknown, fallback: string) {
   const apiErr = err as ApiLikeError;
   const code = apiErr?.code;
   const status = apiErr?.status;
+
+  if (code === "RATE_LIMITED" || status === 429) {
+    return "Too many failed admin token attempts. Wait a minute, then try again.";
+  }
 
   if (code === "ADMIN_AUTH_NOT_CONFIGURED" || status === 503) {
     return "Server admin auth is not configured. Set ADMIN_API_TOKEN on the server and restart.";
@@ -77,6 +82,7 @@ const ORDER_TYPE_BADGE_SOLID: Record<string, string> = {
 export function AdminPage({ onClose }: AdminPageProps) {
   // ─── Auth ────────────────────────────────────────────────────────────────
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [activeTab, setActiveTab] = useState<"orders" | "menu">("orders");
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState("");
 
@@ -115,7 +121,12 @@ export function AdminPage({ onClose }: AdminPageProps) {
         setOrders(data.orders);
       } catch (err) {
         console.error("Failed to fetch orders", err);
-        setFetchError("Could not load orders for this date. Check your connection and try again.");
+        setFetchError(
+          getAdminApiErrorMessage(
+            err,
+            "Could not load orders for this date. Check your connection.",
+          ),
+        );
       } finally {
         setIsLoading(false);
       }
@@ -170,12 +181,18 @@ export function AdminPage({ onClose }: AdminPageProps) {
   };
 
   const handleLogin = () => {
-    if (!config.adminPassword) {
-      setLoginError("Admin PIN not configured");
+    if (config.adminTokenMismatch) {
+      setLoginError("Set only VITE_ADMIN_API_TOKEN (or make both keys identical)");
       setPassword("");
       return;
     }
-    if (password === config.adminPassword) {
+
+    if (!config.adminApiToken) {
+      setLoginError("Admin token not configured (VITE_ADMIN_API_TOKEN)");
+      setPassword("");
+      return;
+    }
+    if (password === config.adminApiToken) {
       setIsAuthenticated(true);
       setLoginError("");
     } else {
@@ -402,7 +419,7 @@ export function AdminPage({ onClose }: AdminPageProps) {
       className="fixed inset-0 z-[100] flex flex-col bg-zinc-950 text-white overflow-hidden p-4"
     >
       {/* Header */}
-      <header className="flex items-center justify-between mb-6">
+      <header className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-4">
           <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-white to-zinc-500 bg-clip-text text-transparent italic">
             Admin Dashboard
@@ -416,6 +433,30 @@ export function AdminPage({ onClose }: AdminPageProps) {
           <X className="h-6 w-6" />
         </Button>
       </header>
+
+      {/* Tab bar */}
+      <div className="flex gap-1 mb-5 border-b border-zinc-800 shrink-0">
+        {(["orders", "menu"] as const).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={cn(
+              "px-5 py-2 text-sm font-semibold tracking-wide uppercase transition-colors border-b-2 -mb-px",
+              activeTab === tab
+                ? "text-white border-sky-500"
+                : "text-zinc-500 border-transparent hover:text-zinc-300",
+            )}
+          >
+            {tab === "orders" ? "Orders" : "Menu Editor"}
+          </button>
+        ))}
+      </div>
+
+      {/* Menu editor tab — rendered outside the orders layout */}
+      {activeTab === "menu" && <MenuEditorTab />}
+
+      {/* Orders tab content */}
+      {activeTab === "orders" && <>
 
       {/* Controls */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -960,6 +1001,8 @@ export function AdminPage({ onClose }: AdminPageProps) {
           </div>
         )}
       </AnimatePresence>
+
+      </>}
     </motion.div>
   );
 }

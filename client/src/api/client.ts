@@ -12,8 +12,8 @@ import type { FullOrder, ArchivedOrder, Customer, Address, ApiError } from "../t
 const API_BASE_URL = config.apiUrl;
 
 function adminAuthHeaders(): Record<string, string> {
-  if (!config.adminPassword) return {};
-  return { Authorization: `Bearer ${config.adminPassword}` };
+  if (!config.adminApiToken) return {};
+  return { Authorization: `Bearer ${config.adminApiToken}` };
 }
 
 function redactApiPath(path: string) {
@@ -101,10 +101,10 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 
 export const apiClient = {
   // Orders
-  async submitOrder(order: FullOrder): Promise<{ orderId: number; printed: boolean }> {
+  async submitOrder(order: FullOrder, clientOrderId?: string): Promise<{ orderId: number; printed: boolean }> {
     return request("/orders/print", {
       method: "POST",
-      body: JSON.stringify({ order, payment: order.payment }),
+      body: JSON.stringify({ order, payment: order.payment, clientOrderId }),
     });
   },
 
@@ -148,6 +148,47 @@ export const apiClient = {
     return request(`/customers/${phone}/export`, {
       headers: adminAuthHeaders(),
     });
+  },
+
+  // Menu
+  async fetchMenu(): Promise<unknown[]> {
+    return request("/menu");
+  },
+
+  async createMenuItem(item: {
+    id: string;
+    nameEn: string;
+    nameZh?: string;
+    price?: number;
+    primaryCategory?: string;
+    primaryStation?: string | null;
+    primaryCookTime?: number | null;
+    secondaryStation?: string | null;
+    secondaryCookTime?: number | null;
+    portionCapacity?: number | null;
+  }): Promise<unknown> {
+    return request("/menu", { method: "POST", body: JSON.stringify(item) });
+  },
+
+  async updateMenuItem(
+    id: string,
+    updates: {
+      nameEn?: string;
+      nameZh?: string;
+      price?: number | null;
+      primaryCategory?: string;
+      primaryStation?: string | null;
+      primaryCookTime?: number | null;
+      secondaryStation?: string | null;
+      secondaryCookTime?: number | null;
+      portionCapacity?: number | null;
+    },
+  ): Promise<unknown> {
+    return request(`/menu/${id}`, { method: "PUT", body: JSON.stringify(updates) });
+  },
+
+  async deleteMenuItem(id: string): Promise<void> {
+    return request(`/menu/${id}`, { method: "DELETE" });
   },
 
   // Addresses

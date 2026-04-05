@@ -11,6 +11,7 @@ Monorepo for a custom takeaway point-of-sale platform with a React client and a 
 
 - `client/` - React + TypeScript + Vite frontend for the POS UI
 - `server/` - Express + SQLite backend, WebSocket transport, and hardware adapters
+- `kitchen/` - React kitchen display screen (KDS) — real-time Kanban board for the kitchen
 - `docs/` - project documentation and planning materials
 - `_legacy/` - legacy reference code retained for migration context
 
@@ -28,6 +29,7 @@ For production hardware support (USB printer and caller ID device), see `server/
 ```bash
 cd server && npm install
 cd ../client && npm install
+cd ../kitchen && npm install
 ```
 
 2. Configure environment files
@@ -57,11 +59,16 @@ npm run dev
 # terminal 2
 cd client
 npm run dev
+
+# terminal 3 (optional — kitchen display screen)
+cd kitchen
+npm run dev
 ```
 
 Default URLs:
 
 - Client: `http://localhost:5173`
+- Kitchen display: `http://localhost:5174`
 - Server API: `http://localhost:4000/api`
 - Server WebSocket: `ws://localhost:4000`
 
@@ -90,7 +97,32 @@ git config core.hooksPath .githooks
 
 This enables the repo pre-commit hook that runs Prettier on staged files before each commit.
 
+## New API endpoints (kitchen integration)
+
+Added as part of the kitchen display screen feature branch:
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/orders/active` | All non-complete/non-cancelled orders with live kitchen status |
+| `PATCH` | `/api/orders/:id/status` | Advance an order through the kitchen state machine |
+
+Valid statuses: `new → accepted → cooking → ready → complete / cancelled`
+
+### New WebSocket events
+
+| Event type | Payload |
+|------------|---------|
+| `order_created` | `{ orderId, order, archivedAt, status }` |
+| `order_status_changed` | `{ orderId, previousStatus, status, updatedAt }` |
+| `order_cancelled` | `{ orderId }` |
+| `order_eta_updated` | `{ orderId, estimatedReadyAt }` |
+
+The `WebSocketMessage` type in `client/src/types/index.ts` has been updated to include all four new event types alongside the existing `incoming_call` event.
+
+Migration `005_order_status.sql` adds the `order_status` table that backs these endpoints.
+
 ## Where To Go Next
 
 - Backend details: [server/README.md](server/README.md)
 - Frontend details: [client/README.md](client/README.md)
+- Kitchen display: [kitchen/README.md](kitchen/README.md)

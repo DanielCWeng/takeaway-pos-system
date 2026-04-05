@@ -24,12 +24,18 @@ import { AppError } from "../../shared/errors.js";
 const stmts = {
   insert: null,
   findById: null,
+  findByClientOrderId: null,
   findAll: null,
   findByDate: null,
   delete: null,
   deleteByDate: null,
   deleteBeforeDate: null,
   findByCustomerPhone: null,
+  // kitchen screen
+  initStatus: null,
+  setStatus: null,
+  getActive: null,
+  getPrevStatus: null,
 };
 
 /**
@@ -39,8 +45,9 @@ const stmts = {
 function getStmts() {
   const db = getDb();
   if (!stmts.insert) {
-    stmts.insert = db.prepare("INSERT INTO orders (data, archived_at) VALUES (?, ?)");
+    stmts.insert = db.prepare("INSERT INTO orders (data, archived_at, client_order_id) VALUES (?, ?, ?)");
     stmts.findById = db.prepare("SELECT * FROM orders WHERE id = ?");
+    stmts.findByClientOrderId = db.prepare("SELECT * FROM orders WHERE client_order_id = ?");
     stmts.findAll = db.prepare("SELECT * FROM orders ORDER BY archived_at DESC LIMIT 500");
     stmts.findByDate = db.prepare(
       "SELECT * FROM orders WHERE archived_at LIKE ? ORDER BY archived_at DESC",
@@ -55,6 +62,29 @@ function getStmts() {
         AND json_extract(data, '$.customerInfo.phone') = ?
       ORDER BY archived_at DESC
     `);
+    // kitchen screen statements
+    stmts.initStatus = db.prepare(
+      "INSERT INTO order_status (order_id, status, estimated_ready_at) VALUES (?, ?, ?)",
+    );
+    stmts.setStatus = db.prepare(`
+      UPDATE order_status
+      SET status     = $status,
+          updated_at = datetime('now'),
+          updated_by = $updatedBy,
+          actual_ready_at = CASE WHEN $status = 'ready' THEN datetime('now') ELSE actual_ready_at END
+      WHERE order_id = $orderId
+    `);
+    stmts.getActive = db.prepare(`
+      SELECT o.id, o.data, o.archived_at,
+             s.status, s.updated_at, s.estimated_ready_at, s.actual_ready_at
+      FROM orders o
+      JOIN order_status s ON s.order_id = o.id
+      WHERE s.status NOT IN ('complete', 'cancelled')
+      ORDER BY o.archived_at ASC
+    `);
+    stmts.getPrevStatus = db.prepare(
+      "SELECT status FROM order_status WHERE order_id = ?",
+    );
   }
   return stmts;
 }
@@ -97,18 +127,23 @@ function rowToOrder(row) {
  * @param {{ data: object, archivedAt?: string }} orderData
  * @returns {{ id: number, data: object, archivedAt: string }}
  */
-export function createOrder({ data, archivedAt }) {
-  const { insert } = getStmts();
+export function createOrder({ data, archivedAt, clientOrderId }) {
+  const { insert, findByClientOrderId } = getStmts();
   const at = archivedAt ?? new Date().toISOString();
 
-  // Use lastInsertRowid — never MAX(id)+1 — fixing the old race condition
-  const result = insert.run(JSON.stringify(data), at);
-
-  return {
-    id: Number(result.lastInsertRowid),
-    data,
-    archivedAt: at,
-  };
+  try {
+    // Use lastInsertRowid — never MAX(id)+1 — fixing the old race condition
+    const result = insert.run(JSON.stringify(data), at, clientOrderId ?? null);
+    return { id: Number(result.lastInsertRowid), data, archivedAt: at };
+  } catch (err) {
+    // A duplicate clientOrderId means the client is retrying a request we already stored.
+    // Return the original row so the response is idempotent.
+    if (err.code === "SQLITE_CONSTRAINT_UNIQUE" && clientOrderId) {
+      const existing = findByClientOrderId.get(clientOrderId);
+      if (existing) return rowToOrder(existing);
+    }
+    throw err;
+  }
 }
 
 /**
@@ -259,4 +294,81 @@ export function findOrdersByPhone(phone) {
       }
     })
     .filter(Boolean);
+}
+
+// ---------------------------------------------------------------------------
+// Kitchen screen — order_status table
+// ---------------------------------------------------------------------------
+
+/**
+ * Insert an initial status row for a newly archived order.
+ *
+ * @param {number} orderId
+ * @param {'new'|'cooking'} initialStatus - 'cooking' for auto-started collection orders
+ * @param {string|null} estimatedReadyAt  - ISO string, null in Phase 1 (calculated client-side)
+ */
+export function initOrderStatus(orderId, initialStatus = "new", estimatedReadyAt = null) {
+  const { initStatus } = getStmts();
+  initStatus.run(orderId, initialStatus, estimatedReadyAt);
+}
+
+/**
+ * Transition an order to a new status.
+ * Automatically sets actual_ready_at when status becomes 'ready'.
+ *
+ * @param {number} orderId
+ * @param {string} status
+ * @param {string} [updatedBy]
+ */
+export function setOrderStatus(orderId, status, updatedBy = "kitchen") {
+  const { setStatus } = getStmts();
+  setStatus.run({ status, updatedBy, orderId });
+}
+
+/**
+ * Return all active orders (status not 'complete' or 'cancelled'), oldest first.
+ *
+ * @returns {Array<{
+ *   orderId: number,
+ *   order: object,
+ *   status: string,
+ *   archivedAt: string,
+ *   updatedAt: string,
+ *   estimatedReadyAt: string|null,
+ *   actualReadyAt: string|null,
+ * }>}
+ */
+export function getActiveOrders() {
+  const { getActive } = getStmts();
+  const rows = getActive.all();
+  return rows.map((row) => {
+    let order;
+    try {
+      order = JSON.parse(row.data);
+    } catch {
+      order = {};
+    }
+    return {
+      orderId: row.id,
+      order,
+      status: row.status,
+      archivedAt: row.archived_at,
+      updatedAt: row.updated_at,
+      estimatedReadyAt: row.estimated_ready_at ?? null,
+      actualReadyAt: row.actual_ready_at ?? null,
+    };
+  });
+}
+
+/**
+ * Return the current status of an order before updating it.
+ * Used to capture previousStatus for the WS event.
+ *
+ * @param {number} orderId
+ * @returns {string|null}
+ */
+export function getPreviousStatus(orderId) {
+  const { getPrevStatus } = getStmts();
+  const row = getPrevStatus.get(orderId);
+  return row?.status ?? null;
 }

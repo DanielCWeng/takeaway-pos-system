@@ -103,8 +103,12 @@ export async function handleDisconnected(callId, phone, durationSeconds) {
     return;
   }
 
-  const endedAt  = new Date();
+  const endedAt   = new Date();
   const startedAt = call?.startedAt ?? new Date(endedAt.getTime() - durationSeconds * 1_000);
+  // Derive duration from our own timestamps so it is consistent with call_started_at/call_ended_at.
+  // (call_started_at reflects CONNECTED time if the call was answered; the bridge's durationSeconds
+  // counts from OFFERING, which would produce an inconsistent value.)
+  const resolvedDuration = Math.round((endedAt.getTime() - startedAt.getTime()) / 1_000);
 
   try {
     const db = getDb();
@@ -125,13 +129,13 @@ export async function handleDisconnected(callId, phone, durationSeconds) {
       resolvedPhone,
       startedAt.toISOString(),
       endedAt.toISOString(),
-      durationSeconds,
+      resolvedDuration,
       customerName,
     );
 
     logger.info("Call logged", {
       phone: resolvedPhone,
-      durationSeconds,
+      durationSeconds: resolvedDuration,
       customerName,
     });
   } catch (err) {

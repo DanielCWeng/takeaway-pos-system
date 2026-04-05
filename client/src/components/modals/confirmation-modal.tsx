@@ -31,6 +31,8 @@ export function ConfirmationModal({
       setAmountPaidStr("");
     } else if (key === "." && amountPaidStr.includes(".")) {
       return;
+    } else if (!/^\d$/.test(key) && key !== ".") {
+      return; // reject comma and any other non-numeric character
     } else if (amountPaidStr.length < 8) {
       setAmountPaidStr((prev) => prev + key);
     }

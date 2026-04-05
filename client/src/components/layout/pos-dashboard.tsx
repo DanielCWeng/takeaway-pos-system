@@ -113,7 +113,6 @@ export function PosDashboard() {
     setFocItem,
     updateItem,
     setCustomerInfo,
-    updatePayment,
     printOrder,
     setOrderType,
     clearOrder,
@@ -510,12 +509,8 @@ export function PosDashboard() {
               errorMessage={checkoutError}
               onConfirm={async (details) => {
                 setCheckoutError(null);
-                updatePayment({
-                  method: "cash",
-                  amount: details.amountPaid,
-                });
                 try {
-                  await printOrder();
+                  await printOrder(undefined, { method: "cash", amount: details.amountPaid });
                   setCheckoutError(null);
                   setIsCheckoutModalOpen(false);
                 } catch (error) {

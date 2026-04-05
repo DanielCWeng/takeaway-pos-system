@@ -138,10 +138,20 @@ export interface CallDetectedPayload {
   distance: number | null;
 }
 
-export type WebSocketMessage = {
-  type: "incoming_call";
-  payload: CallDetectedPayload;
-};
+export type OrderStatus =
+  | "new"
+  | "accepted"
+  | "cooking"
+  | "ready"
+  | "complete"
+  | "cancelled";
+
+export type WebSocketMessage =
+  | { type: "incoming_call"; payload: CallDetectedPayload }
+  | { type: "order_created"; payload: { orderId: number; order: FullOrder; archivedAt: string; status: OrderStatus } }
+  | { type: "order_status_changed"; payload: { orderId: number; previousStatus: OrderStatus; status: OrderStatus; updatedAt: string } }
+  | { type: "order_cancelled"; payload: { orderId: number } }
+  | { type: "order_eta_updated"; payload: { orderId: number; estimatedReadyAt: string } };
 
 export interface ApiError {
   error: {

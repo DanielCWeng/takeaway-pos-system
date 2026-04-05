@@ -7,13 +7,20 @@
 interface Config {
   apiUrl: string;
   wsUrl: string;
-  adminPassword?: string;
+  adminApiToken?: string;
+  adminTokenMismatch: boolean;
 }
+
+const adminApiToken = import.meta.env.VITE_ADMIN_API_TOKEN;
+const legacyAdminPassword = import.meta.env.VITE_ADMIN_PASSWORD;
 
 export const config: Config = {
   apiUrl: import.meta.env.VITE_API_URL || "http://localhost:4000/api",
   wsUrl: import.meta.env.VITE_WS_URL || "ws://localhost:4000",
-  // Prefer explicit token naming, keep legacy VITE_ADMIN_PASSWORD for backwards compatibility.
-  adminPassword:
-    import.meta.env.VITE_ADMIN_API_TOKEN || import.meta.env.VITE_ADMIN_PASSWORD || undefined,
+  // Canonical key: VITE_ADMIN_API_TOKEN. Keep legacy fallback temporarily.
+  adminApiToken: adminApiToken || legacyAdminPassword || undefined,
+  adminTokenMismatch:
+    Boolean(adminApiToken) &&
+    Boolean(legacyAdminPassword) &&
+    adminApiToken !== legacyAdminPassword,
 };

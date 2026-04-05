@@ -15,6 +15,7 @@ import { z } from "zod";
 import * as service from "./orders.service.js";
 import { sendValidationError } from "../../shared/middleware/sendValidationError.js";
 import { requireAdminAuth } from "../../shared/middleware/requireAdminAuth.js";
+import { broadcast } from "../../api/websocket.js";
 
 export const ordersRouter = Router();
 
@@ -151,6 +152,7 @@ const printableOrderSchema = z
 const printOrderRequestSchema = z.object({
   order: printableOrderSchema,
   payment: paymentSchema.optional(),
+  clientOrderId: z.string().uuid().optional(),
 });
 
 // ---------------------------------------------------------------------------
@@ -203,7 +205,7 @@ ordersRouter.post("/print", async (req, res, next) => {
     return sendValidationError(res, details);
   }
 
-  const { order, payment } = parsed.data;
+  const { order, payment, clientOrderId } = parsed.data;
   const orderData = { ...order, payment: payment ?? order.payment };
 
   if (!orderData.payment) {
@@ -211,8 +213,60 @@ ordersRouter.post("/print", async (req, res, next) => {
   }
 
   try {
-    const result = await service.printAndArchiveOrder(orderData);
-    return res.status(200).json(result);
+    const result = await service.printAndArchiveOrder(orderData, clientOrderId);
+    broadcast("order_created", {
+      orderId: result.orderId,
+      order: orderData,
+      archivedAt: result.archivedAt,
+      status: result.status,
+    });
+    return res.status(200).json({ orderId: result.orderId, printed: result.printed });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * GET /api/orders/active
+ * Return all active (non-complete, non-cancelled) orders for the kitchen screen.
+ * Registered before /:id so 'active' is not swallowed as an ID param.
+ */
+ordersRouter.get("/active", (req, res, next) => {
+  try {
+    const orders = service.getActiveOrders();
+    return res.json({ orders });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * PATCH /api/orders/:id/status
+ * Transition a kitchen order to a new status.
+ * Broadcasts order_status_changed to all WS clients.
+ */
+const kitchenStatusSchema = z.object({
+  status: z.enum(["new", "accepted", "cooking", "ready", "complete", "cancelled"]),
+  updatedBy: z.string().optional(),
+});
+
+ordersRouter.patch("/:id/status", (req, res, next) => {
+  const id = parseId(req.params.id);
+  if (!id) {
+    return sendValidationError(res, {}, "Order id must be a positive integer");
+  }
+
+  const parsed = kitchenStatusSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return sendValidationError(res, parsed.error.flatten().fieldErrors);
+  }
+
+  const { status, updatedBy } = parsed.data;
+
+  try {
+    const { previousStatus, updatedAt } = service.setKitchenStatus(id, status, updatedBy);
+    broadcast("order_status_changed", { orderId: id, previousStatus, status, updatedAt });
+    return res.json({ orderId: id, status, updatedAt });
   } catch (err) {
     next(err);
   }

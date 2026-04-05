@@ -91,7 +91,7 @@ interface OrderContextType {
   setCustomerInfo: (info: CustomerInfo | undefined) => void;
   updatePayment: (payment: PaymentDetails) => void;
   setNotes: (notes?: string) => void;
-  printOrder: (orderToPrint?: FullOrder) => Promise<PrintResult>;
+  printOrder: (orderToPrint?: FullOrder, paymentOverride?: PaymentDetails) => Promise<PrintResult>;
   pendingPrintJobs: number;
   isFlushingPrintQueue: boolean;
   lastPrintAlert: string | null;
@@ -320,7 +320,7 @@ const generateInitialOrder = (id: number): OrderState => ({
 const OrderContext = createContext<OrderContextType | undefined>(undefined);
 
 function deriveTotals(order: OrderState) {
-  const subtotal = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const subtotal = order.items.reduce((sum, item) => sum + (item.finalPrice ?? item.price) * item.quantity, 0);
   const deliveryCharge =
     order.orderType === "delivery" ? calculateDeliveryCharge(order.customerInfo?.distance) : 0;
 
@@ -668,7 +668,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
     try {
       for (const job of queued) {
         try {
-          const result = await apiClient.submitOrder(job.order);
+          const result = await apiClient.submitOrder(job.order, job.clientOrderId);
           setPrintQueue((prev) =>
             prev.filter((entry) => entry.clientOrderId !== job.clientOrderId),
           );
@@ -727,7 +727,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const printOrder = useCallback(
-    async (orderToPrint?: FullOrder): Promise<PrintResult> => {
+    async (orderToPrint?: FullOrder, paymentOverride?: PaymentDetails): Promise<PrintResult> => {
       const source = orderToPrint ? orderToPrint : order;
       const totals = deriveTotals(source as OrderState);
       const payload: FullOrder = {
@@ -751,7 +751,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
                   : undefined,
             }
           : undefined,
-        payment: { ...source.payment },
+        payment: paymentOverride ? { ...paymentOverride } : { ...source.payment },
         subtotal: totals.subtotal,
         deliveryCharge: totals.deliveryCharge,
         total: totals.total,
@@ -759,7 +759,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
       const clientOrderId = orderToPrint ? generateClientOrderId() : order.clientOrderId;
 
       try {
-        const result = await apiClient.submitOrder(payload);
+        const result = await apiClient.submitOrder(payload, clientOrderId);
         if (!orderToPrint) {
           clearOrder();
         }
