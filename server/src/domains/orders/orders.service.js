@@ -13,6 +13,8 @@
  */
 
 import * as repo from "./orders.repo.js";
+import * as customers from "../customers/customers.service.js";
+import { config } from "../../config/index.js";
 import { getDb } from "../../infrastructure/db.js";
 import { logger } from "../../infrastructure/logger.js";
 import { printReceipt } from "../../hardware/printer.js";
@@ -95,6 +97,12 @@ function validateOrder(order) {
  */
 export function createOrder(orderData) {
   validateOrder(orderData);
+
+  // Auto-sync the customer profile so that Name/Address aren't missing in future searches/exports
+  if (orderData.customerInfo) {
+    customers.syncCustomerFromOrder(orderData.customerInfo);
+  }
+
   return repo.createOrder({ data: orderData });
 }
 
@@ -153,6 +161,49 @@ export function deleteOrdersByDate(date) {
     throw new ValidationError("Invalid date format. Expected YYYY-MM-DD", { date });
   }
   repo.deleteOrdersByDate(date);
+}
+
+/**
+ * Delete archived orders older than the configured years (Retention Policy).
+ *
+ * @returns {number} Number of deleted rows
+ */
+export function cleanupOldOrders() {
+  const years = config.business.dataRetentionYears ?? 6;
+  const cutoff = new Date();
+  cutoff.setFullYear(cutoff.getFullYear() - years);
+
+  const isoCutoff = cutoff.toISOString();
+  const deletedCount = repo.deleteOrdersBefore(isoCutoff);
+
+  logger.info(`Retention cleanup: deleted ${deletedCount} orders older than ${years} years`, {
+    cutoff: isoCutoff,
+    deletedCount,
+  });
+
+  return deletedCount;
+}
+
+/**
+ * Scrub all PII from orders for a specific phone number.
+ *
+ * @param {string} phone
+ * @param {string} anonId
+ * @returns {number}
+ */
+export function scrubOrdersByPhone(phone, anonId) {
+  return repo.anonymizeOrdersByPhone(phone, anonId);
+}
+
+/**
+ * Find all order history for a specific phone number.
+ * (Used for Data Export / Access requests)
+ *
+ * @param {string} phone
+ * @returns {Array<{ id: number, data: object, archivedAt: string }>}
+ */
+export function getOrdersByPhone(phone) {
+  return repo.findOrdersByPhone(phone);
 }
 
 // ---------------------------------------------------------------------------

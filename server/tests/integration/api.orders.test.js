@@ -9,6 +9,7 @@ const app = express();
 app.use(express.json());
 app.use("/api", apiRouter);
 app.use(globalErrorHandler);
+const ADMIN_TOKEN = process.env.ADMIN_API_TOKEN ?? "";
 
 describe("Orders API Integration", () => {
   const seededByDate = {
@@ -205,5 +206,38 @@ describe("Orders API Integration", () => {
 
     expect(res.status).toBe(404);
     expect(res.body.error.code).toBe("NOT_FOUND");
+  });
+
+  it("POST /api/orders/cleanup - requires admin auth", async () => {
+    const res = await request(app).post("/api/orders/cleanup");
+
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe("FORBIDDEN");
+  });
+
+  it("POST /api/orders/cleanup - deletes records older than retention threshold for authorized admin", async () => {
+    const db = getDb();
+    const insert = db.prepare("INSERT INTO orders (data, archived_at) VALUES (?, ?)");
+    insert.run(
+      JSON.stringify({
+        orderType: "collection",
+        items: [{ name: "Old Record", price: 1, quantity: 1 }],
+        total: 1,
+      }),
+      "2015-01-01T00:00:00.000Z",
+    );
+
+    const cleanupRes = await request(app)
+      .post("/api/orders/cleanup")
+      .set("Authorization", `Bearer ${ADMIN_TOKEN}`);
+
+    expect(cleanupRes.status).toBe(200);
+    expect(cleanupRes.body.success).toBe(true);
+    expect(cleanupRes.body.deletedCount).toBeGreaterThanOrEqual(1);
+
+    const oldCount = db
+      .prepare("SELECT COUNT(*) AS c FROM orders WHERE archived_at < ?")
+      .get("2020-01-01T00:00:00.000Z").c;
+    expect(oldCount).toBe(0);
   });
 });

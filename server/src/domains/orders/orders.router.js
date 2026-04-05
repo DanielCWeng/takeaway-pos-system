@@ -14,6 +14,7 @@ import { Router } from "express";
 import { z } from "zod";
 import * as service from "./orders.service.js";
 import { sendValidationError } from "../../shared/middleware/sendValidationError.js";
+import { requireAdminAuth } from "../../shared/middleware/requireAdminAuth.js";
 
 export const ordersRouter = Router();
 
@@ -67,7 +68,14 @@ const customerInfoSchema = z
     houseNumber: z.string().optional(),
     street: z.string().optional(),
     town: z.string().optional(),
+    distance: z.coerce.number().optional(),
+    latitude: z.coerce.number().optional(),
+    longitude: z.coerce.number().optional(),
+    mapRef: z.string().optional(),
+    deliveryInstructions: z.string().optional(),
+    deliveryTime: z.string().optional(),
   })
+  .passthrough()
   .optional();
 
 const createOrderSchema = z.object({
@@ -116,7 +124,9 @@ const printableOrderSchema = z
         street: z.string().optional(),
         town: z.string().optional(),
         postcode: z.string().optional(),
-        distance: z.number().optional(),
+        distance: z.coerce.number().optional(),
+        latitude: z.coerce.number().optional(),
+        longitude: z.coerce.number().optional(),
         mapRef: z.string().optional(),
         deliveryInstructions: z.string().optional(),
         deliveryTime: z.string().optional(),
@@ -279,6 +289,19 @@ ordersRouter.post("/:id/reprint", async (req, res, next) => {
   try {
     const result = await service.reprintOrder(id);
     return res.status(200).json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * POST /api/orders/cleanup
+ * Trigger the data retention cleanup (delete orders older than X years).
+ */
+ordersRouter.post("/cleanup", requireAdminAuth, (req, res, next) => {
+  try {
+    const deletedCount = service.cleanupOldOrders();
+    return res.json({ success: true, deletedCount });
   } catch (err) {
     next(err);
   }

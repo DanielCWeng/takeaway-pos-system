@@ -28,6 +28,8 @@ const stmts = {
   findByDate: null,
   delete: null,
   deleteByDate: null,
+  deleteBeforeDate: null,
+  findByCustomerPhone: null,
 };
 
 /**
@@ -45,6 +47,14 @@ function getStmts() {
     );
     stmts.delete = db.prepare("DELETE FROM orders WHERE id = ?");
     stmts.deleteByDate = db.prepare("DELETE FROM orders WHERE archived_at LIKE ?");
+    stmts.deleteBeforeDate = db.prepare("DELETE FROM orders WHERE archived_at < ?");
+    stmts.findByCustomerPhone = db.prepare(`
+      SELECT id, data, archived_at
+      FROM orders
+      WHERE json_valid(data) = 1
+        AND json_extract(data, '$.customerInfo.phone') = ?
+      ORDER BY archived_at DESC
+    `);
   }
   return stmts;
 }
@@ -157,4 +167,96 @@ export function deleteOrder(id) {
 export function deleteOrdersByDate(date) {
   const { deleteByDate } = getStmts();
   deleteByDate.run(`${date}%`);
+}
+/**
+ * Delete all orders archived before a specific ISO 8601 timestamp.
+ *
+ * @param {string} date - ISO 8601 timestamp
+ * @returns {number} Number of deleted rows
+ */
+export function deleteOrdersBefore(date) {
+  const { deleteBeforeDate } = getStmts();
+  const result = deleteBeforeDate.run(date);
+  return result.changes;
+}
+
+/**
+ * Find and anonymize all orders associated with a specific phone number.
+ * Replaces customer PII with a unique anonymization ID.
+ *
+ * @param {string} phone - The phone number to scrub
+ * @param {string} anonId - The UUID to use as a replacement
+ * @returns {number} Number of orders anonymized
+ */
+export function anonymizeOrdersByPhone(phone, anonId) {
+  const db = getDb();
+  const { findByCustomerPhone } = getStmts();
+
+  // Fast path: SQL-level exact phone match on JSON field.
+  // Backed by idx_orders_customer_phone_json for large datasets.
+  const candidateRows = findByCustomerPhone.all(phone);
+
+  if (candidateRows.length === 0) return 0;
+
+  const updateStmt = db.prepare("UPDATE orders SET data = ? WHERE id = ?");
+
+  let count = 0;
+  const anonymizeTx = db.transaction(() => {
+    for (const row of candidateRows) {
+      const data = JSON.parse(row.data);
+
+      // Defensive exact-match check before scrubbing.
+      if (data.customerInfo?.phone === phone) {
+        // Scrub PII
+        data.customerInfo = {
+          name: "ANONYMISED",
+          phone: anonId,
+          address: "REMOVED",
+          houseNumber: "REMOVED",
+          street: "REMOVED",
+          town: "REMOVED",
+          postcode: "REMOVED",
+          latitude: null,
+          longitude: null,
+          distance: null,
+          mapRef: "REMOVED",
+          deliveryInstructions: "REMOVED",
+          deliveryTime: null,
+          isAnonymised: true,
+        };
+
+        updateStmt.run(JSON.stringify(data), row.id);
+        count++;
+      }
+    }
+  });
+
+  anonymizeTx();
+  return count;
+}
+
+/**
+ * Find all order history for a specific phone number.
+ *
+ * @param {string} phone
+ * @returns {Array<{ id: number, data: object, archivedAt: string }>}
+ */
+export function findOrdersByPhone(phone) {
+  const { findByCustomerPhone } = getStmts();
+  const rows = findByCustomerPhone.all(phone);
+
+  // Defensive parse + exact-match filter.
+  return rows
+    .map((row) => {
+      try {
+        const order = rowToOrder(row);
+        if (order.data.customerInfo?.phone === phone) {
+          return order;
+        }
+        return null;
+      } catch {
+        return null;
+      }
+    })
+    .filter(Boolean);
 }
