@@ -25,6 +25,7 @@ import { openDb, runMigrations, closeDb } from "./infrastructure/db.js";
 import { logger } from "./infrastructure/logger.js";
 import { apiRouter, globalErrorHandler } from "./api/router.js";
 import { createWsServer, broadcast, closeWsServer } from "./api/websocket.js";
+import { createRateLimiter } from "./shared/middleware/rateLimit.js";
 import { closePostcodeDb } from "./shared/postcodes.js";
 import {
   startListening as startCallerIdListening,
@@ -54,6 +55,14 @@ if (!config.security.adminApiToken) {
 // ---------------------------------------------------------------------------
 
 const app = express();
+const apiRateLimiter = createRateLimiter({
+  windowMs: config.security.apiRateLimitWindowMs,
+  maxRequests: config.security.apiRateLimitMaxRequests,
+  maxBuckets: config.security.apiRateLimitMaxBuckets,
+  trustProxy: config.security.trustProxy,
+  scope: "api",
+});
+app.set("trust proxy", config.security.trustProxy);
 
 // Enable Cross-Origin Resource Sharing (CORS) for the frontend
 app.use(
@@ -100,7 +109,7 @@ app.use((req, res, next) => {
 });
 
 // Mount all API routes under /api
-app.use("/api", apiRouter);
+app.use("/api", apiRateLimiter, apiRouter);
 
 // Global error handler — must be last
 app.use(globalErrorHandler);

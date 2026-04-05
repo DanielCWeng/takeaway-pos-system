@@ -108,6 +108,53 @@ const envSchema = z.object({
   // Leave blank only if those endpoints are intentionally disabled.
   ADMIN_API_TOKEN: z.string().optional().default(""),
 
+  API_RATE_LIMIT_WINDOW_MS: z
+    .string()
+    .regex(/^\d+$/, "API_RATE_LIMIT_WINDOW_MS must be a positive integer")
+    .default("60000")
+    .transform(Number)
+    .pipe(z.number().int().min(1)),
+
+  API_RATE_LIMIT_MAX_REQUESTS: z
+    .string()
+    .regex(/^\d+$/, "API_RATE_LIMIT_MAX_REQUESTS must be a positive integer")
+    .default("600")
+    .transform(Number)
+    .pipe(z.number().int().min(1)),
+
+  API_RATE_LIMIT_MAX_BUCKETS: z
+    .string()
+    .regex(/^\d+$/, "API_RATE_LIMIT_MAX_BUCKETS must be a positive integer")
+    .default("5000")
+    .transform(Number)
+    .pipe(z.number().int().min(1)),
+
+  ADMIN_AUTH_FAILURE_WINDOW_MS: z
+    .string()
+    .regex(/^\d+$/, "ADMIN_AUTH_FAILURE_WINDOW_MS must be a positive integer")
+    .default("60000")
+    .transform(Number)
+    .pipe(z.number().int().min(1)),
+
+  ADMIN_AUTH_FAILURE_MAX_ATTEMPTS: z
+    .string()
+    .regex(/^\d+$/, "ADMIN_AUTH_FAILURE_MAX_ATTEMPTS must be a positive integer")
+    .default("25")
+    .transform(Number)
+    .pipe(z.number().int().min(1)),
+
+  ADMIN_AUTH_FAILURE_MAX_BUCKETS: z
+    .string()
+    .regex(/^\d+$/, "ADMIN_AUTH_FAILURE_MAX_BUCKETS must be a positive integer")
+    .default("2000")
+    .transform(Number)
+    .pipe(z.number().int().min(1)),
+
+  TRUST_PROXY: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((v) => v === "true"),
+
   LOG_LEVEL: z.enum(["error", "warn", "info", "debug"]).default("info"),
   WS_HEARTBEAT_MS: z
     .string()
@@ -180,6 +227,13 @@ export const config = {
 
   security: {
     adminApiToken: env.ADMIN_API_TOKEN,
+    trustProxy: env.TRUST_PROXY,
+    apiRateLimitWindowMs: env.API_RATE_LIMIT_WINDOW_MS,
+    apiRateLimitMaxRequests: env.API_RATE_LIMIT_MAX_REQUESTS,
+    apiRateLimitMaxBuckets: env.API_RATE_LIMIT_MAX_BUCKETS,
+    adminAuthFailureWindowMs: env.ADMIN_AUTH_FAILURE_WINDOW_MS,
+    adminAuthFailureMaxAttempts: env.ADMIN_AUTH_FAILURE_MAX_ATTEMPTS,
+    adminAuthFailureMaxBuckets: env.ADMIN_AUTH_FAILURE_MAX_BUCKETS,
   },
 
   ws: {

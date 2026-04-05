@@ -18,6 +18,7 @@ describe("server lifecycle", () => {
     };
     const app = {
       use: vi.fn(),
+      set: vi.fn(),
       listen: vi.fn((_port, cb) => {
         queueMicrotask(() => cb?.());
         return server;
@@ -46,7 +47,13 @@ describe("server lifecycle", () => {
       config: {
         port: 4444,
         corsOrigin: "http://localhost:5173",
-        security: { adminApiToken: "test-admin-token" },
+        security: {
+          adminApiToken: "test-admin-token",
+          trustProxy: false,
+          apiRateLimitWindowMs: 60000,
+          apiRateLimitMaxRequests: 600,
+          apiRateLimitMaxBuckets: 5000,
+        },
       },
     }));
     vi.doMock("../../src/infrastructure/db.js", () => ({
