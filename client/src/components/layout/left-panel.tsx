@@ -28,6 +28,7 @@ interface LeftPanelProps {
   orderType: OrderType;
   onChangeOrderType: (type: OrderType) => void;
   customerInfo?: CustomerInfo;
+  onDialPhone: (phone: string) => void;
   onCustomerInfoClick: () => void;
 
   onDuplicateItem: () => void;
@@ -61,6 +62,7 @@ export const LeftPanel = React.memo(function LeftPanel({
   orderType,
   onChangeOrderType,
   customerInfo,
+  onDialPhone,
   onCustomerInfoClick,
   onDuplicateItem,
   onModifyItem,
@@ -123,11 +125,7 @@ export const LeftPanel = React.memo(function LeftPanel({
       </motion.div>
 
       <div className="min-h-0 flex-1">
-        <OrderList
-          items={items}
-          selectedIndex={selectedIndex}
-          onSelect={onSelectIndex}
-        />
+        <OrderList items={items} selectedIndex={selectedIndex} onSelect={onSelectIndex} />
       </div>
 
       <div className="grid gap-2 lg:grid-cols-2 items-stretch">
@@ -142,6 +140,7 @@ export const LeftPanel = React.memo(function LeftPanel({
             orderType={orderType}
             onChangeOrderType={onChangeOrderType}
             customerInfo={customerInfo}
+            onDialPhone={onDialPhone}
           />
         </motion.div>
         <motion.div

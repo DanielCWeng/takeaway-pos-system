@@ -178,4 +178,12 @@ export const apiClient = {
       body: JSON.stringify({ phone, addressData }),
     });
   },
+
+  // Calls
+  async dial(phone: string): Promise<{ ok: boolean; phone: string }> {
+    return request("/calls/dial", {
+      method: "POST",
+      body: JSON.stringify({ phone }),
+    });
+  },
 };

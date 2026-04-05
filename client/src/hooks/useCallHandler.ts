@@ -25,33 +25,36 @@ export function useCallHandler() {
 
   const hasActiveOrder = useMemo(() => order.items.length > 0, [order.items]);
 
+  const buildCustomerInfo = useCallback((payload: CallDetectedPayload, address?: Address) => {
+    const customerHouseNumber = payload.customer?.houseNumber ?? undefined;
+    const customerStreet = payload.customer?.street ?? undefined;
+    const resolvedStreet = address?.line1 ?? customerStreet;
+    const resolvedTown = address?.town ?? payload.customer?.town ?? undefined;
+    const fallbackAddress = [customerHouseNumber, resolvedStreet].filter(Boolean).join(" ");
+    const resolvedAddress =
+      address && address.line1
+        ? [customerHouseNumber, address.line1, address.line2, address.town]
+            .filter(Boolean)
+            .join(", ")
+        : fallbackAddress || undefined;
+
+    return {
+      phone: payload.phone,
+      name: payload.customer?.name ?? undefined,
+      address: resolvedAddress,
+      houseNumber: customerHouseNumber,
+      street: resolvedStreet,
+      town: resolvedTown,
+      postcode: address?.postcode ?? payload.customer?.postcode ?? undefined,
+      distance: payload.distance ?? payload.customer?.distance ?? undefined,
+      latitude: address?.latitude ?? payload.customer?.latitude ?? undefined,
+      longitude: address?.longitude ?? payload.customer?.longitude ?? undefined,
+    } satisfies CustomerInfo;
+  }, []);
+
   const resolveCustomerInfo = useCallback(
     (payload: CallDetectedPayload, address?: Address) => {
-      const customerHouseNumber = payload.customer?.houseNumber ?? undefined;
-      const customerStreet = payload.customer?.street ?? undefined;
-      const resolvedStreet = address?.line1 ?? customerStreet;
-      const resolvedTown = address?.town ?? payload.customer?.town ?? undefined;
-      const fallbackAddress = [customerHouseNumber, resolvedStreet].filter(Boolean).join(" ");
-      const resolvedAddress =
-        address && address.line1
-          ? [customerHouseNumber, address.line1, address.line2, address.town]
-              .filter(Boolean)
-              .join(", ")
-          : fallbackAddress || undefined;
-
-      const info: CustomerInfo = {
-        phone: payload.phone,
-        name: payload.customer?.name ?? undefined,
-        address: resolvedAddress,
-        houseNumber: customerHouseNumber,
-        street: resolvedStreet,
-        town: resolvedTown,
-        postcode: address?.postcode ?? payload.customer?.postcode ?? undefined,
-        distance: payload.distance ?? payload.customer?.distance ?? undefined,
-        latitude: address?.latitude ?? payload.customer?.latitude ?? undefined,
-        longitude: address?.longitude ?? payload.customer?.longitude ?? undefined,
-      };
-
+      const info = buildCustomerInfo(payload, address);
       setCustomerInfo(info);
       const wantsDelivery = Boolean(address) || Boolean(info.postcode) || Boolean(info.address);
       setOrderType(wantsDelivery ? "delivery" : "collection");
@@ -59,7 +62,7 @@ export function useCallHandler() {
       setPendingCall(null);
       setAddressOptions([]);
     },
-    [closeModal, setCustomerInfo, setOrderType],
+    [buildCustomerInfo, closeModal, setCustomerInfo, setOrderType],
   );
 
   const handleIncomingCall = useCallback(
@@ -115,11 +118,30 @@ export function useCallHandler() {
     closeModal();
   }, [closeModal]);
 
+  const startNewCustomerFromPending = useCallback(() => {
+    if (!pendingCall) return;
+    const singleAddress =
+      pendingCall.addresses?.length === 1 ? pendingCall.addresses[0] : undefined;
+    const info = buildCustomerInfo(pendingCall, singleAddress);
+    setCustomerInfo(info);
+    const wantsDelivery = Boolean(singleAddress) || Boolean(info.postcode) || Boolean(info.address);
+    setOrderType(wantsDelivery ? "delivery" : "collection");
+    setAddressOptions([]);
+    openModal("customer");
+  }, [buildCustomerInfo, openModal, pendingCall, setCustomerInfo, setOrderType]);
+
+  const resolvePendingCall = useCallback(() => {
+    setPendingCall(null);
+    setAddressOptions([]);
+  }, []);
+
   return {
     lastCall,
     pendingCall,
     addressOptions,
     selectAddress,
+    startNewCustomerFromPending,
+    resolvePendingCall,
     clearCall,
     isConnected,
   };
