@@ -110,19 +110,30 @@ export const apiClient = {
 
   async fetchOrders(date?: string): Promise<{ orders: ArchivedOrder[] }> {
     const query = date ? `?date=${date}` : "";
-    return request(`/orders${query}`);
+    return request(`/orders${query}`, {
+      headers: adminAuthHeaders(),
+    });
   },
 
   async deleteOrder(id: number): Promise<void> {
-    return request(`/orders/${id}`, { method: "DELETE" });
+    return request(`/orders/${id}`, {
+      method: "DELETE",
+      headers: adminAuthHeaders(),
+    });
   },
 
   async deleteOrdersByDate(date: string): Promise<void> {
-    return request(`/orders?date=${date}`, { method: "DELETE" });
+    return request(`/orders?date=${date}`, {
+      method: "DELETE",
+      headers: adminAuthHeaders(),
+    });
   },
 
   async reprintOrder(id: number): Promise<{ printed: boolean }> {
-    return request(`/orders/${id}/reprint`, { method: "POST" });
+    return request(`/orders/${id}/reprint`, {
+      method: "POST",
+      headers: adminAuthHeaders(),
+    });
   },
 
   async cleanupOrders(): Promise<{ success: boolean; deletedCount: number }> {
@@ -206,6 +217,29 @@ export const apiClient = {
     return request("/addresses/verify", {
       method: "POST",
       body: JSON.stringify({ phone, addressData }),
+    });
+  },
+
+  // Calls
+  async dial(phone: string): Promise<{ ok: boolean; phone: string; provider?: string }> {
+    return request("/calls/dial", {
+      method: "POST",
+      body: JSON.stringify({ phone }),
+    });
+  },
+
+  async updateCallSession(
+    callId: number,
+    data: {
+      selectedCustomerPhone?: string;
+      selectedCustomerName?: string;
+      selectedAddress?: string;
+      notes?: string;
+    },
+  ): Promise<{ ok: boolean; callId: number }> {
+    return request("/calls/session", {
+      method: "POST",
+      body: JSON.stringify({ callId, ...data }),
     });
   },
 };

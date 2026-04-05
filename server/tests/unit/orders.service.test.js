@@ -132,6 +132,26 @@ describe("Orders Service", () => {
         }),
       ).not.toThrow();
     });
+
+    it("recalculates totals and ignores tampered subtotal/total values", () => {
+      repo.createOrder.mockReturnValue({ id: 1 });
+
+      service.createOrder({
+        orderType: "collection",
+        items: [{ name: "Beef", price: 7.5, quantity: 2 }],
+        subtotal: 0.01,
+        total: 0.01,
+        deliveryCharge: 999,
+      });
+
+      expect(repo.createOrder).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          subtotal: 15,
+          deliveryCharge: 0,
+          total: 15,
+        }),
+      });
+    });
   });
 
   describe("createOrder", () => {
@@ -145,7 +165,15 @@ describe("Orders Service", () => {
 
       const result = service.createOrder(orderData);
 
-      expect(repo.createOrder).toHaveBeenCalledWith({ data: orderData });
+      expect(repo.createOrder).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          orderType: "collection",
+          items: [{ name: "Chips", price: 2, quantity: 1 }],
+          subtotal: 2,
+          deliveryCharge: 0,
+          total: 2,
+        }),
+      });
       expect(result).toEqual(expectedResult);
     });
 
@@ -209,7 +237,15 @@ describe("Orders Service", () => {
         orderId: 1,
         printed: true,
       });
-      expect(repo.createOrder).toHaveBeenCalledWith({ data: orderData });
+      expect(repo.createOrder).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          orderType: "collection",
+          items: [{ name: "Chips", price: 2, quantity: 1 }],
+          subtotal: 2,
+          deliveryCharge: 0,
+          total: 2,
+        }),
+      });
       expect(printReceipt).toHaveBeenCalledWith(archived);
     });
 

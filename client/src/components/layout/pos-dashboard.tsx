@@ -8,6 +8,7 @@ import { PrintQueueBanner } from "./print-queue-banner";
 import { LoaderSplash } from "../ui/loader-splash";
 import { useCallHandler } from "../../hooks/useCallHandler";
 import { useUI } from "../../context/UIContext";
+import { apiClient } from "../../api/client";
 
 const ItemOptionsModal = lazy(() =>
   import("../modals/item-options-modal").then((m) => ({
@@ -125,7 +126,15 @@ export function PosDashboard() {
     decrementItem,
   } = useOrder();
   const { activeModal, openModal, closeModal } = useUI();
-  const { addressOptions, selectAddress, clearCall } = useCallHandler();
+  const {
+    pendingCall,
+    addressOptions,
+    selectAddress,
+    startNewCustomerFromPending,
+    resolvePendingCall,
+    attachPendingCallSelection,
+    clearCall,
+  } = useCallHandler();
 
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [isMenuLoading, setIsMenuLoading] = useState(true);
@@ -371,6 +380,14 @@ export function PosDashboard() {
     }
   }, [isHappyMealSelected, setIsIncMode, setIsSwapMode]);
 
+  const handleDialCustomerPhone = useCallback(async (phone: string) => {
+    try {
+      await apiClient.dial(phone);
+    } catch (error) {
+      console.error("Failed to initiate dial command", error);
+    }
+  }, []);
+
   return (
     <div className="h-screen">
       <div className="mx-auto flex h-full max-w-[1600px] flex-col gap-2 px-2 py-2">
@@ -403,6 +420,7 @@ export function PosDashboard() {
               onChangeOrderType={setOrderType}
               customerInfo={order.customerInfo}
               onCustomerInfoClick={() => openModal("customer")}
+              onDialPhone={handleDialCustomerPhone}
               onDuplicateItem={handleDuplicateItem}
               onModifyItem={handleModifyItem}
               onFocItem={handleFocItem}
@@ -481,14 +499,19 @@ export function PosDashboard() {
             <DeliveryAddressModal
               key="address-modal"
               customerInfo={order.customerInfo || {}}
+              pendingCall={pendingCall}
+              onUsePendingCall={resolvePendingCall}
+              onDismissPendingCall={resolvePendingCall}
               onSave={(info) => {
+                attachPendingCallSelection(info, info.deliveryInstructions);
                 setCustomerInfo(info);
                 setIsAddressModalOpen(false);
                 closeModal();
+                resolvePendingCall();
               }}
               onClose={() => {
                 setIsAddressModalOpen(false);
-                closeModal();
+                clearCall();
               }}
             />
           )}
@@ -498,6 +521,7 @@ export function PosDashboard() {
               key="address-selection-modal"
               addresses={addressOptions}
               onSelect={selectAddress}
+              onCreateNew={startNewCustomerFromPending}
               onClose={clearCall}
             />
           )}

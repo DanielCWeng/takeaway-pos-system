@@ -120,4 +120,16 @@ describe("apiClient", () => {
       }),
     );
   });
+
+  it("posts dial commands to /calls/dial", async () => {
+    global.fetch = vi.fn().mockResolvedValue(jsonResponse({ ok: true, phone: "07123456789" }));
+
+    const result = await apiClient.dial("07 123 456 789");
+
+    expect(result).toEqual({ ok: true, phone: "07123456789" });
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/calls/dial"),
+      expect.objectContaining({ method: "POST" }),
+    );
+  });
 });

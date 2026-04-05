@@ -40,12 +40,16 @@ describe("Caller ID Service", () => {
 
     expect(customerService.getOrCreateCustomer).toHaveBeenCalledWith(phone);
     expect(customerService.enrichCustomerAddress).toHaveBeenCalledWith(phone, "NG9 8GF");
-    expect(broadcast).toHaveBeenCalledWith("incoming_call", {
-      phone,
-      customer: mockCustomer,
-      addresses: [mockAddress],
-      distance: "1.20",
-    });
+    expect(broadcast).toHaveBeenCalledWith(
+      "incoming_call",
+      expect.objectContaining({
+        phone,
+        customer: mockCustomer,
+        addresses: [mockAddress],
+        distance: "1.20",
+        mode: "single_address",
+      }),
+    );
   });
 
   it("normalizes phone number by stripping non-digits", async () => {
@@ -62,6 +66,7 @@ describe("Caller ID Service", () => {
       "incoming_call",
       expect.objectContaining({
         phone: normPhone,
+        mode: "none",
       }),
     );
   });
@@ -90,6 +95,27 @@ describe("Caller ID Service", () => {
         phone: "07911123456",
         customer: null,
         addresses: [],
+        mode: "none",
+      }),
+    );
+  });
+
+  it("emits incoming_call_multi_address when customer-linked addresses are multiple", async () => {
+    const phone = "07911123456";
+    const mockCustomer = { phone, postcode: "NG9 8GF" };
+    const addresses = [{ line1: "1 A St" }, { line1: "2 B St" }];
+    customerService.getOrCreateCustomer.mockReturnValue(mockCustomer);
+    customerService.enrichCustomerAddress.mockResolvedValue({ customer: mockCustomer, addresses });
+
+    await handlePhoneDetected(phone, { callId: 42, source: "tapi" });
+
+    expect(broadcast).toHaveBeenCalledWith(
+      "incoming_call_multi_address",
+      expect.objectContaining({
+        phone,
+        addresses,
+        callId: 42,
+        mode: "multi_address",
       }),
     );
   });

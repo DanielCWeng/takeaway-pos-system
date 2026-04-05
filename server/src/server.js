@@ -25,16 +25,16 @@ import { openDb, runMigrations, closeDb } from "./infrastructure/db.js";
 import { logger } from "./infrastructure/logger.js";
 import { apiRouter, globalErrorHandler } from "./api/router.js";
 import { createWsServer, broadcast, closeWsServer } from "./api/websocket.js";
+import { createRateLimiter } from "./shared/middleware/rateLimit.js";
 import { closePostcodeDb } from "./shared/postcodes.js";
 import {
   startListening as startCallerIdListening,
   stopListening as stopCallerIdListening,
 } from "./hardware/callerIdDevice.js";
 import {
-  startListening as startTapiListening,
-  stopListening as stopTapiListening,
-} from "./hardware/tapiDevice.js";
-import { startBridge, stopBridge } from "./hardware/tapiBridgeProcess.js";
+  startListening as startTelephonyListening,
+  stopListening as stopTelephonyListening,
+} from "./hardware/telephonyDevice.js";
 import {
   init as initCallerIdService,
   handlePhoneDetected,
@@ -65,6 +65,14 @@ if (!config.security.adminApiToken) {
 // ---------------------------------------------------------------------------
 
 const app = express();
+const apiRateLimiter = createRateLimiter({
+  windowMs: config.security.apiRateLimitWindowMs,
+  maxRequests: config.security.apiRateLimitMaxRequests,
+  maxBuckets: config.security.apiRateLimitMaxBuckets,
+  trustProxy: config.security.trustProxy,
+  scope: "api",
+});
+app.set("trust proxy", config.security.trustProxy);
 
 // Enable Cross-Origin Resource Sharing (CORS) for the frontend
 app.use(
@@ -111,7 +119,7 @@ app.use((req, res, next) => {
 });
 
 // Mount all API routes under /api
-app.use("/api", apiRouter);
+app.use("/api", apiRateLimiter, apiRouter);
 
 // Global error handler — must be last
 app.use(globalErrorHandler);
@@ -142,17 +150,18 @@ const server = app.listen(config.port, () => {
     });
   });
 
-  if (config.tapi.bridgePort > 0) {
-    // Launch the C# bridge first, then open the WS connection to it
-    startBridge();
-    startTapiListening({
-      onOffering:     (phone, callId) => void handleOffering(phone, callId),
-      onConnected:    (callId)        => handleConnected(callId),
+  Promise.resolve(
+    startTelephonyListening({
+      onOffering: (phone, callId) => void handleOffering(phone, callId),
+      onConnected: (callId) => handleConnected(callId),
       onDisconnected: (callId, phone, duration) => void handleDisconnected(callId, phone, duration),
+    }),
+  ).catch((err) => {
+    logger.error("Telephony listener failed to start", {
+      hardware: true,
+      error: err?.message ?? String(err),
     });
-  } else {
-    logger.info("TAPI integration disabled (TAPI_BRIDGE_PORT=0)");
-  }
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -169,12 +178,7 @@ function shutdown(signal) {
     // ignore shutdown cleanup errors
   }
   try {
-    stopTapiListening();
-  } catch (e) {
-    // ignore shutdown cleanup errors
-  }
-  try {
-    stopBridge();
+    stopTelephonyListening();
   } catch (e) {
     // ignore shutdown cleanup errors
   }
