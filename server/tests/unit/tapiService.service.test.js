@@ -12,6 +12,20 @@ vi.mock("../../src/infrastructure/logger.js", () => ({
   },
 }));
 
+const callSessions = vi.hoisted(() => ({
+  markCallOffered: vi.fn(),
+  markCallConnected: vi.fn(),
+  markCallEnded: vi.fn(),
+  getCallSession: vi.fn(),
+}));
+
+vi.mock("../../src/domains/calls/callSessions.service.js", () => ({
+  markCallOffered: callSessions.markCallOffered,
+  markCallConnected: callSessions.markCallConnected,
+  markCallEnded: callSessions.markCallEnded,
+  getCallSession: callSessions.getCallSession,
+}));
+
 import { getDb } from "../../src/infrastructure/db.js";
 import {
   init,
@@ -23,6 +37,7 @@ import {
 describe("tapiService", () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    callSessions.getCallSession.mockReturnValue(null);
   });
 
   afterEach(() => {
@@ -48,7 +63,7 @@ describe("tapiService", () => {
 
     vi.setSystemTime(new Date("2026-04-05T10:00:00.000Z"));
     await handleOffering("07911123456", 10);
-    expect(detected).toHaveBeenCalledWith("07911123456");
+    expect(detected).toHaveBeenCalledWith("07911123456", { callId: 10, source: "tapi" });
 
     vi.setSystemTime(new Date("2026-04-05T10:00:05.000Z"));
     handleConnected(10);
@@ -77,5 +92,29 @@ describe("tapiService", () => {
     expect(durationSeconds).toBe(7);
     expect(endedAtIso).toBe("2026-04-05T11:00:00.000Z");
     expect(startedAtIso).toBe("2026-04-05T10:59:53.000Z");
+  });
+
+  it("uses selected call-session metadata when available", async () => {
+    const { insertRun } = mockDb("Fallback");
+    callSessions.getCallSession.mockReturnValue({
+      callId: 88,
+      selectedCustomerPhone: "07911000000",
+      selectedCustomerName: "Chosen Customer",
+      selectedAddress: "42 Chosen Road, NG9 8GF",
+      notes: "Gate code 1234",
+    });
+    init({ handlePhoneDetected: vi.fn().mockResolvedValue(undefined) });
+
+    vi.setSystemTime(new Date("2026-04-05T12:00:00.000Z"));
+    await handleDisconnected(88, "", 5);
+
+    const [phone, , , , customerName, notes, callId, selectedPhone, selectedAddress] =
+      insertRun.mock.calls[0];
+    expect(phone).toBe("07911000000");
+    expect(customerName).toBe("Chosen Customer");
+    expect(notes).toBe("Gate code 1234");
+    expect(callId).toBe(88);
+    expect(selectedPhone).toBe("07911000000");
+    expect(selectedAddress).toBe("42 Chosen Road, NG9 8GF");
   });
 });
