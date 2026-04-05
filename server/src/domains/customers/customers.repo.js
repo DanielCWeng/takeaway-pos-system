@@ -40,6 +40,24 @@ function rowToCustomer(row) {
   };
 }
 
+function rowToCustomerAddress(row) {
+  return {
+    id: row.id,
+    customerPhone: row.customer_phone,
+    houseNumber: row.house_number ?? null,
+    line1: row.line1,
+    line2: row.line2 ?? null,
+    town: row.town ?? null,
+    postcode: row.postcode ?? null,
+    latitude: row.latitude ?? null,
+    longitude: row.longitude ?? null,
+    usageCount: row.usage_count ?? 1,
+    lastUsedAt: row.last_used_at,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Statement Cache
 // ---------------------------------------------------------------------------
@@ -50,6 +68,8 @@ const stmts = {
   upsertIncrement: null,
   increment: null,
   deleteByPhone: null,
+  listAddressesByCustomer: null,
+  upsertCustomerAddress: null,
 };
 
 function getStmts() {
@@ -96,6 +116,32 @@ function getStmts() {
       RETURNING *
     `)),
     deleteByPhone: (stmts.deleteByPhone ??= db.prepare("DELETE FROM customers WHERE phone = ?")),
+    listAddressesByCustomer: (stmts.listAddressesByCustomer ??= db.prepare(`
+      SELECT *
+      FROM customer_addresses
+      WHERE customer_phone = ?
+      ORDER BY last_used_at DESC, id DESC
+    `)),
+    upsertCustomerAddress: (stmts.upsertCustomerAddress ??= db.prepare(`
+      INSERT INTO customer_addresses (
+        customer_phone, house_number, line1, line2, town, postcode,
+        latitude, longitude, usage_count, last_used_at, created_at, updated_at
+      )
+      VALUES (
+        @customerPhone, @houseNumber, @line1, @line2, @town, @postcode,
+        @latitude, @longitude, 1, @now, @now, @now
+      )
+      ON CONFLICT(customer_phone, line1, line2, postcode)
+      DO UPDATE SET
+        house_number = COALESCE(excluded.house_number, customer_addresses.house_number),
+        town = COALESCE(excluded.town, customer_addresses.town),
+        latitude = COALESCE(excluded.latitude, customer_addresses.latitude),
+        longitude = COALESCE(excluded.longitude, customer_addresses.longitude),
+        usage_count = customer_addresses.usage_count + 1,
+        last_used_at = excluded.last_used_at,
+        updated_at = excluded.updated_at
+      RETURNING *
+    `)),
   };
 }
 
@@ -189,6 +235,19 @@ export function updateAddress(phone, addressData) {
     UPDATE customers SET ${updates.join(", ")} WHERE phone = @phone
   `,
   ).run(params);
+
+  const line1 = addressData.line1 ?? addressData.street;
+  if (line1 && typeof line1 === "string") {
+    upsertCustomerAddress(phone, {
+      houseNumber: addressData.houseNumber,
+      line1,
+      line2: addressData.line2,
+      town: addressData.town,
+      postcode: addressData.postcode,
+      latitude: addressData.latitude,
+      longitude: addressData.longitude,
+    });
+  }
 }
 
 /**
@@ -239,6 +298,51 @@ export function incrementCallCountAndReturn(phone) {
  */
 export function deleteByPhone(phone) {
   getStmts().deleteByPhone.run(phone);
+}
+
+/**
+ * List known addresses for a customer (most recently used first).
+ *
+ * @param {string} phone
+ * @returns {Array<object>}
+ */
+export function listAddressesByCustomer(phone) {
+  return getStmts().listAddressesByCustomer.all(phone).map(rowToCustomerAddress);
+}
+
+/**
+ * Upsert a normalized customer-linked address row.
+ *
+ * @param {string} phone
+ * @param {{
+ *   houseNumber?: string,
+ *   line1?: string,
+ *   line2?: string,
+ *   town?: string,
+ *   postcode?: string,
+ *   latitude?: number|null,
+ *   longitude?: number|null
+ * }} address
+ * @returns {object | null}
+ */
+export function upsertCustomerAddress(phone, address) {
+  const line1 = typeof address?.line1 === "string" ? address.line1.trim() : "";
+  if (!line1) return null;
+
+  const now = new Date().toISOString();
+  const row = getStmts().upsertCustomerAddress.get({
+    customerPhone: phone,
+    houseNumber: address?.houseNumber ?? null,
+    line1,
+    line2: address?.line2 ?? "",
+    town: address?.town ?? null,
+    postcode: address?.postcode ?? "",
+    latitude: address?.latitude ?? null,
+    longitude: address?.longitude ?? null,
+    now,
+  });
+
+  return row ? rowToCustomerAddress(row) : null;
 }
 /**
  * Update a customer's name by their phone number.
