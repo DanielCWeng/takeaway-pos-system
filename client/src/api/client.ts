@@ -12,8 +12,8 @@ import type { FullOrder, ArchivedOrder, Customer, Address, ApiError } from "../t
 const API_BASE_URL = config.apiUrl;
 
 function adminAuthHeaders(): Record<string, string> {
-  if (!config.adminPassword) return {};
-  return { Authorization: `Bearer ${config.adminPassword}` };
+  if (!config.adminApiToken) return {};
+  return { Authorization: `Bearer ${config.adminApiToken}` };
 }
 
 function redactApiPath(path: string) {

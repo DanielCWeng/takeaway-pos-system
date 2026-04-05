@@ -49,7 +49,7 @@ cp .env.example .env
 
 - `VITE_API_URL` default: `http://localhost:4000/api`
 - `VITE_WS_URL` default: `ws://localhost:4000`
-- `VITE_ADMIN_PASSWORD` for Admin screen unlock
+- `VITE_ADMIN_API_TOKEN` for Admin screen unlock and admin API access (must match server `ADMIN_API_TOKEN`)
 
 ## Run Locally
 
@@ -92,4 +92,3 @@ Current tests focus on hooks and core order-context behavior. UI-heavy modal/lay
 - Runtime monitor reports global errors to the server telemetry endpoint
 - Chunk-load failures trigger a one-time reload attempt per browser session
 - Order draft and print queue state are persisted in `localStorage`
-
