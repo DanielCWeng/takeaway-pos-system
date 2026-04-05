@@ -72,6 +72,8 @@ const envSchema = z.object({
 
   // Optional — override path to TapiBridge.exe (absolute or relative to repo root)
   TAPI_BRIDGE_EXE_PATH: z.string().optional().default(""),
+  // Optional — shared secret used by Node <-> bridge DIAL commands
+  TAPI_BRIDGE_TOKEN: z.string().optional().default(""),
 
   DELIVERY_BASE_CHARGE: z
     .string()
@@ -230,6 +232,7 @@ export const config = {
   tapi: {
     bridgePort: env.TAPI_BRIDGE_PORT,
     bridgeExePath: env.TAPI_BRIDGE_EXE_PATH,
+    bridgeToken: env.TAPI_BRIDGE_TOKEN,
   },
 
   business: {

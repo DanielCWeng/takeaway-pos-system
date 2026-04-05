@@ -26,6 +26,7 @@
 import { WebSocket } from "ws";
 import { config } from "../config/index.js";
 import { logger } from "../infrastructure/logger.js";
+import { markBridgeHealthy } from "./tapiBridgeProcess.js";
 
 const INITIAL_RECONNECT_DELAY_MS = 3_000;
 const MAX_RECONNECT_DELAY_MS = 30_000;
@@ -38,6 +39,7 @@ let reconnectTimer = null;
 
 let reconnectAttempt = 0;
 let stopped = true;
+let bridgeReady = false;
 
 /** @type {((phone: string) => void) | null} */
 let _onOffering = null;
@@ -106,7 +108,6 @@ function connect() {
   ws = new WebSocket(url);
 
   ws.once("open", () => {
-    reconnectAttempt = 0;
     logger.info("TAPI bridge connected", { hardware: true, url });
   });
 
@@ -123,6 +124,7 @@ function connect() {
   });
 
   ws.once("close", (code, reason) => {
+    bridgeReady = false;
     if (!stopped) {
       logger.warn("TAPI bridge connection closed", {
         hardware: true,
@@ -145,6 +147,9 @@ function connect() {
 function handleMessage(msg) {
   switch (msg.type) {
     case "READY":
+      bridgeReady = true;
+      reconnectAttempt = 0;
+      markBridgeHealthy();
       logger.info("TAPI bridge ready", { hardware: true });
       break;
 
@@ -216,6 +221,7 @@ export function startListening({ onOffering, onConnected, onDisconnected }) {
   _onDisconnected = onDisconnected ?? null;
 
   stopped = false;
+  bridgeReady = false;
   reconnectAttempt = 0;
 
   connect();
@@ -226,6 +232,7 @@ export function startListening({ onOffering, onConnected, onDisconnected }) {
  */
 export function stopListening() {
   stopped = true;
+  bridgeReady = false;
   _onOffering = null;
   _onConnected = null;
   _onDisconnected = null;
@@ -238,19 +245,33 @@ export function stopListening() {
 
 /**
  * Send a click-to-dial command to the bridge.
- * Silently no-ops if the bridge is not connected.
+ * Returns false when bridge is not connected/ready.
  *
  * @param {string} phone
+ * @returns {boolean}
  */
 export function dial(phone) {
-  if (!ws || ws.readyState !== WebSocket.OPEN) {
+  if (!isBridgeConnected()) {
     logger.warn("dial() called but TAPI bridge is not connected", { hardware: true, phone });
-    return;
+    return false;
   }
 
-  const payload = JSON.stringify({ type: "DIAL", phone });
+  const payload = JSON.stringify({
+    type: "DIAL",
+    phone,
+    token: config.tapi.bridgeToken || undefined,
+  });
   ws.send(payload, (err) => {
     if (err) logger.error("Failed to send DIAL command", { hardware: true, error: err.message });
     else logger.info("DIAL command sent", { hardware: true, phone });
   });
+  return true;
+}
+
+/**
+ * True only when websocket is open and bridge has completed protocol READY.
+ * @returns {boolean}
+ */
+export function isBridgeConnected() {
+  return Boolean(ws && ws.readyState === WebSocket.OPEN && bridgeReady);
 }
