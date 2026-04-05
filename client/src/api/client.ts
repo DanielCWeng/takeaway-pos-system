@@ -186,4 +186,19 @@ export const apiClient = {
       body: JSON.stringify({ phone }),
     });
   },
+
+  async updateCallSession(
+    callId: number,
+    data: {
+      selectedCustomerPhone?: string;
+      selectedCustomerName?: string;
+      selectedAddress?: string;
+      notes?: string;
+    },
+  ): Promise<{ ok: boolean; callId: number }> {
+    return request("/calls/session", {
+      method: "POST",
+      body: JSON.stringify({ callId, ...data }),
+    });
+  },
 };

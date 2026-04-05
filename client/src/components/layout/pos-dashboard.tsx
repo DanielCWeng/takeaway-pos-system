@@ -133,6 +133,7 @@ export function PosDashboard() {
     selectAddress,
     startNewCustomerFromPending,
     resolvePendingCall,
+    attachPendingCallSelection,
     clearCall,
   } = useCallHandler();
 
@@ -503,6 +504,7 @@ export function PosDashboard() {
               onUsePendingCall={resolvePendingCall}
               onDismissPendingCall={resolvePendingCall}
               onSave={(info) => {
+                attachPendingCallSelection(info, info.deliveryInstructions);
                 setCustomerInfo(info);
                 setIsAddressModalOpen(false);
                 closeModal();

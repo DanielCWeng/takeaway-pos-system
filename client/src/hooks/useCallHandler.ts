@@ -13,6 +13,7 @@ import { useCaller } from "../context/CallerContext";
 import { useOrder } from "../context/OrderContext";
 import { useUI } from "../context/UIContext";
 import type { Address, CallDetectedPayload, WebSocketMessage, CustomerInfo } from "../types";
+import { apiClient } from "../api/client";
 
 export function useCallHandler() {
   const { subscribe, isConnected } = useCaller();
@@ -55,6 +56,13 @@ export function useCallHandler() {
   const resolveCustomerInfo = useCallback(
     (payload: CallDetectedPayload, address?: Address) => {
       const info = buildCustomerInfo(payload, address);
+      if (payload.callId) {
+        void apiClient.updateCallSession(payload.callId, {
+          selectedCustomerPhone: info.phone,
+          selectedCustomerName: info.name,
+          selectedAddress: info.address,
+        });
+      }
       setCustomerInfo(info);
       const wantsDelivery = Boolean(address) || Boolean(info.postcode) || Boolean(info.address);
       setOrderType(wantsDelivery ? "delivery" : "collection");
@@ -95,7 +103,7 @@ export function useCallHandler() {
 
   useEffect(() => {
     const unsubscribe = subscribe((msg: WebSocketMessage) => {
-      if (msg.type === "incoming_call") {
+      if (msg.type === "incoming_call" || msg.type === "incoming_call_multi_address") {
         handleIncomingCall(msg.payload);
       }
     });
@@ -135,6 +143,19 @@ export function useCallHandler() {
     setAddressOptions([]);
   }, []);
 
+  const attachPendingCallSelection = useCallback(
+    (info: CustomerInfo, notes?: string) => {
+      if (!pendingCall?.callId) return;
+      void apiClient.updateCallSession(pendingCall.callId, {
+        selectedCustomerPhone: info.phone,
+        selectedCustomerName: info.name,
+        selectedAddress: info.address,
+        notes,
+      });
+    },
+    [pendingCall],
+  );
+
   return {
     lastCall,
     pendingCall,
@@ -142,6 +163,7 @@ export function useCallHandler() {
     selectAddress,
     startNewCustomerFromPending,
     resolvePendingCall,
+    attachPendingCallSelection,
     clearCall,
     isConnected,
   };

@@ -136,12 +136,19 @@ export interface CallDetectedPayload {
   customer: Customer | null;
   addresses: Address[];
   distance: number | null;
+  callId?: number;
+  mode?: "none" | "single_address" | "multi_address";
 }
 
-export type WebSocketMessage = {
-  type: "incoming_call";
-  payload: CallDetectedPayload;
-};
+export type WebSocketMessage =
+  | {
+      type: "incoming_call";
+      payload: CallDetectedPayload;
+    }
+  | {
+      type: "incoming_call_multi_address";
+      payload: CallDetectedPayload;
+    };
 
 export interface ApiError {
   error: {
