@@ -32,7 +32,9 @@ export function DeliveryAddressModal({ customerInfo, onClose, onSave }: Delivery
     street: "",
     town: "",
     deliveryInstructions: "",
-    distance: 0,
+    distance: null,
+    latitude: null,
+    longitude: null,
     ...customerInfo,
   });
 
@@ -57,6 +59,8 @@ export function DeliveryAddressModal({ customerInfo, onClose, onSave }: Delivery
           street: addr.line1,
           town: addr.town || "",
           postcode: addr.postcode,
+          latitude: addr.latitude,
+          longitude: addr.longitude,
         }));
       } else if (addresses.length > 1) {
         setSearchResults(addresses);
@@ -85,7 +89,9 @@ export function DeliveryAddressModal({ customerInfo, onClose, onSave }: Delivery
           houseNumber: customer.houseNumber || "",
           street: customer.street || "",
           town: customer.town || "",
-          distance: customer.distance || 0,
+          distance: customer.distance ?? null,
+          latitude: customer.latitude ?? null,
+          longitude: customer.longitude ?? null,
         }));
       }
     } catch (err) {
@@ -101,6 +107,8 @@ export function DeliveryAddressModal({ customerInfo, onClose, onSave }: Delivery
       street: addr.line1,
       town: addr.town || "",
       postcode: addr.postcode,
+      latitude: addr.latitude,
+      longitude: addr.longitude,
     }));
     setShowAddressPicker(false);
   };
@@ -112,13 +120,23 @@ export function DeliveryAddressModal({ customerInfo, onClose, onSave }: Delivery
         line1: formData.street,
         town: formData.town,
         postcode: formData.postcode,
+        latitude:
+          formData.latitude !== undefined && formData.latitude !== null
+            ? Number(formData.latitude)
+            : undefined,
+        longitude:
+          formData.longitude !== undefined && formData.longitude !== null
+            ? Number(formData.longitude)
+            : undefined,
       };
       const { customer } = await apiClient.verifyAddress(formData.phone || "0000", addressData);
 
       onSave({
         ...formData,
         phone: customer.phone,
-        distance: customer.distance || 0,
+        distance: customer.distance ?? formData.distance ?? null,
+        latitude: customer.latitude ?? formData.latitude ?? null,
+        longitude: customer.longitude ?? formData.longitude ?? null,
         address:
           `${formData.houseNumber || ""} ${formData.street || ""}, ${formData.town || ""}, ${formData.postcode || ""}`
             .trim()
@@ -346,7 +364,7 @@ export function DeliveryAddressModal({ customerInfo, onClose, onSave }: Delivery
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-muted-foreground">Distance:</span>
                   <span className="font-mono font-bold text-accent">
-                    {formData.distance ? `${formData.distance.toFixed(2)} mi` : "---"}
+                    {formData.distance ? `${Number(formData.distance).toFixed(2)} mi` : "---"}
                   </span>
                 </div>
                 <div className="flex justify-between items-center text-xs">

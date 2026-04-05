@@ -29,18 +29,27 @@ export function useCallHandler() {
     (payload: CallDetectedPayload, address?: Address) => {
       const customerHouseNumber = payload.customer?.houseNumber ?? undefined;
       const customerStreet = payload.customer?.street ?? undefined;
-      const fallbackAddress =
-        [customerHouseNumber, customerStreet].filter(Boolean).join(" ") || undefined;
+      const resolvedStreet = address?.line1 ?? customerStreet;
+      const resolvedTown = address?.town ?? payload.customer?.town ?? undefined;
+      const fallbackAddress = [customerHouseNumber, resolvedStreet].filter(Boolean).join(" ");
+      const resolvedAddress =
+        address && address.line1
+          ? [customerHouseNumber, address.line1, address.line2, address.town]
+              .filter(Boolean)
+              .join(", ")
+          : fallbackAddress || undefined;
 
       const info: CustomerInfo = {
         phone: payload.phone,
         name: payload.customer?.name ?? undefined,
-        address:
-          address && address.line1
-            ? [address.line1, address.line2, address.town].filter(Boolean).join(", ")
-            : fallbackAddress,
+        address: resolvedAddress,
+        houseNumber: customerHouseNumber,
+        street: resolvedStreet,
+        town: resolvedTown,
         postcode: address?.postcode ?? payload.customer?.postcode ?? undefined,
         distance: payload.distance ?? payload.customer?.distance ?? undefined,
+        latitude: address?.latitude ?? payload.customer?.latitude ?? undefined,
+        longitude: address?.longitude ?? payload.customer?.longitude ?? undefined,
       };
 
       setCustomerInfo(info);

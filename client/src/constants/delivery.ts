@@ -9,7 +9,7 @@ export const DELIVERY_BASE_CHARGE = 2.0;
 export const DELIVERY_DISTANCE_THRESHOLD_MILES = 2;
 export const DELIVERY_RATE_PER_MILE_OVER_THRESHOLD = 0.5;
 
-export function calculateDeliveryCharge(distanceInMiles?: number): number {
+export function calculateDeliveryCharge(distanceInMiles?: number | null): number {
   if (!distanceInMiles || distanceInMiles <= DELIVERY_DISTANCE_THRESHOLD_MILES) {
     return DELIVERY_BASE_CHARGE;
   }

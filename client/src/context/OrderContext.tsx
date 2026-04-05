@@ -295,7 +295,16 @@ function shouldQueuePrintError(error: unknown) {
 }
 
 function getErrorMessage(error: unknown) {
-  if (error instanceof Error) return error.message;
+  if (error instanceof Error) {
+    const withDetails = error as Error & { details?: Record<string, string[]> };
+    if (withDetails.details && typeof withDetails.details === "object") {
+      const fieldErrors = Object.entries(withDetails.details)
+        .map(([field, errors]) => `${field}: ${errors.join(", ")}`)
+        .join("; ");
+      if (fieldErrors) return `${error.message} (${fieldErrors})`;
+    }
+    return error.message;
+  }
   return "Unknown print error";
 }
 
@@ -716,7 +725,24 @@ export function OrderProvider({ children }: { children: ReactNode }) {
       const payload: FullOrder = {
         ...source,
         items: source.items.map((item) => ({ ...item })),
-        customerInfo: source.customerInfo ? { ...source.customerInfo } : undefined,
+        customerInfo: source.customerInfo
+          ? {
+              ...source.customerInfo,
+              distance:
+                source.customerInfo.distance !== undefined && source.customerInfo.distance !== null
+                  ? Number(source.customerInfo.distance)
+                  : undefined,
+              latitude:
+                source.customerInfo.latitude !== undefined && source.customerInfo.latitude !== null
+                  ? Number(source.customerInfo.latitude)
+                  : undefined,
+              longitude:
+                source.customerInfo.longitude !== undefined &&
+                source.customerInfo.longitude !== null
+                  ? Number(source.customerInfo.longitude)
+                  : undefined,
+            }
+          : undefined,
         payment: { ...source.payment },
         subtotal: totals.subtotal,
         deliveryCharge: totals.deliveryCharge,

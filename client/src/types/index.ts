@@ -65,10 +65,13 @@ export interface CustomerInfo {
   street?: string;
   town?: string;
   postcode?: string;
-  distance?: number;
+  distance?: number | null;
+  latitude?: number | null;
+  longitude?: number | null;
   mapRef?: string;
   deliveryInstructions?: string;
   deliveryTime?: string;
+  isAnonymised?: boolean;
 }
 
 export interface PaymentDetails {
