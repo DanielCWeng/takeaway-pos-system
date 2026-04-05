@@ -103,7 +103,7 @@ export async function handleDisconnected(callId, phone, durationSeconds) {
     return;
   }
 
-  const endedAt  = new Date();
+  const endedAt = new Date();
   const startedAt = call?.startedAt ?? new Date(endedAt.getTime() - durationSeconds * 1_000);
 
   try {
@@ -118,10 +118,12 @@ export async function handleDisconnected(callId, phone, durationSeconds) {
       // Non-fatal — log without name
     }
 
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO call_logs (phone, call_started_at, call_ended_at, duration_seconds, customer_name)
       VALUES (?, ?, ?, ?, ?)
-    `).run(
+    `,
+    ).run(
       resolvedPhone,
       startedAt.toISOString(),
       endedAt.toISOString(),

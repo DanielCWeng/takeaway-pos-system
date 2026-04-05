@@ -38,7 +38,7 @@ const DEFAULT_EXE_PATH = join(
 );
 
 const INITIAL_RESTART_DELAY_MS = 3_000;
-const MAX_RESTART_DELAY_MS     = 60_000;
+const MAX_RESTART_DELAY_MS = 60_000;
 
 /** @type {import('child_process').ChildProcess | null} */
 let child = null;
@@ -101,7 +101,11 @@ function spawnBridge() {
     return;
   }
 
-  logger.info("Launching TapiBridge.exe", { hardware: true, exePath, port: config.tapi.bridgePort });
+  logger.info("Launching TapiBridge.exe", {
+    hardware: true,
+    exePath,
+    port: config.tapi.bridgePort,
+  });
 
   child = spawn(exePath, ["--port", String(config.tapi.bridgePort)], {
     stdio: ["ignore", "pipe", "pipe"],

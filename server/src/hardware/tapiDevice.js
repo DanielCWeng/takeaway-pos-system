@@ -211,8 +211,8 @@ export function startListening({ onOffering, onConnected, onDisconnected }) {
     throw new Error("startListening() called while already listening — call stopListening() first");
   }
 
-  _onOffering    = onOffering;
-  _onConnected   = onConnected ?? null;
+  _onOffering = onOffering;
+  _onConnected = onConnected ?? null;
   _onDisconnected = onDisconnected ?? null;
 
   stopped = false;
@@ -226,8 +226,8 @@ export function startListening({ onOffering, onConnected, onDisconnected }) {
  */
 export function stopListening() {
   stopped = true;
-  _onOffering    = null;
-  _onConnected   = null;
+  _onOffering = null;
+  _onConnected = null;
   _onDisconnected = null;
 
   clearReconnectTimer();
