@@ -45,6 +45,10 @@ function getAdminApiErrorMessage(err: unknown, fallback: string) {
   const code = apiErr?.code;
   const status = apiErr?.status;
 
+  if (code === "RATE_LIMITED" || status === 429) {
+    return "Too many failed admin token attempts. Wait a minute, then try again.";
+  }
+
   if (code === "ADMIN_AUTH_NOT_CONFIGURED" || status === 503) {
     return "Server admin auth is not configured. Set ADMIN_API_TOKEN on the server and restart.";
   }
@@ -115,7 +119,12 @@ export function AdminPage({ onClose }: AdminPageProps) {
         setOrders(data.orders);
       } catch (err) {
         console.error("Failed to fetch orders", err);
-        setFetchError("Could not load orders for this date. Check your connection and try again.");
+        setFetchError(
+          getAdminApiErrorMessage(
+            err,
+            "Could not load orders for this date. Check your connection.",
+          ),
+        );
       } finally {
         setIsLoading(false);
       }
@@ -170,12 +179,18 @@ export function AdminPage({ onClose }: AdminPageProps) {
   };
 
   const handleLogin = () => {
-    if (!config.adminPassword) {
-      setLoginError("Admin PIN not configured");
+    if (config.adminTokenMismatch) {
+      setLoginError("Set only VITE_ADMIN_API_TOKEN (or make both keys identical)");
       setPassword("");
       return;
     }
-    if (password === config.adminPassword) {
+
+    if (!config.adminApiToken) {
+      setLoginError("Admin token not configured (VITE_ADMIN_API_TOKEN)");
+      setPassword("");
+      return;
+    }
+    if (password === config.adminApiToken) {
       setIsAuthenticated(true);
       setLoginError("");
     } else {
