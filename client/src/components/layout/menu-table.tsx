@@ -53,23 +53,17 @@ const MenuTableComponent = React.forwardRef<HTMLDivElement, MenuTableProps>((pro
     return () => window.removeEventListener("resize", calculate);
   }, []);
 
-  // Keep a ref so the snap effect can read viewStartIndex without depending on it
-  const viewStartIndexRef = useRef(viewStartIndex);
-  useEffect(() => {
-    viewStartIndexRef.current = viewStartIndex;
-  });
-
-  // Snap the view whenever the selected item is outside the visible range.
-  // This covers category switches, Show All, and any external selection jump.
-  // It does NOT fire on normal within-page navigation (selection stays in range).
-  useEffect(() => {
+  // Snap the view whenever the selected item falls outside the visible range.
+  // Uses the "derived state during render" pattern to avoid setState-in-effect.
+  const [snapDeps, setSnapDeps] = useState({ selectedId, items, itemsPerPage });
+  if (snapDeps.selectedId !== selectedId || snapDeps.items !== items || snapDeps.itemsPerPage !== itemsPerPage) {
+    setSnapDeps({ selectedId, items, itemsPerPage });
     const idx = selectedId ? items.findIndex((i) => i.id === selectedId) : 0;
     const safeIdx = idx === -1 ? 0 : idx;
-    const vsi = viewStartIndexRef.current;
-    if (safeIdx < vsi || safeIdx >= vsi + itemsPerPage) {
+    if (safeIdx < viewStartIndex || safeIdx >= viewStartIndex + itemsPerPage) {
       setViewStartIndex(Math.floor(safeIdx / itemsPerPage) * itemsPerPage);
     }
-  }, [selectedId, items, itemsPerPage]);
+  }
 
   // Distinguish programmatic scrolls from user scrolls to avoid feedback loops
   const isProgrammaticScroll = useRef(false);
