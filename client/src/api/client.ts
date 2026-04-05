@@ -11,7 +11,7 @@ import type { FullOrder, ArchivedOrder, Customer, Address, ApiError } from "../t
 
 const API_BASE_URL = config.apiUrl;
 
-function adminAuthHeaders() {
+function adminAuthHeaders(): Record<string, string> {
   if (!config.adminPassword) return {};
   return { Authorization: `Bearer ${config.adminPassword}` };
 }
@@ -144,7 +144,7 @@ export const apiClient = {
     });
   },
 
-  async exportCustomer(phone: string): Promise<any> {
+  async exportCustomer(phone: string): Promise<unknown> {
     return request(`/customers/${phone}/export`, {
       headers: adminAuthHeaders(),
     });
