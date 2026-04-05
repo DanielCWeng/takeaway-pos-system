@@ -20,6 +20,7 @@ import { haversineInMiles } from "../../shared/haversine.js";
 import { config } from "../../config/index.js";
 import { logger } from "../../infrastructure/logger.js";
 import { ValidationError, NotFoundError } from "../../shared/errors.js";
+import { normaliseUkPhone } from "../../shared/phones.js";
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -43,7 +44,7 @@ function validatePhone(phone) {
     return phone;
   }
 
-  const digits = phone.replace(/\D/g, "");
+  const digits = normaliseUkPhone(phone);
   if (digits.length < 10 || digits.length > 13) {
     throw new ValidationError("Phone number must contain between 10 and 13 digits", {
       field: "phone",
@@ -155,6 +156,53 @@ export function syncCustomerFromOrder(customerInfo) {
 // Phase 2 stubs (require address API / postcode DB)
 // ---------------------------------------------------------------------------
 
+function toKnownAddressShape(address) {
+  return {
+    line1: address.line1 || "",
+    line2: address.line2 || "",
+    town: address.town || "",
+    postcode: address.postcode || "",
+    latitude: address.latitude,
+    longitude: address.longitude,
+    source: "customer_profile",
+  };
+}
+
+function addressMatchesCustomerIdentity(customer, address) {
+  const line1 = (address.line1 || address.street || "").trim().toLowerCase();
+  const line2 = (address.line2 || "").trim().toLowerCase();
+  const joined = `${line1} ${line2}`.trim();
+
+  let hasIdentityAnchor = false;
+
+  if (customer.houseNumber) {
+    hasIdentityAnchor = true;
+    const escaped = customer.houseNumber.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const houseNumberRe = new RegExp(`(^|\\s)${escaped}(\\s|,|$)`, "i");
+    if (!houseNumberRe.test(line1)) return false;
+  }
+
+  if (customer.street) {
+    hasIdentityAnchor = true;
+    const expectedStreet = customer.street.trim().toLowerCase();
+    if (!joined.includes(expectedStreet)) return false;
+  }
+
+  return hasIdentityAnchor;
+}
+
+function mapAddressRecord(addr, postcode) {
+  return {
+    line1: addr.line1 || addr.street || "",
+    line2: addr.line2 || "",
+    town: addr.town || addr.ward || "",
+    postcode: addr.postcode || postcode,
+    latitude: addr.latitude,
+    longitude: addr.longitude,
+    source: addr.source || "local_db",
+  };
+}
+
 /**
  * Enrich a customer's address data using the local database and API fallback.
  *
@@ -178,48 +226,47 @@ export async function enrichCustomerAddress(phone, postcode) {
     throw new NotFoundError(`Customer with phone ${phone} not found`, { phone });
   }
 
-  const addressRecords = postcodes.findAddressesLocally(normPostcode);
-  let addressData = null;
-  let addresses = [];
+  // Source of truth: customer-linked address history.
+  const knownAddresses = repo.listAddressesByCustomer(normPhone);
+  if (knownAddresses.length > 0) {
+    const primary = knownAddresses[0];
+    if (Number.isFinite(primary.latitude) && Number.isFinite(primary.longitude)) {
+      const dist = haversineInMiles(
+        config.address.storeLatitude,
+        config.address.storeLongitude,
+        primary.latitude,
+        primary.longitude,
+      );
+      repo.updateAddress(normPhone, {
+        postcode: primary.postcode,
+        houseNumber: primary.houseNumber,
+        street: primary.line1,
+        town: primary.town,
+        latitude: primary.latitude,
+        longitude: primary.longitude,
+        distance: parseFloat(dist.toFixed(2)),
+      });
+    }
 
-  // If found locally, take the first one
-  if (addressRecords && addressRecords.length > 0) {
-    const first = addressRecords[0];
-    addressData = {
-      postcode: normPostcode,
-      street: first.line1 || first.street || "",
-      town: first.town || first.ward || "",
-      latitude: first.latitude,
-      longitude: first.longitude,
+    return {
+      customer: repo.findByPhone(normPhone),
+      addresses: knownAddresses.map(toKnownAddressShape),
     };
-    addresses = addressRecords.map((row) => ({
-      line1: row.line1 || row.street || "",
-      line2: row.line2 || "",
-      town: row.town || row.ward || "",
-      postcode: row.postcode,
-      latitude: row.latitude,
-      longitude: row.longitude,
-      source: row.source ?? "local_db",
-    }));
   }
 
-  // If not in local DB, hit the API
-  if (!addressData) {
+  if (!normPostcode) {
+    logger.info("Address enrichment skipped: customer has no postcode", { phone: normPhone });
+    return { customer, addresses: [] };
+  }
+
+  let candidates = postcodes
+    .findAddressesLocally(normPostcode)
+    .map((addr) => mapAddressRecord(addr, normPostcode));
+
+  if (candidates.length === 0) {
     const apiResults = await addressClient.findAddressesFromApi(normPostcode);
-
     if (apiResults && apiResults.length > 0) {
-      // For now, we just use the first result to get lat/lng and a sample street
-      // the UI handles specific house number selection later.
-      const first = apiResults[0];
-      addressData = {
-        postcode: normPostcode,
-        street: first.line1 || "", // matches AddressRecord typedef
-        town: first.town || "",
-        latitude: first.latitude,
-        longitude: first.longitude,
-      };
-
-      addresses = apiResults.map((addr) => ({
+      candidates = apiResults.map((addr) => ({
         line1: addr.line1 || "",
         line2: addr.line2 || "",
         town: addr.town || "",
@@ -229,52 +276,68 @@ export async function enrichCustomerAddress(phone, postcode) {
         source: "api",
       }));
 
-      // Save to local DB so we never pay for this postcode again
       postcodes.saveAddresses(
         normPostcode,
         {
-          street: addressData.street,
-          latitude: addressData.latitude,
-          longitude: addressData.longitude,
+          street: candidates[0].line1,
+          town: candidates[0].town,
+          latitude: candidates[0].latitude,
+          longitude: candidates[0].longitude,
         },
-        apiResults,
+        candidates,
       );
     }
   }
 
-  if (addressData) {
-    // Calculate distance
-    const dist = haversineInMiles(
-      config.address.storeLatitude,
-      config.address.storeLongitude,
-      addressData.latitude,
-      addressData.longitude,
-    );
-
-    // Update customer record
-    const updatedData = {
-      postcode: normPostcode,
-      street: addressData.street,
-      town: addressData.town,
-      latitude: addressData.latitude,
-      longitude: addressData.longitude,
-      distance: parseFloat(dist.toFixed(2)),
-    };
-
-    repo.updateAddress(normPhone, updatedData);
-    logger.debug("Customer address enriched", {
+  const matched = candidates.filter((addr) => addressMatchesCustomerIdentity(customer, addr));
+  if (matched.length === 0) {
+    logger.info("Address enrichment found postcode candidates but no customer-identity matches", {
       phone: normPhone,
       postcode: normPostcode,
-      distance: updatedData.distance,
+      candidateCount: candidates.length,
     });
-  } else {
-    logger.info("Address enrichment failed: no data found", {
-      phone: normPhone,
-      postcode: normPostcode,
+    return { customer, addresses: [] };
+  }
+
+  for (const addr of matched) {
+    repo.upsertCustomerAddress(normPhone, {
+      houseNumber: customer.houseNumber ?? undefined,
+      line1: addr.line1,
+      line2: addr.line2,
+      town: addr.town,
+      postcode: addr.postcode,
+      latitude: addr.latitude,
+      longitude: addr.longitude,
     });
   }
 
-  return { customer: repo.findByPhone(normPhone), addresses };
+  const primary = matched[0];
+  if (Number.isFinite(primary.latitude) && Number.isFinite(primary.longitude)) {
+    const dist = haversineInMiles(
+      config.address.storeLatitude,
+      config.address.storeLongitude,
+      primary.latitude,
+      primary.longitude,
+    );
+
+    repo.updateAddress(normPhone, {
+      postcode: primary.postcode,
+      houseNumber: customer.houseNumber ?? undefined,
+      street: primary.line1,
+      town: primary.town,
+      latitude: primary.latitude,
+      longitude: primary.longitude,
+      distance: parseFloat(dist.toFixed(2)),
+    });
+  }
+
+  logger.debug("Customer address enriched using identity-linked matches", {
+    phone: normPhone,
+    postcode: normPostcode,
+    matchedCount: matched.length,
+  });
+
+  return { customer: repo.findByPhone(normPhone), addresses: matched };
 }
 
 /**

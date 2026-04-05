@@ -15,9 +15,15 @@
 
 import { getDb } from "../../infrastructure/db.js";
 import { logger } from "../../infrastructure/logger.js";
+import {
+  getCallSession,
+  markCallConnected,
+  markCallEnded,
+  markCallOffered,
+} from "../calls/callSessions.service.js";
 
 /**
- * @type {((phone: string) => Promise<void>) | null}
+ * @type {((phone: string, context?: { callId?: number, source?: string }) => Promise<void>) | null}
  */
 let _handlePhoneDetected = null;
 
@@ -31,7 +37,7 @@ const activeCalls = new Map();
  * Inject the callerIdService.handlePhoneDetected dependency.
  * Must be called once before any TAPI events arrive.
  *
- * @param {{ handlePhoneDetected: (phone: string) => Promise<void> }} deps
+ * @param {{ handlePhoneDetected: (phone: string, context?: { callId?: number, source?: string }) => Promise<void> }} deps
  */
 export function init({ handlePhoneDetected }) {
   if (typeof handlePhoneDetected !== "function") {
@@ -50,6 +56,14 @@ export async function handleOffering(phone, callId) {
   if (!phone) return;
 
   activeCalls.set(callId, { phone, offeredAt: new Date(), connectedAt: null });
+  try {
+    markCallOffered(callId, phone);
+  } catch (err) {
+    logger.warn("tapiService: failed to persist OFFERING call session", {
+      callId,
+      error: err?.message,
+    });
+  }
 
   if (!_handlePhoneDetected) {
     logger.error("tapiService: handlePhoneDetected not initialised — call init() at startup");
@@ -58,7 +72,7 @@ export async function handleOffering(phone, callId) {
 
   // Delegate to callerIdService: debounce + DB lookup + WS broadcast
   try {
-    await _handlePhoneDetected(phone);
+    await _handlePhoneDetected(phone, { callId, source: "tapi" });
   } catch (err) {
     logger.error("tapiService: handlePhoneDetected threw", {
       phone,
@@ -84,6 +98,15 @@ export function handleConnected(callId) {
     const now = new Date();
     activeCalls.set(callId, { phone: "", offeredAt: now, connectedAt: now });
   }
+
+  try {
+    markCallConnected(callId);
+  } catch (err) {
+    logger.warn("tapiService: failed to persist CONNECTED call session", {
+      callId,
+      error: err?.message,
+    });
+  }
 }
 
 /**
@@ -97,8 +120,19 @@ export function handleConnected(callId) {
 export async function handleDisconnected(callId, phone, durationSeconds) {
   const call = activeCalls.get(callId);
   activeCalls.delete(callId);
+  let session = null;
+  try {
+    markCallEnded(callId);
+    session = getCallSession(callId);
+  } catch (err) {
+    logger.warn("tapiService: failed to read/mark call session at DISCONNECTED", {
+      callId,
+      error: err?.message,
+    });
+  }
 
-  const resolvedPhone = phone || call?.phone || "";
+  const resolvedPhone =
+    session?.selectedCustomerPhone || phone || call?.phone || session?.phone || "";
   if (!resolvedPhone) {
     logger.warn("tapiService: DISCONNECTED with no phone number — skipping log", { callId });
     return;
@@ -116,18 +150,23 @@ export async function handleDisconnected(callId, phone, durationSeconds) {
     const db = getDb();
 
     // Snapshot customer name at call-end time for the log (best-effort)
-    let customerName = null;
+    let customerName = session?.selectedCustomerName ?? null;
     try {
-      const row = db.prepare("SELECT name FROM customers WHERE phone = ?").get(resolvedPhone);
-      customerName = row?.name ?? null;
+      if (!customerName) {
+        const row = db.prepare("SELECT name FROM customers WHERE phone = ?").get(resolvedPhone);
+        customerName = row?.name ?? null;
+      }
     } catch {
       // Non-fatal — log without name
     }
 
     db.prepare(
       `
-      INSERT INTO call_logs (phone, call_started_at, call_ended_at, duration_seconds, customer_name)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO call_logs (
+        phone, call_started_at, call_ended_at, duration_seconds, customer_name, notes,
+        call_id, selected_customer_phone, selected_address
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
     ).run(
       resolvedPhone,
@@ -135,12 +174,17 @@ export async function handleDisconnected(callId, phone, durationSeconds) {
       endedAt.toISOString(),
       resolvedDurationSeconds,
       customerName,
+      session?.notes ?? null,
+      callId,
+      session?.selectedCustomerPhone ?? null,
+      session?.selectedAddress ?? null,
     );
 
     logger.info("Call logged", {
       phone: resolvedPhone,
       durationSeconds: resolvedDurationSeconds,
       customerName,
+      selectedCustomerPhone: session?.selectedCustomerPhone ?? null,
     });
   } catch (err) {
     logger.error("tapiService: Failed to log call", {
