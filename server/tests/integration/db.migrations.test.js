@@ -21,6 +21,7 @@ describe("db migrations", () => {
       "002_coordinate_integrity.sql",
       "003_call_logs.sql",
       "003_orders_customer_phone_index.sql",
+      "004_call_sessions_and_customer_addresses.sql",
     ]);
 
     const orderCount = getDb().prepare("SELECT COUNT(*) AS n FROM orders").get().n;

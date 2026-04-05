@@ -10,6 +10,7 @@ describe("calls router", () => {
   async function buildApp({ bridgePort = 8765, connected = true, dialAccepted = true } = {}) {
     const dial = vi.fn().mockReturnValue(dialAccepted);
     const isBridgeConnected = vi.fn().mockReturnValue(connected);
+    const upsertCallSession = vi.fn();
 
     vi.doMock("../../src/config/index.js", () => ({
       config: { tapi: { bridgePort } },
@@ -18,6 +19,9 @@ describe("calls router", () => {
       dial,
       isBridgeConnected,
     }));
+    vi.doMock("../../src/domains/calls/callSessions.service.js", () => ({
+      upsertCallSession,
+    }));
 
     const { callsRouter } = await import("../../src/domains/calls/calls.router.js");
 
@@ -25,7 +29,7 @@ describe("calls router", () => {
     app.use(express.json());
     app.use("/api/calls", callsRouter);
 
-    return { app, dial, isBridgeConnected };
+    return { app, dial, isBridgeConnected, upsertCallSession };
   }
 
   it("returns 503 when TAPI is disabled", async () => {
@@ -65,5 +69,39 @@ describe("calls router", () => {
     expect(res.status).toBe(202);
     expect(res.body).toEqual({ ok: true, phone: "07123456789" });
     expect(dial).toHaveBeenCalledWith("07123456789");
+  });
+
+  it("returns 400 when session callId is invalid", async () => {
+    const { app, upsertCallSession } = await buildApp();
+
+    const res = await request(app).post("/api/calls/session").send({
+      callId: "abc",
+      selectedCustomerPhone: "07123456789",
+    });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe("INVALID_CALL_ID");
+    expect(upsertCallSession).not.toHaveBeenCalled();
+  });
+
+  it("returns 202 and upserts call session metadata", async () => {
+    const { app, upsertCallSession } = await buildApp();
+
+    const res = await request(app).post("/api/calls/session").send({
+      callId: 42,
+      selectedCustomerPhone: "+44 7911 123456",
+      selectedCustomerName: "  Test Customer  ",
+      selectedAddress: "  10 Test Street  ",
+      notes: "  Leave at door  ",
+    });
+
+    expect(res.status).toBe(202);
+    expect(res.body).toEqual({ ok: true, callId: 42 });
+    expect(upsertCallSession).toHaveBeenCalledWith(42, {
+      selectedCustomerPhone: "07911123456",
+      selectedCustomerName: "Test Customer",
+      selectedAddress: "10 Test Street",
+      notes: "Leave at door",
+    });
   });
 });
