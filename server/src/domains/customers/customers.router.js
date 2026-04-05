@@ -12,6 +12,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import * as service from "./customers.service.js";
+import { requireAdminAuth } from "../../shared/middleware/requireAdminAuth.js";
 
 export const customersRouter = Router();
 
@@ -80,6 +81,32 @@ customersRouter.post("/:phone/address", (req, res, next) => {
   try {
     const customer = service.updateCustomerAddress(req.params.phone, parsed.data);
     return res.json({ customer });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * GET /api/customers/:phone/export
+ * Gather all data for a customer (Right of Access).
+ */
+customersRouter.get("/:phone/export", requireAdminAuth, (req, res, next) => {
+  try {
+    const data = service.exportCustomerData(req.params.phone);
+    return res.json(data);
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * DELETE /api/customers/:phone
+ * Permanently delete a customer and anonymize orders (Right to Erasure).
+ */
+customersRouter.delete("/:phone", requireAdminAuth, (req, res, next) => {
+  try {
+    const result = service.deleteCustomerData(req.params.phone);
+    return res.json(result);
   } catch (err) {
     next(err);
   }

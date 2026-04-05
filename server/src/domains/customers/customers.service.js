@@ -11,7 +11,9 @@
  *  - enrichCustomerAddress(phone, postcode)
  */
 
+import { randomUUID } from "crypto";
 import * as repo from "./customers.repo.js";
+import * as orders from "../orders/orders.service.js";
 import * as postcodes from "../../shared/postcodes.js";
 import * as addressClient from "../callerIdService/addressClient.js";
 import { haversineInMiles } from "../../shared/haversine.js";
@@ -49,6 +51,10 @@ function validatePhone(phone) {
     });
   }
   return digits;
+}
+
+function isAnonymizedPhoneIdentifier(phone) {
+  return typeof phone === "string" && phone.startsWith("ANON-");
 }
 
 // ---------------------------------------------------------------------------
@@ -95,6 +101,54 @@ export function getCustomerByPhone(phone) {
     throw new NotFoundError(`Customer with phone ${phone} not found`, { phone });
   }
   return customer;
+}
+/**
+ * Update the master customer profile using information from an order.
+ * This ensures the export/search records are always up to date.
+ *
+ * @param {object} customerInfo - The customerInfo blob from an order
+ */
+export function syncCustomerFromOrder(customerInfo) {
+  if (!customerInfo?.phone) return;
+
+  const phone = validatePhone(customerInfo.phone);
+  const hasValidCoordinates =
+    Number.isFinite(customerInfo.latitude) && Number.isFinite(customerInfo.longitude);
+  const normalizedDistance = Number.isFinite(customerInfo.distance)
+    ? Number(customerInfo.distance)
+    : undefined;
+
+  // We use the existing update logic to fill in/overwrite the profile
+  // with the details from the most recent order.
+  const data = {
+    name: customerInfo.name,
+    houseNumber: customerInfo.houseNumber,
+    street: customerInfo.street,
+    town: customerInfo.town,
+    postcode: customerInfo.postcode,
+    latitude: hasValidCoordinates ? Number(customerInfo.latitude) : undefined,
+    longitude: hasValidCoordinates ? Number(customerInfo.longitude) : undefined,
+    // Ignore placeholder distance values unless they are backed by coordinates.
+    distance: hasValidCoordinates ? normalizedDistance : undefined,
+  };
+
+  // Ensure the customer exists first (upsert behavior)
+  const existing = repo.findByPhone(phone);
+  if (!existing) {
+    repo.upsertCustomer({
+      phone,
+      ...data,
+      firstCall: new Date().toISOString(),
+      lastCall: new Date().toISOString(),
+      callCount: 1,
+    });
+  } else {
+    repo.updateAddress(phone, data);
+    // Also update the name if it's provided in the order but missing in the profile
+    if (customerInfo.name && (!existing.name || existing.name === "Anonymous Guest")) {
+      repo.updateName(phone, customerInfo.name);
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -221,4 +275,69 @@ export async function enrichCustomerAddress(phone, postcode) {
   }
 
   return { customer: repo.findByPhone(normPhone), addresses };
+}
+
+/**
+ * Permanently delete a customer profile and anonymize their order history.
+ * (GDPR Right to Erasure)
+ *
+ * @param {string} phone
+ * @returns {{ ordersAnonymized: number }}
+ */
+export function deleteCustomerData(phone) {
+  if (isAnonymizedPhoneIdentifier(phone)) {
+    throw new ValidationError(
+      "Customer record has already been anonymised and cannot be deleted again",
+      { field: "phone", anonymised: true },
+    );
+  }
+
+  const normPhone = validatePhone(phone);
+
+  // 1. Generate an anonymization ID to link old orders without PII
+  const anonId = `ANON-${randomUUID()}`;
+
+  // 2. Scrub PII from the orders table
+  const ordersAnonymized = orders.scrubOrdersByPhone(normPhone, anonId);
+
+  // 3. Delete the customer profile
+  repo.deleteByPhone(normPhone);
+
+  logger.info("Customer data erased (GDPR)", {
+    ordersAnonymized,
+    piiRemoved: true,
+  });
+
+  return { ordersAnonymized };
+}
+
+/**
+ * Gather all data stored about a customer.
+ * (GDPR Right of Access)
+ *
+ * @param {string} phone
+ * @returns {{ customer: object, orders: Array<object> }}
+ */
+export function exportCustomerData(phone) {
+  if (isAnonymizedPhoneIdentifier(phone)) {
+    throw new ValidationError("Customer record has been anonymised and can no longer be exported", {
+      field: "phone",
+      anonymised: true,
+    });
+  }
+
+  const normPhone = validatePhone(phone);
+
+  const customer = repo.findByPhone(normPhone);
+  if (!customer) {
+    throw new NotFoundError(`Customer with phone ${phone} not found`, { phone });
+  }
+
+  const history = orders.getOrdersByPhone(normPhone);
+
+  return {
+    customer,
+    orders: history,
+    exportedAt: new Date().toISOString(),
+  };
 }

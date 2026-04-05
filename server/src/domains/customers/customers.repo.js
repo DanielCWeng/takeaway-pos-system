@@ -49,6 +49,7 @@ const stmts = {
   upsert: null,
   upsertIncrement: null,
   increment: null,
+  deleteByPhone: null,
 };
 
 function getStmts() {
@@ -94,6 +95,7 @@ function getStmts() {
       WHERE phone = ?
       RETURNING *
     `)),
+    deleteByPhone: (stmts.deleteByPhone ??= db.prepare("DELETE FROM customers WHERE phone = ?")),
   };
 }
 
@@ -227,4 +229,25 @@ export function incrementCallCountAndReturn(phone) {
   const row = getStmts().increment.get(new Date().toISOString(), phone);
 
   return row ? rowToCustomer(row) : null;
+}
+
+/**
+ * Delete a customer by phone number.
+ *
+ * @param {string} phone
+ * @returns {void}
+ */
+export function deleteByPhone(phone) {
+  getStmts().deleteByPhone.run(phone);
+}
+/**
+ * Update a customer's name by their phone number.
+ *
+ * @param {string} phone
+ * @param {string} name
+ * @returns {void}
+ */
+export function updateName(phone, name) {
+  const db = getDb();
+  db.prepare("UPDATE customers SET name = ? WHERE phone = ?").run(name, phone);
 }
