@@ -38,7 +38,7 @@ const DEFAULT_EXE_PATH = join(
 );
 
 const INITIAL_RESTART_DELAY_MS = 3_000;
-const MAX_RESTART_DELAY_MS     = 60_000;
+const MAX_RESTART_DELAY_MS = 60_000;
 
 /** @type {import('child_process').ChildProcess | null} */
 let child = null;
@@ -101,9 +101,18 @@ function spawnBridge() {
     return;
   }
 
-  logger.info("Launching TapiBridge.exe", { hardware: true, exePath, port: config.tapi.bridgePort });
+  logger.info("Launching TapiBridge.exe", {
+    hardware: true,
+    exePath,
+    port: config.tapi.bridgePort,
+  });
 
-  child = spawn(exePath, ["--port", String(config.tapi.bridgePort)], {
+  const bridgeArgs = ["--port", String(config.tapi.bridgePort)];
+  if (config.tapi.bridgeToken) {
+    bridgeArgs.push("--token", config.tapi.bridgeToken);
+  }
+
+  child = spawn(exePath, bridgeArgs, {
     stdio: ["ignore", "pipe", "pipe"],
     windowsHide: true,
   });
@@ -124,7 +133,6 @@ function spawnBridge() {
   });
 
   child.once("spawn", () => {
-    restartAttempt = 0;
     logger.info("TapiBridge.exe spawned", { hardware: true, pid: child?.pid });
   });
 
@@ -161,6 +169,21 @@ export function startBridge() {
   stopped = false;
   restartAttempt = 0;
   spawnBridge();
+}
+
+/**
+ * Marks the bridge as healthy after a successful protocol handshake.
+ * This is when backoff should reset, not merely when the process spawns.
+ */
+export function markBridgeHealthy() {
+  if (stopped) return;
+  if (restartAttempt > 0) {
+    logger.info("TapiBridge handshake completed; restart backoff reset", {
+      hardware: true,
+      attemptsBeforeReset: restartAttempt,
+    });
+  }
+  restartAttempt = 0;
 }
 
 /**

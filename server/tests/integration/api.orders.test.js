@@ -61,6 +61,9 @@ describe("Orders API Integration", () => {
     expect(res.body.order.id).toBeTypeOf("number");
     expect(res.body.order.data).toEqual({
       ...payload,
+      subtotal: 5,
+      deliveryCharge: 0,
+      total: 5,
       items: payload.items.map((item) => ({
         modifiers: [],
         hidePrice: false,
@@ -70,6 +73,24 @@ describe("Orders API Integration", () => {
     });
 
     createdId = res.body.order.id;
+  });
+
+  it("POST /api/orders - recalculates totals and ignores tampered client totals", async () => {
+    const payload = {
+      orderType: "collection",
+      items: [{ name: "Duck", price: 12.5, quantity: 2 }],
+      subtotal: 0.01,
+      total: 0.01,
+      deliveryCharge: 999,
+      paymentMethod: "cash",
+    };
+
+    const res = await request(app).post("/api/orders").send(payload);
+
+    expect(res.status).toBe(201);
+    expect(res.body.order.data.subtotal).toBe(25);
+    expect(res.body.order.data.deliveryCharge).toBe(0);
+    expect(res.body.order.data.total).toBe(25);
   });
 
   it("POST /api/orders/print - archives and returns printed flag", async () => {
@@ -109,7 +130,9 @@ describe("Orders API Integration", () => {
   });
 
   it("POST /api/orders/:id/reprint - returns printed flag (best-effort)", async () => {
-    const res = await request(app).post(`/api/orders/${printedOrderId}/reprint`);
+    const res = await request(app)
+      .post(`/api/orders/${printedOrderId}/reprint`)
+      .set("Authorization", `Bearer ${ADMIN_TOKEN}`);
 
     expect(res.status).toBe(200);
     expect(res.body.printed).toBeTypeOf("boolean");
@@ -144,6 +167,13 @@ describe("Orders API Integration", () => {
   it("GET /api/orders - lists archived orders", async () => {
     const res = await request(app).get("/api/orders");
 
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe("FORBIDDEN");
+  });
+
+  it("GET /api/orders - lists archived orders for authorized admin", async () => {
+    const res = await request(app).get("/api/orders").set("Authorization", `Bearer ${ADMIN_TOKEN}`);
+
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body.orders)).toBe(true);
     expect(res.body.orders.length).toBeGreaterThanOrEqual(1);
@@ -151,7 +181,10 @@ describe("Orders API Integration", () => {
   });
 
   it("GET /api/orders?date=YYYY-MM-DD - filters by archive date", async () => {
-    const res = await request(app).get("/api/orders").query({ date: "2026-01-01" });
+    const res = await request(app)
+      .get("/api/orders")
+      .set("Authorization", `Bearer ${ADMIN_TOKEN}`)
+      .query({ date: "2026-01-01" });
 
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body.orders)).toBe(true);
@@ -160,40 +193,59 @@ describe("Orders API Integration", () => {
   });
 
   it("GET /api/orders/:id - fetches a single order", async () => {
-    const res = await request(app).get(`/api/orders/${createdId}`);
+    const res = await request(app)
+      .get(`/api/orders/${createdId}`)
+      .set("Authorization", `Bearer ${ADMIN_TOKEN}`);
 
     expect(res.status).toBe(200);
     expect(res.body.order.id).toBe(createdId);
   });
 
   it("GET /api/orders/:id - returns 404 for unknown order", async () => {
-    const res = await request(app).get("/api/orders/9999");
+    const res = await request(app)
+      .get("/api/orders/9999")
+      .set("Authorization", `Bearer ${ADMIN_TOKEN}`);
 
     expect(res.status).toBe(404);
     expect(res.body.error.code).toBe("NOT_FOUND");
   });
 
   it("GET /api/orders/:id - returns 400 for invalid ID format", async () => {
-    const res = await request(app).get("/api/orders/abc");
+    const res = await request(app)
+      .get("/api/orders/abc")
+      .set("Authorization", `Bearer ${ADMIN_TOKEN}`);
 
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe("VALIDATION_ERROR");
   });
 
   it("DELETE /api/orders/:id - deletes an order", async () => {
-    const delRes = await request(app).delete(`/api/orders/${createdId}`);
+    const delRes = await request(app)
+      .delete(`/api/orders/${createdId}`)
+      .set("Authorization", `Bearer ${ADMIN_TOKEN}`);
     expect(delRes.status).toBe(204);
 
-    const getRes = await request(app).get(`/api/orders/${createdId}`);
+    const getRes = await request(app)
+      .get(`/api/orders/${createdId}`)
+      .set("Authorization", `Bearer ${ADMIN_TOKEN}`);
     expect(getRes.status).toBe(404);
   });
 
   it("DELETE /api/orders?date=YYYY-MM-DD - deletes only orders for the provided date", async () => {
-    const deleteRes = await request(app).delete("/api/orders").query({ date: "2026-01-01" });
+    const deleteRes = await request(app)
+      .delete("/api/orders")
+      .set("Authorization", `Bearer ${ADMIN_TOKEN}`)
+      .query({ date: "2026-01-01" });
     expect(deleteRes.status).toBe(204);
 
-    const jan1 = await request(app).get("/api/orders").query({ date: "2026-01-01" });
-    const jan2 = await request(app).get("/api/orders").query({ date: "2026-01-02" });
+    const jan1 = await request(app)
+      .get("/api/orders")
+      .set("Authorization", `Bearer ${ADMIN_TOKEN}`)
+      .query({ date: "2026-01-01" });
+    const jan2 = await request(app)
+      .get("/api/orders")
+      .set("Authorization", `Bearer ${ADMIN_TOKEN}`)
+      .query({ date: "2026-01-02" });
 
     expect(jan1.status).toBe(200);
     expect(jan1.body.orders.some((o) => o.id === seededByDate.jan1)).toBe(false);
@@ -202,7 +254,9 @@ describe("Orders API Integration", () => {
   });
 
   it("POST /api/orders/:id/reprint - returns 404 for unknown archived order", async () => {
-    const res = await request(app).post(`/api/orders/${createdId}/reprint`);
+    const res = await request(app)
+      .post(`/api/orders/${createdId}/reprint`)
+      .set("Authorization", `Bearer ${ADMIN_TOKEN}`);
 
     expect(res.status).toBe(404);
     expect(res.body.error.code).toBe("NOT_FOUND");

@@ -6,22 +6,81 @@
  */
 
 import { Router } from "express";
-import { dial } from "../../hardware/tapiDevice.js";
-import { config } from "../../config/index.js";
+import {
+  dial,
+  isTelephonyConnected,
+  isDialEnabled,
+  getTelephonyProvider,
+} from "../../hardware/telephonyDevice.js";
+import { upsertCallSession } from "./callSessions.service.js";
+import { normaliseUkPhone } from "../../shared/phones.js";
 
 export const callsRouter = Router();
+
+/**
+ * POST /api/calls/session
+ * Body: {
+ *   callId: number,
+ *   selectedCustomerPhone?: string,
+ *   selectedCustomerName?: string,
+ *   selectedAddress?: string,
+ *   notes?: string
+ * }
+ */
+callsRouter.post("/session", (req, res, next) => {
+  const { callId, selectedCustomerPhone, selectedCustomerName, selectedAddress, notes } =
+    req.body ?? {};
+
+  const id = Number(callId);
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(400).json({
+      error: { code: "INVALID_CALL_ID", message: "callId must be a positive integer." },
+    });
+  }
+
+  try {
+    upsertCallSession(id, {
+      selectedCustomerPhone:
+        typeof selectedCustomerPhone === "string" && selectedCustomerPhone.trim()
+          ? normaliseUkPhone(selectedCustomerPhone)
+          : undefined,
+      selectedCustomerName:
+        typeof selectedCustomerName === "string" ? selectedCustomerName.trim() || null : undefined,
+      selectedAddress:
+        typeof selectedAddress === "string" ? selectedAddress.trim() || null : undefined,
+      notes: typeof notes === "string" ? notes.trim() || null : undefined,
+    });
+
+    return res.status(202).json({ ok: true, callId: id });
+  } catch (err) {
+    return next(err);
+  }
+});
 
 /**
  * POST /api/calls/dial
  * Body: { phone: string }
  *
- * Passes the dial command to the TAPI bridge.
- * Returns 503 if TAPI integration is disabled (TAPI_BRIDGE_PORT=0).
+ * Passes the dial command to the configured telephony provider.
+ * Returns 503 when dial integration is disabled or provider is unavailable.
  */
 callsRouter.post("/dial", (req, res) => {
-  if (config.tapi.bridgePort === 0) {
+  const provider = getTelephonyProvider();
+  if (!isDialEnabled()) {
     return res.status(503).json({
-      error: { code: "TAPI_DISABLED", message: "TAPI integration is not enabled on this server." },
+      error: {
+        code: "TELEPHONY_DISABLED",
+        message: "Telephony dial integration is not enabled on this server.",
+      },
+    });
+  }
+
+  if (!isTelephonyConnected()) {
+    return res.status(503).json({
+      error: {
+        code: "TELEPHONY_UNAVAILABLE",
+        message: `Telephony provider '${provider}' is not currently connected.`,
+      },
     });
   }
 
@@ -33,13 +92,22 @@ callsRouter.post("/dial", (req, res) => {
   }
 
   // Strip non-digits for safety — never forward raw user input to the bridge
-  const normalised = phone.replace(/\D/g, "");
+  const normalised = normaliseUkPhone(phone).replace(/\D/g, "");
   if (!normalised) {
     return res.status(400).json({
       error: { code: "INVALID_PHONE", message: "phone contains no digits." },
     });
   }
 
-  dial(normalised);
-  res.status(202).json({ ok: true, phone: normalised });
+  const accepted = dial(normalised);
+  if (!accepted) {
+    return res.status(503).json({
+      error: {
+        code: "TELEPHONY_UNAVAILABLE",
+        message: `Telephony provider '${provider}' did not accept the dial command.`,
+      },
+    });
+  }
+
+  res.status(202).json({ ok: true, phone: normalised, provider });
 });

@@ -10,6 +10,8 @@ vi.mock("../../src/domains/customers/customers.repo.js", () => ({
   updateAddress: vi.fn(),
   incrementCallCountAndReturn: vi.fn(),
   upsertAndIncrementCallCount: vi.fn(),
+  listAddressesByCustomer: vi.fn(),
+  upsertCustomerAddress: vi.fn(),
 }));
 
 vi.mock("../../src/shared/postcodes.js");
@@ -40,6 +42,7 @@ import { logger } from "../../src/infrastructure/logger.js";
 describe("Customers Service", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    repo.listAddressesByCustomer.mockReturnValue([]);
   });
 
   describe("getOrCreateCustomer", () => {
@@ -70,6 +73,14 @@ describe("Customers Service", () => {
       service.getOrCreateCustomer(messyPhone);
 
       expect(repo.upsertAndIncrementCallCount).toHaveBeenCalledWith(cleanPhone, {});
+    });
+
+    it("canonicalises +44 prefixes to local 0-prefix format", () => {
+      repo.upsertAndIncrementCallCount.mockReturnValue({ phone: "07911123456" });
+
+      service.getOrCreateCustomer("+447911123456");
+
+      expect(repo.upsertAndIncrementCallCount).toHaveBeenCalledWith("07911123456", {});
     });
 
     it("accepts UNKNOWN-* phone identifiers without reformatting", () => {
@@ -128,11 +139,11 @@ describe("Customers Service", () => {
     const postcode = "NG9 8GF";
 
     it("updates customer with data from local DB if found", async () => {
-      repo.findByPhone.mockReturnValue({ phone });
+      repo.findByPhone.mockReturnValue({ phone, houseNumber: "12", street: "High St" });
       postcodes.normalisePostcode.mockReturnValue(postcode);
       postcodes.findAddressesLocally.mockReturnValue([
         {
-          street: "High St",
+          line1: "12 High St",
           latitude: 52.91,
           longitude: -1.21,
         },
@@ -152,11 +163,11 @@ describe("Customers Service", () => {
     });
 
     it("falls back to API if not in local DB", async () => {
-      repo.findByPhone.mockReturnValue({ phone });
+      repo.findByPhone.mockReturnValue({ phone, houseNumber: "42", street: "API St" });
       postcodes.normalisePostcode.mockReturnValue(postcode);
       postcodes.findAddressesLocally.mockReturnValue([]); // Not in DB
       addressClient.findAddressesFromApi.mockResolvedValue([
-        { line1: "API St", town: "API Town", latitude: 52.92, longitude: -1.22 },
+        { line1: "42 API St", town: "API Town", latitude: 52.92, longitude: -1.22 },
       ]);
       haversineInMiles.mockReturnValue(2.0);
 
@@ -167,7 +178,7 @@ describe("Customers Service", () => {
       expect(repo.updateAddress).toHaveBeenCalledWith(
         phone,
         expect.objectContaining({
-          street: "API St",
+          street: "42 API St",
           distance: 2.0,
         }),
       );
@@ -175,7 +186,7 @@ describe("Customers Service", () => {
     });
 
     it("returns unchanged customer and empty addresses when no address data is found", async () => {
-      const existing = { phone, postcode: null };
+      const existing = { phone, postcode: null, houseNumber: "2", street: "Any St" };
       repo.findByPhone.mockReturnValue(existing);
       postcodes.normalisePostcode.mockReturnValue(postcode);
       postcodes.findAddressesLocally.mockReturnValue([]);
@@ -185,13 +196,17 @@ describe("Customers Service", () => {
 
       expect(repo.updateAddress).not.toHaveBeenCalled();
       expect(result).toEqual({ customer: existing, addresses: [] });
-      expect(logger.info).toHaveBeenCalledWith("Address enrichment failed: no data found", {
-        phone,
-        postcode,
-      });
+      expect(logger.info).toHaveBeenCalledWith(
+        "Address enrichment found postcode candidates but no customer-identity matches",
+        {
+          phone,
+          postcode,
+          candidateCount: 0,
+        },
+      );
     });
 
-    it("bubbles coordinate errors from malformed local rows", async () => {
+    it("returns unchanged customer when local rows exist but do not match customer identity", async () => {
       repo.findByPhone.mockReturnValue({ phone });
       postcodes.normalisePostcode.mockReturnValue(postcode);
       postcodes.findAddressesLocally.mockReturnValue([
@@ -201,11 +216,13 @@ describe("Customers Service", () => {
         throw new TypeError("lat2 must be finite");
       });
 
-      await expect(service.enrichCustomerAddress(phone, postcode)).rejects.toThrow(TypeError);
+      const result = await service.enrichCustomerAddress(phone, postcode);
+
+      expect(result).toEqual({ customer: { phone }, addresses: [] });
       expect(repo.updateAddress).not.toHaveBeenCalled();
     });
 
-    it("bubbles coordinate errors from malformed API rows", async () => {
+    it("returns unchanged customer when API rows exist but do not match customer identity", async () => {
       repo.findByPhone.mockReturnValue({ phone });
       postcodes.normalisePostcode.mockReturnValue(postcode);
       postcodes.findAddressesLocally.mockReturnValue([]);
@@ -216,8 +233,65 @@ describe("Customers Service", () => {
         throw new TypeError("lat2 must be finite");
       });
 
+      const result = await service.enrichCustomerAddress(phone, postcode);
+
+      expect(result).toEqual({ customer: { phone }, addresses: [] });
+      expect(repo.updateAddress).not.toHaveBeenCalled();
+    });
+
+    it("bubbles coordinate errors for identity-matched rows", async () => {
+      repo.findByPhone.mockReturnValue({ phone, houseNumber: "10", street: "Matched St" });
+      postcodes.normalisePostcode.mockReturnValue(postcode);
+      postcodes.findAddressesLocally.mockReturnValue([
+        { line1: "10 Matched St", latitude: 52.91, longitude: -1.21 },
+      ]);
+      haversineInMiles.mockImplementation(() => {
+        throw new TypeError("lat2 must be finite");
+      });
+
       await expect(service.enrichCustomerAddress(phone, postcode)).rejects.toThrow(TypeError);
       expect(repo.updateAddress).not.toHaveBeenCalled();
+    });
+
+    it("bubbles coordinate errors from identity-matched API rows", async () => {
+      repo.findByPhone.mockReturnValue({ phone, houseNumber: "8", street: "API St" });
+      postcodes.normalisePostcode.mockReturnValue(postcode);
+      postcodes.findAddressesLocally.mockReturnValue([]);
+      addressClient.findAddressesFromApi.mockResolvedValue([
+        { line1: "8 API St", town: "API Town", latitude: 52.92, longitude: -1.22 },
+      ]);
+      haversineInMiles.mockImplementation(() => {
+        throw new TypeError("lat2 must be finite");
+      });
+
+      await expect(service.enrichCustomerAddress(phone, postcode)).rejects.toThrow(TypeError);
+      expect(repo.updateAddress).not.toHaveBeenCalled();
+    });
+
+    it("returns known customer-linked addresses before postcode-wide lookup", async () => {
+      const existing = { phone, postcode, houseNumber: "3", street: "Saved St" };
+      repo.findByPhone.mockReturnValue(existing);
+      repo.listAddressesByCustomer.mockReturnValue([
+        {
+          id: 1,
+          customerPhone: phone,
+          houseNumber: "3",
+          line1: "3 Saved St",
+          line2: "",
+          town: "Nottingham",
+          postcode,
+          latitude: 52.9,
+          longitude: -1.2,
+        },
+      ]);
+      haversineInMiles.mockReturnValue(1.1);
+
+      const result = await service.enrichCustomerAddress(phone, postcode);
+
+      expect(postcodes.findAddressesLocally).not.toHaveBeenCalled();
+      expect(addressClient.findAddressesFromApi).not.toHaveBeenCalled();
+      expect(result.addresses).toHaveLength(1);
+      expect(result.addresses[0].line1).toBe("3 Saved St");
     });
   });
 });

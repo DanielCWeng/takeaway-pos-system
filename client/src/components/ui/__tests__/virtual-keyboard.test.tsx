@@ -15,7 +15,9 @@ function TestInputs() {
 function getEnterButton() {
   return screen
     .getAllByRole("button")
-    .find((btn) => btn.className.includes("bg-primary/10")) as HTMLButtonElement;
+    .find((btn) =>
+      btn.className.includes("bg-primary text-primary-foreground"),
+    ) as HTMLButtonElement;
 }
 
 function getBackspaceButton() {

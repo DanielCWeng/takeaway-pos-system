@@ -272,6 +272,9 @@ ordersRouter.patch("/:id/status", (req, res, next) => {
   }
 });
 
+// Everything below this point is admin-only (history reads, deletes, reprints, retention cleanup).
+ordersRouter.use(requireAdminAuth);
+
 /**
  * GET /api/orders
  * List archived orders, optionally filtered by date (?date=YYYY-MM-DD).

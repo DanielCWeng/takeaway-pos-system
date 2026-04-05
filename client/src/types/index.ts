@@ -136,6 +136,8 @@ export interface CallDetectedPayload {
   customer: Customer | null;
   addresses: Address[];
   distance: number | null;
+  callId?: number;
+  mode?: "none" | "single_address" | "multi_address";
 }
 
 export type OrderStatus =
@@ -148,6 +150,7 @@ export type OrderStatus =
 
 export type WebSocketMessage =
   | { type: "incoming_call"; payload: CallDetectedPayload }
+  | { type: "incoming_call_multi_address"; payload: CallDetectedPayload }
   | { type: "order_created"; payload: { orderId: number; order: FullOrder; archivedAt: string; status: OrderStatus } }
   | { type: "order_status_changed"; payload: { orderId: number; previousStatus: OrderStatus; status: OrderStatus; updatedAt: string } }
   | { type: "order_cancelled"; payload: { orderId: number } }

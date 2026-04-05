@@ -24,6 +24,47 @@ import { HardwareError, ValidationError, NotFoundError } from "../../shared/erro
 // Validation
 // ---------------------------------------------------------------------------
 
+function roundMoney(value) {
+  return Math.round((value + Number.EPSILON) * 100) / 100;
+}
+
+function calculateDeliveryCharge(distanceMiles) {
+  const base = Number(config.business.deliveryBaseCharge) || 0;
+  const threshold = Number(config.business.deliveryDistanceThresholdMiles) || 0;
+  const rate = Number(config.business.deliveryRatePerMile) || 0;
+
+  if (!Number.isFinite(distanceMiles) || distanceMiles <= threshold) {
+    return roundMoney(base);
+  }
+
+  const milesOverThreshold = Math.floor(Math.max(0, distanceMiles - threshold));
+  return roundMoney(base + milesOverThreshold * rate);
+}
+
+function recalculateTotals(order) {
+  const subtotal = roundMoney(
+    order.items.reduce((sum, item) => {
+      const unitPrice =
+        typeof item.finalPrice === "number" &&
+        Number.isFinite(item.finalPrice) &&
+        item.finalPrice >= 0
+          ? item.finalPrice
+          : item.price;
+      return sum + unitPrice * item.quantity;
+    }, 0),
+  );
+
+  const distance = Number(order.customerInfo?.distance);
+  const deliveryCharge = order.orderType === "delivery" ? calculateDeliveryCharge(distance) : 0;
+
+  return {
+    ...order,
+    subtotal,
+    deliveryCharge,
+    total: roundMoney(subtotal + deliveryCharge),
+  };
+}
+
 /**
  * Validate an incoming order payload.
  * Throws ValidationError with a descriptive message if any rule is violated.
@@ -57,6 +98,14 @@ function validateOrder(order) {
     if (typeof item.quantity !== "number" || item.quantity < 1) {
       throw new ValidationError(`Item at index ${i} has an invalid quantity`, {
         field: `items[${i}].quantity`,
+      });
+    }
+    if (
+      item.finalPrice !== undefined &&
+      (typeof item.finalPrice !== "number" || item.finalPrice < 0)
+    ) {
+      throw new ValidationError(`Item at index ${i} has an invalid finalPrice`, {
+        field: `items[${i}].finalPrice`,
       });
     }
   }
@@ -97,13 +146,14 @@ function validateOrder(order) {
  */
 export function createOrder(orderData, clientOrderId) {
   validateOrder(orderData);
+  const normalizedOrderData = recalculateTotals(orderData);
 
   // Auto-sync the customer profile so that Name/Address aren't missing in future searches/exports
-  if (orderData.customerInfo) {
-    customers.syncCustomerFromOrder(orderData.customerInfo);
+  if (normalizedOrderData.customerInfo) {
+    customers.syncCustomerFromOrder(normalizedOrderData.customerInfo);
   }
 
-  return repo.createOrder({ data: orderData, clientOrderId });
+  return repo.createOrder({ data: normalizedOrderData, clientOrderId });
 }
 
 /**
