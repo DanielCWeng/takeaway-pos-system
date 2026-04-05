@@ -84,6 +84,12 @@ function normalizePostcode(postcode) {
   if (match) return `${match[1]} ${match[2]}`;
   return cleaned;
 }
+function sanitizeAutocompleteSegment(input) {
+  if (!input) return null;
+  const cleaned = String(input).replace(/\s+/g, "").toUpperCase();
+  if (!/^[A-Z0-9]{2,8}$/.test(cleaned)) return null;
+  return cleaned;
+}
 
 // ====================== EXTRACT PHONE ======================
 function extractPhone(data) {
@@ -219,11 +225,19 @@ async function lookupAddressesAPI(postcode) {
   }
 }
 async function lookupAddressesAutocomplete(postcode) {
-  const cleaned = postcode.replace(/\s+/g, "").toUpperCase();
-  const url = `https://api.getaddress.io/autocomplete/${cleaned}?api-key=${GETADDRESS_API_KEY}&all=true`;
-  logDebug("Trying autocomplete API: " + url.replace(GETADDRESS_API_KEY, "KEY_HIDDEN"));
+  const cleaned = sanitizeAutocompleteSegment(postcode);
+  if (!cleaned) {
+    console.warn("AUTOCOMPLETE: rejected malformed postcode input");
+    return null;
+  }
+
+  const url = new URL(`https://api.getaddress.io/autocomplete/${encodeURIComponent(cleaned)}`);
+  url.searchParams.set("api-key", GETADDRESS_API_KEY);
+  url.searchParams.set("all", "true");
+
+  logDebug("Trying autocomplete API: " + url.toString().replace(GETADDRESS_API_KEY, "KEY_HIDDEN"));
   try {
-    const response = await fetch(url);
+    const response = await fetch(url.toString());
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
     if (!data.suggestions || data.suggestions.length === 0) {
