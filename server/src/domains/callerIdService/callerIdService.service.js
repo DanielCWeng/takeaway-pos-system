@@ -105,7 +105,7 @@ export async function handlePhoneDetected(phone) {
       phone: normPhone,
       customer: enrichedCustomer || customer,
       addresses,
-      distance: enrichedCustomer?.distance || customer?.distance || null,
+      distance: enrichedCustomer?.distance ?? customer?.distance ?? null,
     };
 
     // 4. Push to all connected UIs
