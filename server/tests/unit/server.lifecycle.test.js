@@ -43,7 +43,11 @@ describe("server lifecycle", () => {
     vi.doMock("express", () => ({ default: express }));
     vi.doMock("cors", () => ({ default: cors }));
     vi.doMock("../../src/config/index.js", () => ({
-      config: { port: 4444, corsOrigin: "http://localhost:5173" },
+      config: {
+        port: 4444,
+        corsOrigin: "http://localhost:5173",
+        security: { adminApiToken: "test-admin-token" },
+      },
     }));
     vi.doMock("../../src/infrastructure/db.js", () => ({
       openDb,
