@@ -26,6 +26,7 @@ function makeValidEnv(overrides = {}) {
     ORDER_AUTO_RELOAD_COUNT: "3",
     ORDER_AUTO_CLEANUP_MINUTES: "5",
     MAX_CONCURRENT_ORDERS: "9",
+    ADMIN_API_TOKEN: "test-admin-token",
     LOG_LEVEL: "error",
     WS_HEARTBEAT_MS: "30000",
     ...overrides,

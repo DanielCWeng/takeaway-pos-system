@@ -43,6 +43,12 @@ import {
 openDb();
 runMigrations();
 
+if (!config.security.adminApiToken) {
+  logger.warn(
+    "ADMIN_API_TOKEN is not configured. GDPR/admin endpoints are disabled and will return 503.",
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Express app setup
 // ---------------------------------------------------------------------------

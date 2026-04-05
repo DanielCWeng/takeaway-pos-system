@@ -97,6 +97,17 @@ const envSchema = z.object({
     .transform(Number)
     .pipe(z.number().int().min(1)),
 
+  DATA_RETENTION_YEARS: z
+    .string()
+    .regex(/^\d+$/, "DATA_RETENTION_YEARS must be a positive integer")
+    .default("6")
+    .transform(Number)
+    .pipe(z.number().int().min(1)),
+
+  // Required for privileged GDPR/admin endpoints (export/erase/retention cleanup).
+  // Leave blank only if those endpoints are intentionally disabled.
+  ADMIN_API_TOKEN: z.string().optional().default(""),
+
   LOG_LEVEL: z.enum(["error", "warn", "info", "debug"]).default("info"),
   WS_HEARTBEAT_MS: z
     .string()
@@ -164,6 +175,11 @@ export const config = {
     orderAutoReloadCount: env.ORDER_AUTO_RELOAD_COUNT,
     orderAutoCleanupMinutes: env.ORDER_AUTO_CLEANUP_MINUTES,
     maxConcurrentOrders: env.MAX_CONCURRENT_ORDERS,
+    dataRetentionYears: env.DATA_RETENTION_YEARS,
+  },
+
+  security: {
+    adminApiToken: env.ADMIN_API_TOKEN,
   },
 
   ws: {
