@@ -75,6 +75,30 @@ const envSchema = z.object({
   // Optional — shared secret used by Node <-> bridge DIAL commands
   TAPI_BRIDGE_TOKEN: z.string().optional().default(""),
 
+  TELEPHONY_PROVIDER: z.enum(["none", "tapi", "asterisk_ami"]).optional(),
+  ASTERISK_AMI_HOST: z.string().optional().default("127.0.0.1"),
+  ASTERISK_AMI_PORT: z
+    .string()
+    .regex(/^\d+$/, "ASTERISK_AMI_PORT must be a positive integer")
+    .optional()
+    .default("5038")
+    .transform(Number)
+    .pipe(z.number().int().min(1).max(65535)),
+  ASTERISK_AMI_USERNAME: z.string().optional().default(""),
+  ASTERISK_AMI_SECRET: z.string().optional().default(""),
+  ASTERISK_AMI_CHANNEL_TEMPLATE: z.string().optional().default("PJSIP/{number}"),
+  ASTERISK_AMI_CONTEXT: z.string().optional().default("from-internal"),
+  ASTERISK_AMI_EXTEN_TEMPLATE: z.string().optional().default("{number}"),
+  ASTERISK_AMI_PRIORITY: z
+    .string()
+    .regex(/^\d+$/, "ASTERISK_AMI_PRIORITY must be a positive integer")
+    .optional()
+    .default("1")
+    .transform(Number)
+    .pipe(z.number().int().min(1)),
+  ASTERISK_AMI_CALLER_ID: z.string().optional().default(""),
+  ASTERISK_AMI_OUTBOUND_CONTEXT: z.string().optional().default("from-internal"),
+
   DELIVERY_BASE_CHARGE: z
     .string()
     .regex(/^\d+(\.\d+)?$/, "DELIVERY_BASE_CHARGE must be a decimal number")
@@ -233,6 +257,22 @@ export const config = {
     bridgePort: env.TAPI_BRIDGE_PORT,
     bridgeExePath: env.TAPI_BRIDGE_EXE_PATH,
     bridgeToken: env.TAPI_BRIDGE_TOKEN,
+  },
+
+  telephony: {
+    provider: env.TELEPHONY_PROVIDER ?? (env.TAPI_BRIDGE_PORT > 0 ? "tapi" : "none"),
+    asterisk: {
+      host: env.ASTERISK_AMI_HOST,
+      port: env.ASTERISK_AMI_PORT,
+      username: env.ASTERISK_AMI_USERNAME,
+      secret: env.ASTERISK_AMI_SECRET,
+      channelTemplate: env.ASTERISK_AMI_CHANNEL_TEMPLATE,
+      context: env.ASTERISK_AMI_CONTEXT,
+      extenTemplate: env.ASTERISK_AMI_EXTEN_TEMPLATE,
+      priority: env.ASTERISK_AMI_PRIORITY,
+      callerId: env.ASTERISK_AMI_CALLER_ID,
+      outboundContext: env.ASTERISK_AMI_OUTBOUND_CONTEXT,
+    },
   },
 
   business: {

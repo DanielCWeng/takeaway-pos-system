@@ -6,8 +6,12 @@
  */
 
 import { Router } from "express";
-import { dial, isBridgeConnected } from "../../hardware/tapiDevice.js";
-import { config } from "../../config/index.js";
+import {
+  dial,
+  isTelephonyConnected,
+  isDialEnabled,
+  getTelephonyProvider,
+} from "../../hardware/telephonyDevice.js";
 import { upsertCallSession } from "./callSessions.service.js";
 import { normaliseUkPhone } from "../../shared/phones.js";
 
@@ -57,21 +61,25 @@ callsRouter.post("/session", (req, res, next) => {
  * POST /api/calls/dial
  * Body: { phone: string }
  *
- * Passes the dial command to the TAPI bridge.
- * Returns 503 if TAPI integration is disabled (TAPI_BRIDGE_PORT=0).
+ * Passes the dial command to the configured telephony provider.
+ * Returns 503 when dial integration is disabled or provider is unavailable.
  */
 callsRouter.post("/dial", (req, res) => {
-  if (config.tapi.bridgePort === 0) {
+  const provider = getTelephonyProvider();
+  if (!isDialEnabled()) {
     return res.status(503).json({
-      error: { code: "TAPI_DISABLED", message: "TAPI integration is not enabled on this server." },
+      error: {
+        code: "TELEPHONY_DISABLED",
+        message: "Telephony dial integration is not enabled on this server.",
+      },
     });
   }
 
-  if (!isBridgeConnected()) {
+  if (!isTelephonyConnected()) {
     return res.status(503).json({
       error: {
-        code: "TAPI_UNAVAILABLE",
-        message: "TAPI bridge is enabled but not currently connected.",
+        code: "TELEPHONY_UNAVAILABLE",
+        message: `Telephony provider '${provider}' is not currently connected.`,
       },
     });
   }
@@ -95,11 +103,11 @@ callsRouter.post("/dial", (req, res) => {
   if (!accepted) {
     return res.status(503).json({
       error: {
-        code: "TAPI_UNAVAILABLE",
-        message: "TAPI bridge is not ready to accept dial commands.",
+        code: "TELEPHONY_UNAVAILABLE",
+        message: `Telephony provider '${provider}' did not accept the dial command.`,
       },
     });
   }
 
-  res.status(202).json({ ok: true, phone: normalised });
+  res.status(202).json({ ok: true, phone: normalised, provider });
 });

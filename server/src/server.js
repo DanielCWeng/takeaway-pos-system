@@ -32,10 +32,9 @@ import {
   stopListening as stopCallerIdListening,
 } from "./hardware/callerIdDevice.js";
 import {
-  startListening as startTapiListening,
-  stopListening as stopTapiListening,
-} from "./hardware/tapiDevice.js";
-import { startBridge, stopBridge } from "./hardware/tapiBridgeProcess.js";
+  startListening as startTelephonyListening,
+  stopListening as stopTelephonyListening,
+} from "./hardware/telephonyDevice.js";
 import {
   init as initCallerIdService,
   handlePhoneDetected,
@@ -151,17 +150,18 @@ const server = app.listen(config.port, () => {
     });
   });
 
-  if (config.tapi.bridgePort > 0) {
-    // Launch the C# bridge first, then open the WS connection to it
-    startBridge();
-    startTapiListening({
+  Promise.resolve(
+    startTelephonyListening({
       onOffering: (phone, callId) => void handleOffering(phone, callId),
       onConnected: (callId) => handleConnected(callId),
       onDisconnected: (callId, phone, duration) => void handleDisconnected(callId, phone, duration),
+    }),
+  ).catch((err) => {
+    logger.error("Telephony listener failed to start", {
+      hardware: true,
+      error: err?.message ?? String(err),
     });
-  } else {
-    logger.info("TAPI integration disabled (TAPI_BRIDGE_PORT=0)");
-  }
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -178,12 +178,7 @@ function shutdown(signal) {
     // ignore shutdown cleanup errors
   }
   try {
-    stopTapiListening();
-  } catch (e) {
-    // ignore shutdown cleanup errors
-  }
-  try {
-    stopBridge();
+    stopTelephonyListening();
   } catch (e) {
     // ignore shutdown cleanup errors
   }
