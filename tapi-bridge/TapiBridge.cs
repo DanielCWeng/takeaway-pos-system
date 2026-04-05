@@ -60,7 +60,7 @@ internal struct LINEEXTENSIONID
 // Delegate type for the TAPI message callback.
 // TAPI calls this from its own internal thread.
 internal delegate void LINECALLBACK(
-    int dwDevice,
+    IntPtr dwDevice,
     int dwMsg,
     IntPtr dwCallbackInstance,
     IntPtr dwParam1,
@@ -155,7 +155,7 @@ internal static class Tapi
 // Active call tracker
 // ---------------------------------------------------------------------------
 
-internal record ActiveCall(IntPtr Handle, DateTime StartedAt, string? Phone);
+internal record ActiveCall(IntPtr Handle, DateTime OfferedAt, DateTime? ConnectedAt, string? Phone);
 
 // ---------------------------------------------------------------------------
 // WebSocket client manager
@@ -164,7 +164,7 @@ internal record ActiveCall(IntPtr Handle, DateTime StartedAt, string? Phone);
 internal sealed class WsClientManager : IDisposable
 {
     private readonly List<WebSocket> _clients = [];
-    private readonly Lock _lock = new();
+    private readonly object _lock = new();
 
     public void Add(WebSocket ws)
     {
@@ -211,8 +211,11 @@ internal sealed class WsClientManager : IDisposable
 
 internal sealed class Bridge : IDisposable
 {
+    private const int MAX_COMMAND_BYTES = 64 * 1024;
+
     private readonly int _port;
     private readonly int _deviceId;
+    private readonly string _commandToken;
 
     private IntPtr _hLineApp;
     private IntPtr _hLine;
@@ -223,14 +226,15 @@ internal sealed class Bridge : IDisposable
 
     private readonly WsClientManager _wsClients = new();
     private readonly Dictionary<IntPtr, ActiveCall> _activeCalls = [];
-    private readonly Lock _callsLock = new();
+    private readonly object _callsLock = new();
 
     private readonly CancellationTokenSource _cts = new();
 
-    public Bridge(int port, int deviceId)
+    public Bridge(int port, int deviceId, string commandToken)
     {
         _port = port;
         _deviceId = deviceId;
+        _commandToken = commandToken;
         _tapiCallback = OnTapiMessage; // pin the delegate
     }
 
@@ -304,16 +308,39 @@ internal sealed class Bridge : IDisposable
         {
             while (ws.State == WebSocketState.Open && !_cts.Token.IsCancellationRequested)
             {
-                var result = await ws.ReceiveAsync(buffer, _cts.Token);
+                using var messageBuffer = new MemoryStream();
+                WebSocketReceiveResult result;
+                do
+                {
+                    result = await ws.ReceiveAsync(buffer, _cts.Token);
+
+                    if (result.MessageType == WebSocketMessageType.Close)
+                        break;
+
+                    if (result.Count > 0)
+                    {
+                        messageBuffer.Write(buffer, 0, result.Count);
+                        if (messageBuffer.Length > MAX_COMMAND_BYTES)
+                        {
+                            Log("WARN", $"Received oversized command payload ({messageBuffer.Length} bytes).");
+                            await ws.CloseAsync(
+                                WebSocketCloseStatus.MessageTooBig,
+                                "command_too_large",
+                                CancellationToken.None);
+                            return;
+                        }
+                    }
+                }
+                while (!result.EndOfMessage && !_cts.Token.IsCancellationRequested);
 
                 if (result.MessageType == WebSocketMessageType.Close)
                     break;
 
-                if (result.MessageType == WebSocketMessageType.Text)
-                {
-                    var json = Encoding.UTF8.GetString(buffer, 0, result.Count);
-                    HandleCommand(json);
-                }
+                if (result.MessageType != WebSocketMessageType.Text || messageBuffer.Length == 0)
+                    continue;
+
+                var json = Encoding.UTF8.GetString(messageBuffer.GetBuffer(), 0, (int)messageBuffer.Length);
+                HandleCommand(json);
             }
         }
         catch (OperationCanceledException) { }
@@ -345,6 +372,12 @@ internal sealed class Bridge : IDisposable
             var type = node["type"]?.GetValue<string>();
             if (type == "DIAL")
             {
+                if (!HasValidToken(node))
+                {
+                    Log("WARN", "Rejected unauthorised DIAL command.");
+                    return;
+                }
+
                 var phone = node["phone"]?.GetValue<string>();
                 if (!string.IsNullOrWhiteSpace(phone))
                     Dial(phone);
@@ -428,7 +461,7 @@ internal sealed class Bridge : IDisposable
     // ------------------------------------------------------------------
 
     private void OnTapiMessage(
-        int dwDevice,
+        IntPtr dwDevice,
         int dwMsg,
         IntPtr dwCallbackInstance,
         IntPtr dwParam1,
@@ -437,7 +470,7 @@ internal sealed class Bridge : IDisposable
     {
         if (dwMsg != Tapi.LINE_CALLSTATE) return;
 
-        var hCall = (IntPtr)dwDevice;
+        var hCall = dwDevice;
         var callState = (uint)dwParam1.ToInt64();
 
         switch (callState)
@@ -468,7 +501,7 @@ internal sealed class Bridge : IDisposable
         ActiveCall call;
         lock (_callsLock)
         {
-            call = new ActiveCall(hCall, DateTime.UtcNow, phone);
+            call = new ActiveCall(hCall, DateTime.UtcNow, null, phone);
             _activeCalls[hCall] = call;
         }
 
@@ -485,6 +518,18 @@ internal sealed class Bridge : IDisposable
     private void HandleConnected(IntPtr hCall)
     {
         Log("INFO", $"CONNECTED — hCall=0x{hCall:X}");
+
+        lock (_callsLock)
+        {
+            if (_activeCalls.TryGetValue(hCall, out var existing))
+            {
+                _activeCalls[hCall] = existing with { ConnectedAt = DateTime.UtcNow };
+            }
+            else
+            {
+                _activeCalls[hCall] = new ActiveCall(hCall, DateTime.UtcNow, DateTime.UtcNow, null);
+            }
+        }
 
         var payload = JsonSerializer.Serialize(new
         {
@@ -505,7 +550,9 @@ internal sealed class Bridge : IDisposable
         }
 
         var duration = call is not null
-            ? (int)(DateTime.UtcNow - call.StartedAt).TotalSeconds
+            ? call.ConnectedAt.HasValue
+                ? Math.Max(0, (int)(DateTime.UtcNow - call.ConnectedAt.Value).TotalSeconds)
+                : 0
             : 0;
 
         Log("INFO", $"DISCONNECTED — hCall=0x{hCall:X}, duration={duration}s");
@@ -575,6 +622,17 @@ internal sealed class Bridge : IDisposable
                 if (hr != 0) return null;
             }
 
+            int usedSize = Marshal.ReadInt32(buf, 8); // dwUsedSize @ offset 8
+            if (usedSize <= 0) return null;
+
+            if (!IsWithinBuffer(Tapi.CALLINFO_CALLERID_FLAGS_OFFSET, sizeof(int), usedSize) ||
+                !IsWithinBuffer(Tapi.CALLINFO_CALLERID_SIZE_OFFSET, sizeof(int), usedSize) ||
+                !IsWithinBuffer(Tapi.CALLINFO_CALLERID_OFFSET_OFFSET, sizeof(int), usedSize))
+            {
+                Log("WARN", $"LINECALLINFO buffer too small for CallerID fields (used={usedSize}).");
+                return null;
+            }
+
             // Read CallerID fields
             uint callerIdFlags  = (uint)Marshal.ReadInt32(buf, Tapi.CALLINFO_CALLERID_FLAGS_OFFSET);
             int  callerIdSize   = Marshal.ReadInt32(buf, Tapi.CALLINFO_CALLERID_SIZE_OFFSET);
@@ -583,14 +641,34 @@ internal sealed class Bridge : IDisposable
             if ((callerIdFlags & Tapi.LINECALLPARTYID_ADDRESS) == 0 || callerIdSize <= 0)
                 return null;
 
+            if (!IsWithinBuffer(callerIdOffset, callerIdSize, usedSize))
+            {
+                Log("WARN", $"CallerID pointer out of bounds (offset={callerIdOffset}, size={callerIdSize}, used={usedSize}).");
+                return null;
+            }
+
             // The CallerID string is Unicode, stored at callerIdOffset from the start of the buffer
-            string raw = Marshal.PtrToStringUni(buf + callerIdOffset, callerIdSize / 2).TrimEnd('\0');
+            string raw = Marshal.PtrToStringUni(IntPtr.Add(buf, callerIdOffset), callerIdSize / 2).TrimEnd('\0');
             return string.IsNullOrWhiteSpace(raw) ? null : raw;
         }
         finally
         {
             Marshal.FreeHGlobal(buf);
         }
+    }
+
+    private bool HasValidToken(JsonNode node)
+    {
+        if (string.IsNullOrEmpty(_commandToken)) return true;
+        var token = node["token"]?.GetValue<string>() ?? string.Empty;
+        return token == _commandToken;
+    }
+
+    private static bool IsWithinBuffer(int offset, int size, int usedSize)
+    {
+        if (offset < 0 || size <= 0 || usedSize <= 0) return false;
+        long end = (long)offset + size;
+        return end <= usedSize;
     }
 
     // ------------------------------------------------------------------
@@ -644,14 +722,16 @@ internal static class Program
     {
         int port = 8765;
         int device = 0;
+        string token = string.Empty;
 
         for (int i = 0; i < args.Length - 1; i++)
         {
             if (args[i] == "--port" && int.TryParse(args[i + 1], out var p)) port = p;
             if (args[i] == "--device" && int.TryParse(args[i + 1], out var d)) device = d;
+            if (args[i] == "--token") token = args[i + 1];
         }
 
-        using var bridge = new Bridge(port, device);
+        using var bridge = new Bridge(port, device, token);
         try
         {
             await bridge.RunAsync();
