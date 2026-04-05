@@ -155,8 +155,8 @@ const server = app.listen(config.port, () => {
     // Launch the C# bridge first, then open the WS connection to it
     startBridge();
     startTapiListening({
-      onOffering:     (phone, callId) => void handleOffering(phone, callId),
-      onConnected:    (callId)        => handleConnected(callId),
+      onOffering: (phone, callId) => void handleOffering(phone, callId),
+      onConnected: (callId) => handleConnected(callId),
       onDisconnected: (callId, phone, duration) => void handleDisconnected(callId, phone, duration),
     });
   } else {
