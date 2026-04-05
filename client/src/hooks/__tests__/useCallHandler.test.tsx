@@ -84,6 +84,7 @@ describe("useCallHandler", () => {
   beforeEach(() => {
     MockWebSocket.instances = [];
     vi.useRealTimers();
+    window.localStorage.clear();
   });
 
   afterEach(() => {
@@ -144,7 +145,9 @@ describe("useCallHandler", () => {
         payload: {
           phone: "07111",
           customer: makeCustomer({ phone: "07111", name: "Sam", postcode: null }),
-          addresses: [makeAddress({ line1: "10 High St", town: "Nottingham", postcode: "NG9 8GF" })],
+          addresses: [
+            makeAddress({ line1: "10 High St", town: "Nottingham", postcode: "NG9 8GF" }),
+          ],
           distance: 1.2,
         },
       };
@@ -250,5 +253,74 @@ describe("useCallHandler", () => {
     expect(result.current.call.lastCall).toBeNull();
     expect(result.current.call.addressOptions).toHaveLength(0);
     expect(result.current.ui.activeModal).toBe("none");
+  });
+
+  it("routes none-of-these flow to customer modal with pending phone prefilled", async () => {
+    const { result } = renderHook(() => useCombined(), { wrapper: Providers });
+    await waitFor(() => expect(MockWebSocket.instances.length).toBe(1));
+
+    act(() => {
+      const payload: WebSocketMessage = {
+        type: "incoming_call",
+        payload: {
+          phone: "07555",
+          customer: makeCustomer({ phone: "07555", name: "New Caller" }),
+          addresses: [
+            makeAddress({ line1: "1 High St", postcode: "NG1 1AA" }),
+            makeAddress({ line1: "2 Low St", postcode: "NG1 1AB" }),
+          ],
+          distance: null,
+        },
+      };
+      MockWebSocket.instances[0].triggerMessage(payload);
+    });
+
+    expect(result.current.ui.activeModal).toBe("address-selection");
+
+    act(() => {
+      result.current.call.startNewCustomerFromPending();
+    });
+
+    expect(result.current.ui.activeModal).toBe("customer");
+    expect(result.current.order.order.customerInfo?.phone).toBe("07555");
+    expect(result.current.order.order.customerInfo?.name).toBe("New Caller");
+  });
+
+  it("resolvePendingCall clears pending call context without closing modal", async () => {
+    const { result } = renderHook(() => useCombined(), { wrapper: Providers });
+    await waitFor(() => expect(MockWebSocket.instances.length).toBe(1));
+
+    act(() => {
+      result.current.order.addItem({
+        id: "ITEM2",
+        name: "Noodles",
+        price: 4,
+        uniqueId: "item-2",
+      });
+    });
+
+    act(() => {
+      const payload: WebSocketMessage = {
+        type: "incoming_call",
+        payload: {
+          phone: "07666",
+          customer: makeCustomer({ phone: "07666", name: "Merge Candidate" }),
+          addresses: [makeAddress({ line1: "3 Test Lane", postcode: "NG2 2AA" })],
+          distance: null,
+        },
+      };
+      MockWebSocket.instances[0].triggerMessage(payload);
+    });
+
+    expect(result.current.call.pendingCall?.phone).toBe("07666");
+    expect(result.current.ui.activeModal).toBe("customer");
+
+    act(() => {
+      result.current.call.resolvePendingCall();
+    });
+
+    expect(result.current.call.pendingCall).toBeNull();
+    expect(result.current.call.addressOptions).toHaveLength(0);
+    expect(result.current.ui.activeModal).toBe("customer");
   });
 });

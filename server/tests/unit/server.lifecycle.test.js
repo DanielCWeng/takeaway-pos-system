@@ -37,9 +37,17 @@ describe("server lifecycle", () => {
     const closePostcodeDb = vi.fn();
     const startListening = vi.fn().mockResolvedValue(undefined);
     const stopListening = vi.fn();
+    const startTapiListening = vi.fn();
+    const stopTapiListening = vi.fn();
+    const startBridge = vi.fn();
+    const stopBridge = vi.fn();
     const initCallerIdService = vi.fn();
+    const initTapiService = vi.fn();
     const handlePhoneDetected = vi.fn();
-    const logger = { info: vi.fn(), error: vi.fn() };
+    const handleOffering = vi.fn();
+    const handleConnected = vi.fn();
+    const handleDisconnected = vi.fn();
+    const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
 
     vi.doMock("express", () => ({ default: express }));
     vi.doMock("cors", () => ({ default: cors }));
@@ -53,6 +61,9 @@ describe("server lifecycle", () => {
           apiRateLimitWindowMs: 60000,
           apiRateLimitMaxRequests: 600,
           apiRateLimitMaxBuckets: 5000,
+        },
+        tapi: {
+          bridgePort: 0,
         },
       },
     }));
@@ -76,9 +87,23 @@ describe("server lifecycle", () => {
       startListening,
       stopListening,
     }));
+    vi.doMock("../../src/hardware/tapiDevice.js", () => ({
+      startListening: startTapiListening,
+      stopListening: stopTapiListening,
+    }));
+    vi.doMock("../../src/hardware/tapiBridgeProcess.js", () => ({
+      startBridge,
+      stopBridge,
+    }));
     vi.doMock("../../src/domains/callerIdService/callerIdService.service.js", () => ({
       init: initCallerIdService,
       handlePhoneDetected,
+    }));
+    vi.doMock("../../src/domains/tapiService/tapiService.service.js", () => ({
+      init: initTapiService,
+      handleOffering,
+      handleConnected,
+      handleDisconnected,
     }));
 
     const processOnSpy = vi.spyOn(process, "on").mockImplementation((event, handler) => {
@@ -103,8 +128,16 @@ describe("server lifecycle", () => {
       closePostcodeDb,
       startListening,
       stopListening,
+      startTapiListening,
+      stopTapiListening,
+      startBridge,
+      stopBridge,
       initCallerIdService,
+      initTapiService,
       handlePhoneDetected,
+      handleOffering,
+      handleConnected,
+      handleDisconnected,
       logger,
       processOnSpy,
       processExitSpy,
@@ -125,7 +158,12 @@ describe("server lifecycle", () => {
     expect(ctx.initCallerIdService).toHaveBeenCalledWith({
       broadcast: ctx.broadcast,
     });
+    expect(ctx.initTapiService).toHaveBeenCalledWith({
+      handlePhoneDetected: ctx.handlePhoneDetected,
+    });
     expect(ctx.startListening).toHaveBeenCalledWith(expect.any(Function));
+    expect(ctx.startBridge).not.toHaveBeenCalled();
+    expect(ctx.startTapiListening).not.toHaveBeenCalled();
 
     const phoneHandler = ctx.startListening.mock.calls[0][0];
     await phoneHandler("07911123456");
@@ -138,6 +176,8 @@ describe("server lifecycle", () => {
     ctx.handlers.SIGTERM();
 
     expect(ctx.stopListening).toHaveBeenCalledTimes(1);
+    expect(ctx.stopTapiListening).toHaveBeenCalledTimes(1);
+    expect(ctx.stopBridge).toHaveBeenCalledTimes(1);
     expect(ctx.closePostcodeDb).toHaveBeenCalledTimes(1);
     expect(ctx.closeWsServer).toHaveBeenCalledTimes(1);
     expect(ctx.server.closeAllConnections).toHaveBeenCalledTimes(1);
