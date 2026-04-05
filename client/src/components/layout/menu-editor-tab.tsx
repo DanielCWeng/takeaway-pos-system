@@ -419,14 +419,13 @@ function MenuItemRow({ item, onSave, onDelete }: RowProps) {
 
 export function MenuEditorTab() {
   const [items, setItems]           = useState<RawMenuItem[]>([]);
-  const [isLoading, setIsLoading]   = useState(true);
+  const [isLoading, setIsLoading]   = useState(true); // true = loading until fetch resolves
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [search, setSearch]         = useState("");
   const [category, setCategory]     = useState("All");
   const [showAddModal, setShowAddModal] = useState(false);
 
   useEffect(() => {
-    setIsLoading(true);
     apiClient
       .fetchMenu()
       .then((data) => setItems(data as RawMenuItem[]))
