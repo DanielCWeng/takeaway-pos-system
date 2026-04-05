@@ -19,6 +19,7 @@ describe("db migrations", () => {
     expect(rows.map((r) => r.filename)).toEqual([
       "001_initial_schema.sql",
       "002_coordinate_integrity.sql",
+      "003_call_logs.sql",
       "003_orders_customer_phone_index.sql",
     ]);
 
