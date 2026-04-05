@@ -6,20 +6,20 @@ interface CustomerCardProps {
   orderType: OrderType;
   onChangeOrderType: (type: OrderType) => void;
   customerInfo?: CustomerInfo;
+  onDialPhone: (phone: string) => void;
 }
 
-export function CustomerCard({ orderType, onChangeOrderType, customerInfo }: CustomerCardProps) {
+export function CustomerCard({
+  orderType,
+  onChangeOrderType,
+  customerInfo,
+  onDialPhone,
+}: CustomerCardProps) {
   const empty = "\u2014";
-  const infoRows = [
-    { label: "Name", value: customerInfo?.name || empty },
-    {
-      label: "Phone",
-      value: customerInfo?.phone?.startsWith("UNKNOWN-")
-        ? "Anonymous"
-        : customerInfo?.phone || empty,
-    },
-    { label: "Address", value: customerInfo?.address || customerInfo?.postcode || empty },
-  ];
+  const phoneValue = customerInfo?.phone?.startsWith("UNKNOWN-")
+    ? "Anonymous"
+    : customerInfo?.phone || empty;
+  const canDial = Boolean(customerInfo?.phone && !customerInfo.phone.startsWith("UNKNOWN-"));
 
   return (
     <div className="pos-panel flex h-full flex-col p-3">
@@ -57,23 +57,54 @@ export function CustomerCard({ orderType, onChangeOrderType, customerInfo }: Cus
       </Tabs>
 
       <div className="mt-2 grid gap-1 text-xs flex-1">
-        {infoRows.map((row) => {
-          const isEmpty = row.value === empty;
-          return (
-            <div key={row.label} className="flex items-center justify-between">
-              <span className="text-muted-foreground">{row.label}</span>
-              <span
-                className={
-                  isEmpty
-                    ? "pos-value font-mono text-muted-foreground"
-                    : "pos-value font-mono text-foreground"
-                }
-              >
-                {row.value}
-              </span>
-            </div>
-          );
-        })}
+        <div className="flex items-center justify-between">
+          <span className="text-muted-foreground">Name</span>
+          <span
+            className={
+              customerInfo?.name
+                ? "pos-value font-mono text-foreground"
+                : "pos-value font-mono text-muted-foreground"
+            }
+          >
+            {customerInfo?.name || empty}
+          </span>
+        </div>
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-muted-foreground">Phone</span>
+          <div className="flex items-center gap-2">
+            <span
+              className={
+                phoneValue === empty
+                  ? "pos-value font-mono text-muted-foreground"
+                  : "pos-value font-mono text-foreground"
+              }
+            >
+              {phoneValue}
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-7 px-2 text-[11px]"
+              onClick={() => customerInfo?.phone && onDialPhone(customerInfo.phone)}
+              disabled={!canDial}
+            >
+              Dial
+            </Button>
+          </div>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-muted-foreground">Address</span>
+          <span
+            className={
+              customerInfo?.address || customerInfo?.postcode
+                ? "pos-value font-mono text-foreground"
+                : "pos-value font-mono text-muted-foreground"
+            }
+          >
+            {customerInfo?.address || customerInfo?.postcode || empty}
+          </span>
+        </div>
       </div>
     </div>
   );

@@ -7,12 +7,14 @@ import { ScrollArea } from "../ui/scroll-area";
 interface AddressSelectionModalProps {
   addresses: Address[];
   onSelect: (address: Address) => void;
+  onCreateNew: () => void;
   onClose: () => void;
 }
 
 export function AddressSelectionModal({
   addresses,
   onSelect,
+  onCreateNew,
   onClose,
 }: AddressSelectionModalProps) {
   return (
@@ -64,9 +66,14 @@ export function AddressSelectionModal({
         </ScrollArea>
 
         <div className="border-t border-border/60 p-4 bg-muted/10">
-          <Button variant="outline" className="w-full h-12 text-base" onClick={onClose}>
-            None of these
-          </Button>
+          <div className="grid grid-cols-2 gap-2">
+            <Button variant="outline" className="h-12 text-base" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button className="h-12 text-base" onClick={onCreateNew}>
+              None / New Customer
+            </Button>
+          </div>
         </div>
       </motion.div>
     </motion.div>
