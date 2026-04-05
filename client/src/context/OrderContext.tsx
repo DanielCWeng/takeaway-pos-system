@@ -72,11 +72,9 @@ interface OrderContextType {
   isZeroPriceMode: boolean;
   isSwapMode: boolean;
   isIncMode: boolean;
-  isShortMode: boolean;
   setIsZeroPriceMode: (value: boolean | ((prev: boolean) => boolean)) => void;
   setIsSwapMode: (value: boolean | ((prev: boolean) => boolean)) => void;
   setIsIncMode: (value: boolean | ((prev: boolean) => boolean)) => void;
-  setIsShortMode: (value: boolean | ((prev: boolean) => boolean)) => void;
 
   setActiveOrderIndex: (index: number) => void;
   createNewOrder: () => void;
@@ -348,7 +346,6 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   const [isZeroPriceMode, setIsZeroPriceMode] = useState(false);
   const [isSwapMode, setIsSwapMode] = useState(false);
   const [isIncMode, setIsIncMode] = useState(false);
-  const [isShortMode, setIsShortMode] = useState(false);
   const [printQueue, setPrintQueue] = useState<PrintQueueItem[]>(loadPrintQueue);
   const [isFlushingPrintQueue, setIsFlushingPrintQueue] = useState(false);
   const [lastPrintAlert, setLastPrintAlert] = useState<string | null>(null);
@@ -608,16 +605,27 @@ export function OrderProvider({ children }: { children: ReactNode }) {
         const nextItems = [...prev.items];
         const item = nextItems[index];
 
-        if (item.isFoc && item.name.endsWith(" (FOC)")) {
-          return {};
+        if (item.isFoc) {
+          // Reverse FOC — restore original price and name
+          nextItems[index] = {
+            ...item,
+            price: item.preFocPrice ?? item.price,
+            isFoc: false,
+            preFocPrice: undefined,
+            name: item.name.endsWith(" (FOC)")
+              ? item.name.slice(0, -6)
+              : item.name,
+          };
+        } else {
+          // Apply FOC — zero price, stash original
+          nextItems[index] = {
+            ...item,
+            preFocPrice: item.price,
+            price: 0,
+            isFoc: true,
+            name: `${item.name} (FOC)`,
+          };
         }
-
-        nextItems[index] = {
-          ...item,
-          price: 0,
-          isFoc: true,
-          name: item.name.endsWith(" (FOC)") ? item.name : `${item.name} (FOC)`,
-        };
         return { items: nextItems };
       });
     },
@@ -813,11 +821,9 @@ export function OrderProvider({ children }: { children: ReactNode }) {
         isZeroPriceMode,
         isSwapMode,
         isIncMode,
-        isShortMode,
         setIsZeroPriceMode,
         setIsSwapMode,
         setIsIncMode,
-        setIsShortMode,
 
         setActiveOrderIndex,
         createNewOrder,

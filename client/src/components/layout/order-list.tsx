@@ -1,24 +1,42 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { OrderItem } from "../../types";
 import { formatCurrency } from "../../lib/format";
 import { cn } from "../../lib/utils";
-import { ScrollArea } from "../ui/scroll-area";
 import { Badge } from "../ui/badge";
 
 interface OrderListProps {
   items: OrderItem[];
   selectedIndex: number | null;
   onSelect: (index: number) => void;
-  isShortMode?: boolean;
 }
 
 export const OrderList = React.memo(function OrderList({
   items,
   selectedIndex,
   onSelect,
-  isShortMode,
 }: OrderListProps) {
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  useEffect(() => {
+    if (selectedIndex === null) return;
+    const el = itemRefs.current[selectedIndex];
+    const viewport = viewportRef.current;
+    if (!el || !viewport) return;
+
+    const elTop = el.offsetTop;
+    const elBottom = elTop + el.offsetHeight;
+    const vpTop = viewport.scrollTop;
+    const vpBottom = vpTop + viewport.clientHeight;
+
+    if (elTop < vpTop) {
+      viewport.scrollTop = elTop - 8;
+    } else if (elBottom > vpBottom) {
+      viewport.scrollTop = elBottom - viewport.clientHeight + 8;
+    }
+  }, [selectedIndex]);
+
   return (
     <div className="pos-panel flex h-full flex-col">
       <div className="flex items-center justify-between border-b border-border/60 px-3 py-2">
@@ -32,20 +50,22 @@ export const OrderList = React.memo(function OrderList({
           {items.length}
         </Badge>
       </div>
-      <ScrollArea className="min-h-0 flex-1">
+      <div
+        ref={viewportRef}
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:w-2.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted/65 [&::-webkit-scrollbar-thumb:hover]:bg-accent/60"
+        style={{ touchAction: "pan-y", WebkitOverflowScrolling: "touch" } as React.CSSProperties}
+      >
         <motion.div layout className="flex flex-col gap-1.5 p-2">
           <AnimatePresence initial={false} mode="popLayout">
             {items.map((item, index) => {
               const isSelected = selectedIndex === index;
               const isChild = !!item.parentId;
-              const isVisible = !isShortMode || !isChild;
-
-              if (!isVisible) return null;
 
               return (
                 <motion.div
                   layout
                   key={item.uniqueId || `${item.name}-${index}`}
+                  ref={(el) => { itemRefs.current[index] = el; }}
                   initial={{ opacity: 0, height: 0, marginBottom: 0 }}
                   animate={{ opacity: 1, height: "auto", marginBottom: 6 }}
                   exit={{ opacity: 0, height: 0, marginBottom: 0 }}
@@ -111,7 +131,7 @@ export const OrderList = React.memo(function OrderList({
             })}
           </AnimatePresence>
         </motion.div>
-      </ScrollArea>
+      </div>
     </div>
   );
 });

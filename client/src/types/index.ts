@@ -26,6 +26,7 @@ export interface OrderItem {
   >;
   parentId?: string;
   isFoc?: boolean;
+  preFocPrice?: number;
   isIncluded?: boolean;
 }
 

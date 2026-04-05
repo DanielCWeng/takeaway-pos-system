@@ -1,19 +1,19 @@
-﻿[
+[
   {
     "id": "HM1",
     "name": {
       "en": "Happy Meal",
-      "zh": "开心套餐"
+      "zh": "H/M"
     },
     "price": 11,
     "primaryCategory": "Special",
-    "secondaryCategory": "Snack Box"
+    "secondaryCategory": ""
   },
   {
     "id": "SET2",
     "name": {
       "en": "Set Dinner for 2 Persons",
-      "zh": "二人套餐"
+      "zh": "2人餐"
     },
     "price": 24,
     "primaryCategory": "Special",
@@ -21,23 +21,26 @@
     "contents": [
       {
         "type": "choice",
-        "description": "Choose 2 Soups",
-        "options": ["Chicken Noodle Soup", "Chicken & Sweetcorn Soup"]
+        "description": "Choose 2 Soups 选2汤",
+        "options": [
+          "Chicken Noodle Soup 鸡面汤",
+          "Chicken & Sweetcorn Soup 鸡米汤"
+        ]
       },
       {
-        "item": "BBQ Spare Ribs"
+        "item": "BBQ Spare Ribs BBQ骨"
       },
       {
-        "item": "Sweet & Sour Chicken Hong Kong Style"
+        "item": "Sweet & Sour Chicken Hong Kong Style 港式古鸡"
       },
       {
-        "item": "Beef with Green Pepper & Black Bean Sauce"
+        "item": "Beef with Green Pepper & Black Bean Sauce 士召牛"
       },
       {
-        "item": "Fried Rice (Large)"
+        "item": "Fried Rice (Large) 炒饭(大)"
       },
       {
-        "item": "Prawn Crackers"
+        "item": "Prawn Crackers 虾片"
       }
     ]
   },
@@ -45,29 +48,29 @@
     "id": "SET3",
     "name": {
       "en": "Set Dinner for 3 Persons",
-      "zh": "三人套餐"
+      "zh": "3人餐"
     },
     "price": 33,
     "primaryCategory": "Special",
     "secondaryCategory": "Chef's",
     "contents": [
       {
-        "item": "1/4 Crispy Aromatic Duck"
+        "item": "1/4 Crispy Aromatic Duck 1/4鸭"
       },
       {
-        "item": "Sweet & Sour Chicken Ball (9)"
+        "item": "Sweet & Sour Chicken Ball (9) 古鸡球(9)"
       },
       {
-        "item": "Crispy Shredded Beef in Chilli Sauce"
+        "item": "Crispy Shredded Beef in Chilli Sauce 辣牛丝"
       },
       {
-        "item": "Lemon Chicken"
+        "item": "Lemon Chicken 柠鸡"
       },
       {
-        "item": "2 x Chicken Fried Rice (Small)"
+        "item": "2 x Chicken Fried Rice (Small) 2x鸡饭(小)"
       },
       {
-        "item": "Prawn Crackers"
+        "item": "Prawn Crackers 虾片"
       }
     ]
   },
@@ -75,7 +78,7 @@
     "id": "SET4",
     "name": {
       "en": "Set Dinner for 4 Persons",
-      "zh": "四人套餐"
+      "zh": "4人餐"
     },
     "price": 47,
     "primaryCategory": "Special",
@@ -83,26 +86,29 @@
     "contents": [
       {
         "type": "choice",
-        "description": "Choose 1 Starter",
-        "options": ["Mixed Platter for 4", "1/2 Aromatic Duck"]
+        "description": "Choose 1 Starter 选1头盘",
+        "options": [
+          "Mixed Platter for 4 4人拼",
+          "1/2 Aromatic Duck 1/2鸭"
+        ]
       },
       {
-        "item": "Sweet & Sour King Prawn Balls (12)"
+        "item": "Sweet & Sour King Prawn Balls (12) 古大下球(12)"
       },
       {
-        "item": "Shredded Chicken in Honey & Chilli Sauce"
+        "item": "Shredded Chicken in Honey & Chilli Sauce 蜜辣鸡丝"
       },
       {
-        "item": "Beef with Ginger & Spring Onion"
+        "item": "Beef with Ginger & Spring Onion 姜葱牛"
       },
       {
-        "item": "Chicken with Cashew Nuts"
+        "item": "Chicken with Cashew Nuts 腰果鸡"
       },
       {
-        "item": "2 x Yung Chow Fried Rice (Large)"
+        "item": "2 x Yung Chow Fried Rice (Large) 2x扬州炒饭(大)"
       },
       {
-        "item": "Prawn Crackers"
+        "item": "Prawn Crackers 虾片"
       }
     ]
   },
@@ -110,21 +116,21 @@
     "id": "1",
     "name": {
       "en": "Crispy Aromatic Duck",
-      "zh": "香酥鸭"
+      "zh": "甲"
     },
     "primaryCategory": "Duck",
     "secondaryCategory": "Starter",
     "options": [
       {
-        "name": "Quarter",
+        "name": "Quarter 1/4",
         "price": 9.6
       },
       {
-        "name": "Half",
+        "name": "Half 1/2",
         "price": 18
       },
       {
-        "name": "Whole",
+        "name": "Whole 1/1",
         "price": 36
       }
     ]
@@ -133,7 +139,7 @@
     "id": "2",
     "name": {
       "en": "Mixed Platter (For 2 Persons)",
-      "zh": "拼盘 (两人份)"
+      "zh": "2人拼"
     },
     "price": 11,
     "primaryCategory": "Special",
@@ -143,7 +149,7 @@
     "id": "2a",
     "name": {
       "en": "Fortune Kitchen's Munchy Box",
-      "zh": "富厨"
+      "zh": "椒盐"
     },
     "price": 14,
     "primaryCategory": "Special",
@@ -153,7 +159,7 @@
     "id": "3",
     "name": {
       "en": "Spare Ribs",
-      "zh": "排骨"
+      "zh": "骨"
     },
     "price": 7,
     "primaryCategory": "Pork",
@@ -164,23 +170,23 @@
         "price": 7
       },
       {
-        "name": "Peking",
+        "name": "Peking 京",
         "price": 7
       },
       {
-        "name": "Honey & Chilli",
+        "name": "Honey & Chilli 蜜辣",
         "price": 7
       },
       {
-        "name": "Salt & Pepper",
+        "name": "Salt & Pepper 召盐",
         "price": 7
       },
       {
-        "name": "Thai Sweet Chilli",
+        "name": "Thai Sweet Chilli 甜辣",
         "price": 7
       },
       {
-        "name": "Dry",
+        "name": "Dry 干骨",
         "price": 7
       }
     ]
@@ -189,34 +195,34 @@
     "id": "4",
     "name": {
       "en": "Chicken Wings",
-      "zh": "鸡翅"
+      "zh": "介亦"
     },
     "price": 5.6,
     "primaryCategory": "Chicken",
     "secondaryCategory": "Chicken Wing",
     "options": [
       {
-        "name": "BBQ",
+        "name": "BBQ ",
         "price": 5.6
       },
       {
-        "name": "Peking",
+        "name": "Peking 京",
         "price": 5.6
       },
       {
-        "name": "Honey & Chilli",
+        "name": "Honey & Chilli 蜜辣",
         "price": 5.6
       },
       {
-        "name": "Salt & Pepper",
+        "name": "Salt & Pepper 召盐",
         "price": 5.6
       },
       {
-        "name": "Thai Sweet Chilli",
+        "name": "Thai Sweet Chilli 甜辣",
         "price": 5.6
       },
       {
-        "name": "Dry",
+        "name": "Dry 干",
         "price": 5.6
       }
     ]
@@ -235,7 +241,7 @@
     "id": "6",
     "name": {
       "en": "Salt & Pepper King Prawn",
-      "zh": "椒盐大虾"
+      "zh": "椒盐大下"
     },
     "price": 6.6,
     "primaryCategory": "King Prawn",
@@ -255,7 +261,7 @@
     "id": "8",
     "name": {
       "en": "Salt & Pepper Chips",
-      "zh": "椒盐薯条"
+      "zh": "椒盐条"
     },
     "price": 4.4,
     "primaryCategory": "Chips",
@@ -275,7 +281,7 @@
     "id": "9",
     "name": {
       "en": "Mini Spring Rolls (8)",
-      "zh": "迷你春卷 (8个)"
+      "zh": "春卷 (8)"
     },
     "price": 3.2,
     "primaryCategory": "Veg",
@@ -285,7 +291,7 @@
     "id": "9a",
     "name": {
       "en": "Sweetcorn Balls (8)",
-      "zh": "玉米球 (8个)"
+      "zh": "粟米球 (8)"
     },
     "price": 4.1,
     "primaryCategory": "Veg",
@@ -295,7 +301,7 @@
     "id": "10",
     "name": {
       "en": "Roast Pork Spring Rolls (4)",
-      "zh": "烧肉春卷 (4个)"
+      "zh": "叉烧春卷 (4)"
     },
     "price": 3.8,
     "primaryCategory": "Pork",
@@ -305,7 +311,7 @@
     "id": "11",
     "name": {
       "en": "Dainty Crispy Duck Rolls (4)",
-      "zh": "鸭卷 (4个)"
+      "zh": "鸭卷 (4)"
     },
     "price": 4.6,
     "primaryCategory": "Duck",
@@ -315,7 +321,7 @@
     "id": "12",
     "name": {
       "en": "Spring Rolls (2)",
-      "zh": "春卷 (2个)"
+      "zh": "春卷 (2)"
     },
     "price": 4.4,
     "primaryCategory": "Veg",
@@ -345,7 +351,8 @@
     "id": "15",
     "name": {
       "en": "Crispy Smoke Chicken",
-      "zh": "熏鸡"
+      "zh": "凤吉士",
+      "_note": "zh unverified — phonetic guess from #fengjishi"
     },
     "price": 6.1,
     "primaryCategory": "Chicken",
@@ -365,7 +372,7 @@
     "id": "17",
     "name": {
       "en": "Sesame Prawn Toast (8)",
-      "zh": "虾吐司 (8件)"
+      "zh": "下多士 (8)"
     },
     "price": 5,
     "primaryCategory": "King Prawn",
@@ -375,7 +382,7 @@
     "id": "18",
     "name": {
       "en": "Butterfly King Prawn (8)",
-      "zh": "蝴蝶大虾 (8只)"
+      "zh": "蝴蝶大下 (8)"
     },
     "price": 6,
     "primaryCategory": "King Prawn",
@@ -385,7 +392,7 @@
     "id": "19",
     "name": {
       "en": "Crab Claws (4)",
-      "zh": "蟹钳 (4只)"
+      "zh": "蟹钳 (4)"
     },
     "price": 3.8,
     "primaryCategory": "Special",
@@ -395,7 +402,7 @@
     "id": "21",
     "name": {
       "en": "Chicken Satay on Skewer (4)",
-      "zh": "沙爹鸡串 (4串)"
+      "zh": "沙爹鸡串 (4)"
     },
     "price": 5,
     "primaryCategory": "Chicken",
@@ -405,7 +412,7 @@
     "id": "22",
     "name": {
       "en": "Prawn Dumplings (6)",
-      "zh": "虾饺 (6只)"
+      "zh": "下饺 (6)"
     },
     "price": 5,
     "primaryCategory": "King Prawn",
@@ -415,7 +422,7 @@
     "id": "23",
     "name": {
       "en": "Pork Dumplings (6)",
-      "zh": "猪肉饺 (6只)"
+      "zh": "肉饺 (6)"
     },
     "price": 5,
     "primaryCategory": "Pork",
@@ -435,7 +442,7 @@
     "id": "25",
     "name": {
       "en": "Chicken & Mushroom Soup",
-      "zh": "蘑菇鸡汤"
+      "zh": "毛菇鸡汤"
     },
     "price": 3.3,
     "primaryCategory": "Chicken",
@@ -485,7 +492,7 @@
     "id": "C1",
     "name": {
       "en": "Happy Family",
-      "zh": "全家福"
+      "zh": "大家乐"
     },
     "price": 6.6,
     "primaryCategory": "Special",
@@ -505,7 +512,8 @@
     "id": "C3",
     "name": {
       "en": "Happy Phoenix",
-      "zh": "快活凤"
+      "zh": "喜凤",
+      "_note": "zh unverified — phonetic guess from #xifen"
     },
     "price": 6.6,
     "primaryCategory": "Special",
@@ -515,7 +523,7 @@
     "id": "C4",
     "name": {
       "en": "Three Special Roast",
-      "zh": "烧味三拼"
+      "zh": "三烧"      
     },
     "price": 6.6,
     "primaryCategory": "Special",
@@ -525,7 +533,7 @@
     "id": "C5",
     "name": {
       "en": "Chicken in Honey & Chilli Sauce",
-      "zh": "蜜汁辣鸡"
+      "zh": "蜜辣鸡"
     },
     "price": 6.6,
     "primaryCategory": "Chicken",
@@ -535,7 +543,7 @@
     "id": "C6",
     "name": {
       "en": "Shredded Chicken in Honey & Chilli Sauce",
-      "zh": "蜜汁辣鸡丝"
+      "zh": "蜜辣鸡丝"
     },
     "price": 6.6,
     "primaryCategory": "Chicken",
@@ -545,7 +553,7 @@
     "id": "C7",
     "name": {
       "en": "Shredded Beef in Honey & Chilli Sauce",
-      "zh": "蜜汁辣牛丝"
+      "zh": "蜜辣牛丝"
     },
     "price": 6.6,
     "primaryCategory": "Beef",
@@ -555,7 +563,7 @@
     "id": "C8",
     "name": {
       "en": "King Prawn in Honey & Chilli Sauce",
-      "zh": "蜜汁辣大虾"
+      "zh": "蜜辣大下"
     },
     "price": 6.6,
     "primaryCategory": "King Prawn",
@@ -565,7 +573,7 @@
     "id": "31",
     "name": {
       "en": "Chicken Peking Style",
-      "zh": "京式鸡"
+      "zh": "京鸡"
     },
     "price": 6.3,
     "primaryCategory": "Chicken",
@@ -575,7 +583,7 @@
     "id": "32",
     "name": {
       "en": "Beef Peking Style",
-      "zh": "京式牛"
+      "zh": "京牛"
     },
     "price": 6.3,
     "primaryCategory": "Beef",
@@ -585,7 +593,7 @@
     "id": "33",
     "name": {
       "en": "Pork Peking Style",
-      "zh": "京式猪"
+      "zh": "京肉"
     },
     "price": 6.3,
     "primaryCategory": "Pork",
@@ -595,7 +603,7 @@
     "id": "34",
     "name": {
       "en": "King Prawn Peking Style",
-      "zh": "京式大虾"
+      "zh": "京大下"
     },
     "price": 6.5,
     "primaryCategory": "King Prawn",
@@ -605,7 +613,7 @@
     "id": "35",
     "name": {
       "en": "Duck Peking Style",
-      "zh": "京式鸭"
+      "zh": "京鸭"
     },
     "price": 6.8,
     "primaryCategory": "Duck",
@@ -615,7 +623,7 @@
     "id": "39",
     "name": {
       "en": "Sweet & Sour Chicken in Batter (10)",
-      "zh": "甜酸鸡球 (10个)"
+      "zh": "古鸡球(10)"
     },
     "price": 6.3,
     "primaryCategory": "Chicken",
@@ -625,7 +633,7 @@
     "id": "39a",
     "name": {
       "en": "Sweet & Sour Chicken in Batter (5)",
-      "zh": "甜酸鸡球 (5个)"
+      "zh": "古鸡球(5)"
     },
     "price": 3.3,
     "primaryCategory": "Chicken",
@@ -635,7 +643,7 @@
     "id": "39b",
     "name": {
       "en": "Sweet & Sour Chicken in Batter (4)",
-      "zh": "甜酸鸡球 (5个)"
+      "zh": "古鸡球(4)"
     },
     "price": 0,
     "primaryCategory": "Chicken",
@@ -645,7 +653,7 @@
     "id": "40",
     "name": {
       "en": "Sweet & Sour Pork in Batter (10)",
-      "zh": "甜酸猪球 (10个)"
+      "zh": "咕肉球(10)"
     },
     "price": 6.3,
     "primaryCategory": "Pork",
@@ -655,7 +663,7 @@
     "id": "41",
     "name": {
       "en": "Sweet & Sour King Prawn in Batter (10)",
-      "zh": "甜酸大虾球 (10个)"
+      "zh": "大下球(10)"
     },
     "price": 6.6,
     "primaryCategory": "King Prawn",
@@ -665,7 +673,7 @@
     "id": "42",
     "name": {
       "en": "Sweet & Sour Chicken Hong Kong Style",
-      "zh": "港式咕咾鸡"
+      "zh": "港古鸡"
     },
     "price": 6.3,
     "primaryCategory": "Chicken",
@@ -675,7 +683,7 @@
     "id": "43",
     "name": {
       "en": "Sweet & Sour Pork Hong Kong Style",
-      "zh": "港式咕咾肉"
+      "zh": "港古肉"
     },
     "price": 6.3,
     "primaryCategory": "Pork",
@@ -685,7 +693,7 @@
     "id": "44",
     "name": {
       "en": "Sweet & Sour King Prawn Hong Kong Style",
-      "zh": "港式咕咾大虾"
+      "zh": "港古大下"
     },
     "price": 6.6,
     "primaryCategory": "King Prawn",
@@ -735,7 +743,7 @@
     "id": "49",
     "name": {
       "en": "King Prawn Szechuan Style",
-      "zh": "四川大虾"
+      "zh": "四川大下"
     },
     "price": 6.6,
     "primaryCategory": "King Prawn",
@@ -765,7 +773,7 @@
     "id": "53",
     "name": {
       "en": "Chicken Kung Po Style",
-      "zh": "宫保鸡"
+      "zh": "公保鸡"
     },
     "price": 6.3,
     "primaryCategory": "Chicken",
@@ -775,7 +783,7 @@
     "id": "54",
     "name": {
       "en": "Beef Kung Po Style",
-      "zh": "宫保牛"
+      "zh": "公保牛"
     },
     "price": 6.3,
     "primaryCategory": "Beef",
@@ -785,7 +793,7 @@
     "id": "55",
     "name": {
       "en": "Char Sui Kung Po Style",
-      "zh": "宫保叉烧"
+      "zh": "公保叉烧"
     },
     "price": 6.3,
     "primaryCategory": "Pork",
@@ -795,7 +803,7 @@
     "id": "56",
     "name": {
       "en": "King Prawn Kung Po Style",
-      "zh": "宫保大虾"
+      "zh": "公保大下"
     },
     "price": 6.6,
     "primaryCategory": "King Prawn",
@@ -805,7 +813,7 @@
     "id": "57",
     "name": {
       "en": "Duck Kung Po Style",
-      "zh": "宫保鸭"
+      "zh": "公保鸭"
     },
     "price": 6.6,
     "primaryCategory": "Duck",
@@ -815,7 +823,7 @@
     "id": "58",
     "name": {
       "en": "Chicken Curry",
-      "zh": "咖喱鸡"
+      "zh": "加喱鸡"
     },
     "price": 6,
     "primaryCategory": "Chicken",
@@ -825,7 +833,7 @@
     "id": "59",
     "name": {
       "en": "Beef Curry",
-      "zh": "咖喱牛"
+      "zh": "加喱牛"
     },
     "price": 6.3,
     "primaryCategory": "Beef",
@@ -835,7 +843,7 @@
     "id": "60",
     "name": {
       "en": "Char Sui Curry",
-      "zh": "咖喱叉烧"
+      "zh": "加喱叉烧"
     },
     "price": 6,
     "primaryCategory": "Pork",
@@ -845,7 +853,7 @@
     "id": "61",
     "name": {
       "en": "Lamb Curry",
-      "zh": "咖喱羊"
+      "zh": "加喱羊"
     },
     "price": 6.3,
     "primaryCategory": "Lamb",
@@ -855,7 +863,7 @@
     "id": "62",
     "name": {
       "en": "Shrimp curry",
-      "zh": "咖喱虾"
+      "zh": "加喱下仔"
     },
     "price": 6,
     "primaryCategory": "Shrimp",
@@ -865,7 +873,7 @@
     "id": "63",
     "name": {
       "en": "King Prawn Curry",
-      "zh": "咖喱大虾"
+      "zh": "加喱大下"
     },
     "price": 6.6,
     "primaryCategory": "King Prawn",
@@ -875,7 +883,7 @@
     "id": "64",
     "name": {
       "en": "Special Curry",
-      "zh": "特别咖喱"
+      "zh": "招牌加喱"
     },
     "price": 6.5,
     "primaryCategory": "Special",
@@ -885,7 +893,7 @@
     "id": "65",
     "name": {
       "en": "Duck Curry",
-      "zh": "咖喱鸭"
+      "zh": "加喱鸭"
     },
     "price": 6.6,
     "primaryCategory": "Duck",
@@ -895,7 +903,7 @@
     "id": "66",
     "name": {
       "en": "Mushroom Curry",
-      "zh": "咖喱蘑菇"
+      "zh": "加喱毛菇"
     },
     "price": 5.5,
     "primaryCategory": "Mushroom",
@@ -905,7 +913,7 @@
     "id": "67",
     "name": {
       "en": "Mixed Vegetable Curry",
-      "zh": "咖喱杂菜"
+      "zh": "加喱什才"
     },
     "price": 5.5,
     "primaryCategory": "Veg",
@@ -915,7 +923,7 @@
     "id": "M1",
     "name": {
       "en": "Chicken in Sambal Sauce",
-      "zh": "叁巴鸡"
+      "zh": "三巴鸡"
     },
     "price": 6.2,
     "primaryCategory": "Chicken",
@@ -925,7 +933,7 @@
     "id": "M2",
     "name": {
       "en": "Beef in Sambal Sauce",
-      "zh": "叁巴牛"
+      "zh": "三巴牛"
     },
     "price": 6.2,
     "primaryCategory": "Beef",
@@ -935,7 +943,7 @@
     "id": "M3",
     "name": {
       "en": "Char Sui in Sambal Sauce",
-      "zh": "叁巴叉烧"
+      "zh": "三巴叉烧"
     },
     "price": 6.2,
     "primaryCategory": "Pork",
@@ -945,7 +953,7 @@
     "id": "M4",
     "name": {
       "en": "Squid in Sambal Sauce",
-      "zh": "叁巴鱿鱼"
+      "zh": "三巴鱿鱼"
     },
     "price": 6.1,
     "primaryCategory": "Special",
@@ -955,7 +963,7 @@
     "id": "M5",
     "name": {
       "en": "King Prawn in Sambal Sauce",
-      "zh": "叁巴大虾"
+      "zh": "三巴大虾"
     },
     "price": 6.6,
     "primaryCategory": "King Prawn",
@@ -965,7 +973,7 @@
     "id": "M6",
     "name": {
       "en": "Duck in Sambal Sauce",
-      "zh": "叁巴鸭"
+      "zh": "三巴鸭"
     },
     "price": 6.6,
     "primaryCategory": "Duck",
@@ -975,7 +983,7 @@
     "id": "M7",
     "name": {
       "en": "Mixed Meat in Sambal Sauce",
-      "zh": "叁巴杂烩"
+      "zh": "三巴什肉"
     },
     "price": 6.6,
     "primaryCategory": "Special",
@@ -985,17 +993,17 @@
     "id": "T1",
     "name": {
       "en": "Chicken in Thai Curry",
-      "zh": "泰式咖喱鸡"
+      "zh": "泰加喱鸡"    
     },
     "primaryCategory": "Chicken",
     "secondaryCategory": "Thai-Curry",
     "options": [
       {
-        "name": "Red",
+        "name": "Red 红",
         "price": 6.2
       },
       {
-        "name": "Green",
+        "name": "Green 青",
         "price": 6.2
       }
     ]
@@ -1004,17 +1012,17 @@
     "id": "T2",
     "name": {
       "en": "Beef in Thai Curry",
-      "zh": "泰式咖喱牛"
+      "zh": "泰加喱牛"
     },
     "primaryCategory": "Beef",
     "secondaryCategory": "Thai-Curry",
     "options": [
       {
-        "name": "Red",
+        "name": "Red 红",
         "price": 6.2
       },
       {
-        "name": "Green",
+        "name": "Green 青",
         "price": 6.2
       }
     ]
@@ -1023,17 +1031,17 @@
     "id": "T3",
     "name": {
       "en": "Char Sui in Thai Curry",
-      "zh": "泰式咖喱叉烧"
+      "zh": "泰加喱叉烧"
     },
     "primaryCategory": "Pork",
     "secondaryCategory": "Thai-Curry",
     "options": [
       {
-        "name": "Red",
+        "name": "Red 红",
         "price": 6.2
       },
       {
-        "name": "Green",
+        "name": "Green 青",
         "price": 6.2
       }
     ]
@@ -1042,17 +1050,17 @@
     "id": "T4",
     "name": {
       "en": "King Prawn in Thai Curry",
-      "zh": "泰式咖喱大虾"
+      "zh": "泰加喱大下"
     },
     "primaryCategory": "King Prawn",
     "secondaryCategory": "Thai-Curry",
     "options": [
       {
-        "name": "Red",
+        "name": "Red 红",
         "price": 6.6
       },
       {
-        "name": "Green",
+        "name": "Green 青",
         "price": 6.6
       }
     ]
@@ -1061,17 +1069,17 @@
     "id": "T5",
     "name": {
       "en": "Duck in Thai Curry",
-      "zh": "泰式咖喱鸭"
+      "zh": "泰加喱鸭"
     },
     "primaryCategory": "Duck",
     "secondaryCategory": "Thai-Curry",
     "options": [
       {
-        "name": "Red",
+        "name": "Red 红",
         "price": 6.8
       },
       {
-        "name": "Green",
+        "name": "Green 青",
         "price": 6.8
       }
     ]
@@ -1080,7 +1088,7 @@
     "id": "T6",
     "name": {
       "en": "Deep Fried King Prawn in Sweet Chilli Sauce",
-      "zh": "甜辣炸大虾"
+      "zh": "甜辣大下"
     },
     "price": 6.6,
     "primaryCategory": "King Prawn",
@@ -1090,7 +1098,7 @@
     "id": "T7",
     "name": {
       "en": "Crispy Chicken in Sweet Chilli Sauce",
-      "zh": "甜辣脆皮鸡"
+      "zh": "甜辣鸡"
     },
     "price": 6.3,
     "primaryCategory": "Chicken",
@@ -1130,7 +1138,7 @@
     "id": "71",
     "name": {
       "en": "Shrimp Foo Yung",
-      "zh": "虾芙蓉"
+      "zh": "下仔芙蓉"
     },
     "price": 6.1,
     "primaryCategory": "Shrimp",
@@ -1140,7 +1148,7 @@
     "id": "72",
     "name": {
       "en": "King Prawn Foo Yung",
-      "zh": "大虾芙蓉"
+      "zh": "大下芙蓉"
     },
     "price": 6.6,
     "primaryCategory": "King Prawn",
@@ -1150,7 +1158,7 @@
     "id": "73",
     "name": {
       "en": "Special Foo Yung",
-      "zh": "特别芙蓉"
+      "zh": "招牌芙蓉"
     },
     "price": 6.5,
     "primaryCategory": "Special",
@@ -1160,7 +1168,7 @@
     "id": "74",
     "name": {
       "en": "Mushroom Foo Yung",
-      "zh": "蘑菇芙蓉"
+      "zh": "毛菇芙蓉"
     },
     "price": 5.5,
     "primaryCategory": "Mushroom",
@@ -1170,7 +1178,7 @@
     "id": "75",
     "name": {
       "en": "Mixed Vegetable Foo Yung",
-      "zh": "杂菜芙蓉"
+      "zh": "什才芙蓉"
     },
     "price": 5.5,
     "primaryCategory": "Veg",
@@ -1200,7 +1208,7 @@
     "id": "77",
     "name": {
       "en": "Chicken with Lemon Sauce",
-      "zh": "柠檬鸡"
+      "zh": "柠鸡"
     },
     "price": 6.3,
     "primaryCategory": "Chicken",
@@ -1220,7 +1228,7 @@
     "id": "79",
     "name": {
       "en": "Chicken in Plum Sauce",
-      "zh": "梅子鸡"
+      "zh": "梅鸡"
     },
     "price": 6.3,
     "primaryCategory": "Chicken",
@@ -1260,7 +1268,7 @@
     "id": "83",
     "name": {
       "en": "Chicken with Green Pepper & Black Bean Sauce",
-      "zh": "豉椒鸡"
+      "zh": "士召鸡"
     },
     "price": 6.2,
     "primaryCategory": "Chicken",
@@ -1270,7 +1278,7 @@
     "id": "84",
     "name": {
       "en": "Chicken in Black Pepper Sauce",
-      "zh": "黑椒鸡"
+      "zh": "黑召鸡"
     },
     "price": 6.2,
     "primaryCategory": "Chicken",
@@ -1310,7 +1318,7 @@
     "id": "88",
     "name": {
       "en": "Chicken with Mushrooms",
-      "zh": "蘑菇鸡"
+      "zh": "毛菇鸡"
     },
     "price": 6.2,
     "primaryCategory": "Chicken",
@@ -1360,7 +1368,7 @@
     "id": "94",
     "name": {
       "en": "Chicken with Onions",
-      "zh": "洋葱鸡"
+      "zh": "洋冲鸡"
     },
     "price": 6.2,
     "primaryCategory": "Chicken",
@@ -1380,7 +1388,7 @@
     "id": "96",
     "name": {
       "en": "Chicken Chop Suey",
-      "zh": "鸡杂碎"
+      "zh": "仕水鸡"
     },
     "price": 6.2,
     "primaryCategory": "Chicken",
@@ -1440,7 +1448,7 @@
     "id": "100",
     "name": {
       "en": "Beef with Green Pepper & Black Bean Sauce",
-      "zh": "豉椒牛"
+      "zh": "士召牛"
     },
     "price": 6.3,
     "primaryCategory": "Beef",
@@ -1450,7 +1458,7 @@
     "id": "101",
     "name": {
       "en": "Beef in Black Pepper Sauce",
-      "zh": "黑椒牛"
+      "zh": "黑召牛"
     },
     "price": 6.3,
     "primaryCategory": "Beef",
@@ -1490,7 +1498,7 @@
     "id": "105",
     "name": {
       "en": "Beef with Mushrooms",
-      "zh": "蘑菇牛"
+      "zh": "毛菇牛"
     },
     "price": 6.3,
     "primaryCategory": "Beef",
@@ -1530,7 +1538,7 @@
     "id": "110",
     "name": {
       "en": "Beef with Onions",
-      "zh": "洋葱牛"
+      "zh": "洋冲牛"
     },
     "price": 6.3,
     "primaryCategory": "Beef",
@@ -1550,7 +1558,7 @@
     "id": "112",
     "name": {
       "en": "Beef Chop Suey",
-      "zh": "牛杂碎"
+      "zh": "仕水牛"
     },
     "price": 6.3,
     "primaryCategory": "Beef",
@@ -1590,7 +1598,7 @@
     "id": "116",
     "name": {
       "en": "Char Sui with Green Pepper & Black Bean Sauce",
-      "zh": "豉椒叉烧"
+      "zh": "士召叉烧"
     },
     "price": 6.1,
     "primaryCategory": "Pork",
@@ -1620,7 +1628,7 @@
     "id": "119",
     "name": {
       "en": "Char Sui with Mushrooms",
-      "zh": "蘑菇叉烧"
+      "zh": "毛菇叉烧"
     },
     "price": 6.1,
     "primaryCategory": "Pork",
@@ -1640,7 +1648,7 @@
     "id": "121",
     "name": {
       "en": "Char Sui with Onions",
-      "zh": "洋葱叉烧"
+      "zh": "洋冲叉烧"
     },
     "price": 6.1,
     "primaryCategory": "Pork",
@@ -1660,7 +1668,7 @@
     "id": "123",
     "name": {
       "en": "Char Sui Chop Suey",
-      "zh": "叉烧杂碎"
+      "zh": "仕水叉烧"
     },
     "price": 6.1,
     "primaryCategory": "Pork",
@@ -1670,7 +1678,7 @@
     "id": "124",
     "name": {
       "en": "Roast Duck in Lemon Sauce",
-      "zh": "柠檬鸭"
+      "zh": "柠鸭"
     },
     "price": 6.6,
     "primaryCategory": "Duck",
@@ -1690,7 +1698,7 @@
     "id": "126",
     "name": {
       "en": "Roast Duck in Plum Sauce",
-      "zh": "梅子鸭"
+      "zh": "梅鸭"
     },
     "price": 6.6,
     "primaryCategory": "Duck",
@@ -1730,7 +1738,7 @@
     "id": "130",
     "name": {
       "en": "Roast Duck with Green Pepper & Black Bean Sauce",
-      "zh": "豉椒鸭"
+      "zh": "士召鸭"
     },
     "price": 6.6,
     "primaryCategory": "Duck",
@@ -1780,7 +1788,7 @@
     "id": "135",
     "name": {
       "en": "Roast Duck with Mushrooms",
-      "zh": "蘑菇鸭"
+      "zh": "毛菇鸭"
     },
     "price": 6.6,
     "primaryCategory": "Duck",
@@ -1790,7 +1798,7 @@
     "id": "136",
     "name": {
       "en": "Roast Duck with Black Pepper Sauce",
-      "zh": "黑椒鸭"
+      "zh": "黑召鸭"
     },
     "price": 6.6,
     "primaryCategory": "Duck",
@@ -1800,7 +1808,7 @@
     "id": "137",
     "name": {
       "en": "Lamb with Green Pepper & Black Bean Sauce",
-      "zh": "豉椒羊"
+      "zh": "士召羊"
     },
     "price": 6.5,
     "primaryCategory": "Lamb",
@@ -1810,7 +1818,7 @@
     "id": "138",
     "name": {
       "en": "Lamb with Mushrooms",
-      "zh": "蘑菇羊"
+      "zh": "毛菇羊"
     },
     "price": 6.5,
     "primaryCategory": "Lamb",
@@ -1840,7 +1848,7 @@
     "id": "145",
     "name": {
       "en": "King Prawn with Cashew Nuts",
-      "zh": "腰果大虾"
+      "zh": "腰果大下"
     },
     "price": 6.6,
     "primaryCategory": "King Prawn",
@@ -1850,7 +1858,7 @@
     "id": "146",
     "name": {
       "en": "King Prawn with Ginger & Spring Onion",
-      "zh": "姜葱大虾"
+      "zh": "姜葱大下"
     },
     "price": 6.6,
     "primaryCategory": "King Prawn",
@@ -1860,7 +1868,7 @@
     "id": "147",
     "name": {
       "en": "King Prawn with Green Pepper & Black Bean Sauce",
-      "zh": "豉椒大虾"
+      "zh": "士召大下"
     },
     "price": 6.6,
     "primaryCategory": "King Prawn",
@@ -1870,7 +1878,7 @@
     "id": "148",
     "name": {
       "en": "King Prawn with Black Pepper Sauce",
-      "zh": "黑椒大虾"
+      "zh": "黑召大下"
     },
     "price": 6.6,
     "primaryCategory": "King Prawn",
@@ -1880,7 +1888,7 @@
     "id": "149",
     "name": {
       "en": "King Prawn with Oyster Sauce",
-      "zh": "蚝油大虾"
+      "zh": "蚝油大下"
     },
     "price": 6.6,
     "primaryCategory": "King Prawn",
@@ -1890,7 +1898,7 @@
     "id": "150",
     "name": {
       "en": "King Prawn with Garlic Sauce",
-      "zh": "蒜蓉大虾"
+      "zh": "蒜蓉大下"
     },
     "price": 6.6,
     "primaryCategory": "King Prawn",
@@ -1900,7 +1908,7 @@
     "id": "151",
     "name": {
       "en": "King Prawn in Satay Sauce",
-      "zh": "沙爹大虾"
+      "zh": "沙爹大下"
     },
     "price": 6.6,
     "primaryCategory": "King Prawn",
@@ -1910,7 +1918,7 @@
     "id": "152",
     "name": {
       "en": "King Prawn with Mushrooms",
-      "zh": "蘑菇大虾"
+      "zh": "毛菇大下"
     },
     "price": 6.6,
     "primaryCategory": "King Prawn",
@@ -1920,7 +1928,7 @@
     "id": "153",
     "name": {
       "en": "King Prawn with Broccoli",
-      "zh": "西兰花大虾"
+      "zh": "西兰花大下"
     },
     "price": 6.6,
     "primaryCategory": "King Prawn",
@@ -1930,7 +1938,7 @@
     "id": "154",
     "name": {
       "en": "King Prawn Chop Suey",
-      "zh": "大虾杂碎"
+      "zh": "仕水大下"
     },
     "price": 6.6,
     "primaryCategory": "King Prawn",
@@ -1940,7 +1948,7 @@
     "id": "154a",
     "name": {
       "en": "King Prawn with Cashew Nuts in Hoisin Sauce",
-      "zh": "海鲜酱腰果大虾"
+      "zh": "海鲜酱腰果大下"
     },
     "price": 6.6,
     "primaryCategory": "King Prawn",
@@ -1960,7 +1968,7 @@
     "id": "156",
     "name": {
       "en": "Squid with Green Pepper & Black Bean Sauce",
-      "zh": "豉椒鱿鱼"
+      "zh": "士召鱿鱼"
     },
     "price": 6.6,
     "primaryCategory": "Special",
@@ -1990,7 +1998,7 @@
     "id": "161",
     "name": {
       "en": "Fillet Beef with Green Pepper & Black Bean Sauce",
-      "zh": "豉椒牛柳"
+      "zh": "士召牛柳"
     },
     "price": 9,
     "primaryCategory": "Beef",
@@ -2010,7 +2018,7 @@
     "id": "163",
     "name": {
       "en": "Fillet Beef with Black Pepper Sauce",
-      "zh": "黑椒牛柳"
+      "zh": "黑召牛柳"
     },
     "price": 9,
     "primaryCategory": "Beef",
@@ -2040,7 +2048,7 @@
     "id": "166",
     "name": {
       "en": "Dragon Balls Curry",
-      "zh": "咖喱龙珠"
+      "zh": "加喱龙珠"
     },
     "price": 5.7,
     "primaryCategory": "Chicken",
@@ -2050,7 +2058,7 @@
     "id": "167",
     "name": {
       "en": "Dragon Balls Kung Po Style",
-      "zh": "宫保龙珠"
+      "zh": "公保龙珠"
     },
     "price": 5.7,
     "primaryCategory": "Chicken",
@@ -2080,7 +2088,7 @@
     "id": "170",
     "name": {
       "en": "Dragon Balls with Black Pepper Sauce",
-      "zh": "黑椒龙珠"
+      "zh": "黑召龙珠"
     },
     "price": 5.7,
     "primaryCategory": "Chicken",
@@ -2090,7 +2098,7 @@
     "id": "171",
     "name": {
       "en": "Dragon Balls with Sambal Sauce",
-      "zh": "叁巴龙珠"
+      "zh": "三日龙珠"
     },
     "price": 5.7,
     "primaryCategory": "Chicken",
@@ -2110,7 +2118,7 @@
     "id": "173",
     "name": {
       "en": "Special Fried Rice",
-      "zh": "特别炒饭"
+      "zh": "招牌炒饭"
     },
     "price": 7,
     "primaryCategory": "Special",
@@ -2130,7 +2138,7 @@
     "id": "175",
     "name": {
       "en": "King Prawn Fried Rice",
-      "zh": "大虾炒饭"
+      "zh": "大下炒饭"
     },
     "price": 6.6,
     "primaryCategory": "King Prawn",
@@ -2210,7 +2218,7 @@
     "id": "183",
     "name": {
       "en": "Shrimp Fried Rice",
-      "zh": "虾炒饭"
+      "zh": "下仔炒饭"
     },
     "price": 6.1,
     "primaryCategory": "Shrimp",
@@ -2230,7 +2238,7 @@
     "id": "185",
     "name": {
       "en": "Mixed Vegetable Fried Rice",
-      "zh": "杂菜炒饭"
+      "zh": "什才炒饭"
     },
     "price": 6.1,
     "primaryCategory": "Veg",
@@ -2240,7 +2248,7 @@
     "id": "186",
     "name": {
       "en": "Mushroom Fried Rice",
-      "zh": "蘑菇炒饭"
+      "zh": "毛菇炒饭"
     },
     "price": 6.1,
     "primaryCategory": "Veg",
@@ -2260,7 +2268,7 @@
     "id": "188",
     "name": {
       "en": "Special Chow Mein",
-      "zh": "特别炒面"
+      "zh": "招牌炒面"
     },
     "price": 7,
     "primaryCategory": "Special",
@@ -2270,7 +2278,7 @@
     "id": "189",
     "name": {
       "en": "King Prawn Chow Mein",
-      "zh": "大虾炒面"
+      "zh": "大下炒面"
     },
     "price": 6.6,
     "primaryCategory": "King Prawn",
@@ -2350,7 +2358,7 @@
     "id": "197",
     "name": {
       "en": "Mixed Vegetable Chow Mein",
-      "zh": "杂菜炒面"
+      "zh": "什才炒面"
     },
     "price": 6.1,
     "primaryCategory": "Veg",
@@ -2360,7 +2368,7 @@
     "id": "198",
     "name": {
       "en": "Mushroom Chow Mein",
-      "zh": "蘑菇炒面"
+      "zh": "毛菇炒面"
     },
     "price": 6.1,
     "primaryCategory": "Veg",
@@ -2377,22 +2385,22 @@
     "secondaryCategory": "English",
     "options": [
       {
-        "name": "Blue"
+        "name": "Blue 蓝"
       },
       {
-        "name": "Rare"
+        "name": "Rare 一成"
       },
       {
-        "name": "Medium Rare"
+        "name": "Medium Rare 三成"
       },
       {
-        "name": "Medium"
+        "name": "Medium 五成"
       },
       {
-        "name": "Medium Well"
+        "name": "Medium Well 七成"
       },
       {
-        "name": "Well Done"
+        "name": "Well Done 全熟"
       }
     ]
   },
@@ -2400,29 +2408,29 @@
     "id": "208",
     "name": {
       "en": "Grilled Sirloin Steak",
-      "zh": "扒西冷牛排"
+      "zh": "西冷牛排"
     },
     "price": 10,
     "primaryCategory": "Beef",
     "secondaryCategory": "English",
     "options": [
       {
-        "name": "Blue"
+        "name": "Blue 蓝"
       },
       {
-        "name": "Rare"
+        "name": "Rare 一成"
       },
       {
-        "name": "Medium Rare"
+        "name": "Medium Rare 三成"
       },
       {
-        "name": "Medium"
+        "name": "Medium 五成"
       },
       {
-        "name": "Medium Well"
+        "name": "Medium Well 七成"
       },
       {
-        "name": "Well Done"
+        "name": "Well Done 全熟"
       }
     ]
   },
@@ -2430,7 +2438,7 @@
     "id": "209",
     "name": {
       "en": "1/4 Roast Chicken",
-      "zh": "1/4 烤鸡"
+      "zh": "1/4 烧鸡"
     },
     "price": 6.5,
     "primaryCategory": "Chicken",
@@ -2440,7 +2448,7 @@
     "id": "211",
     "name": {
       "en": "King Prawn Omelette",
-      "zh": "大虾煎蛋卷"
+      "zh": "大下奄列"
     },
     "price": 6.8,
     "primaryCategory": "King Prawn",
@@ -2450,7 +2458,7 @@
     "id": "212",
     "name": {
       "en": "Special Omelette",
-      "zh": "特别煎蛋卷"
+      "zh": "招牌奄列"
     },
     "price": 6.8,
     "primaryCategory": "Special",
@@ -2460,7 +2468,7 @@
     "id": "213",
     "name": {
       "en": "Chicken Omelette",
-      "zh": "鸡煎蛋卷"
+      "zh": "鸡奄列"
     },
     "price": 6.5,
     "primaryCategory": "Chicken",
@@ -2470,7 +2478,7 @@
     "id": "214",
     "name": {
       "en": "Ham Omelette",
-      "zh": "火腿煎蛋卷"
+      "zh": "火腿奄列"
     },
     "price": 6.4,
     "primaryCategory": "Pork",
@@ -2480,7 +2488,7 @@
     "id": "215",
     "name": {
       "en": "Plain Omelette",
-      "zh": "纯煎蛋卷"
+      "zh": "净奄列"
     },
     "price": 6.4,
     "primaryCategory": "Veg",
@@ -2490,7 +2498,7 @@
     "id": "216",
     "name": {
       "en": "Cheese Omelette",
-      "zh": "芝士煎蛋卷"
+      "zh": "芝士奄列"
     },
     "price": 6.5,
     "primaryCategory": "Veg",
@@ -2500,23 +2508,23 @@
     "id": "217",
     "name": {
       "en": "Vegetarian Chicken",
-      "zh": "素鸡"
+      "zh": "斋鸡"
     },
     "price": 6.2,
     "primaryCategory": "Veg",
     "secondaryCategory": "Vegetarian",
     "options": [
       {
-        "name": "Sweet & Sour"
+        "name": "Sweet & Sour 古"
       },
       {
-        "name": "Black Bean Sauce"
+        "name": "Black Bean Sauce 士召"
       },
       {
-        "name": "Mushroom"
+        "name": "Mushroom 毛菇"
       },
       {
-        "name": "Curry"
+        "name": "Curry 加喱"
       }
     ]
   },
@@ -2524,23 +2532,23 @@
     "id": "218",
     "name": {
       "en": "Vegetarian Duck",
-      "zh": "素鸭"
+      "zh": "斋鸭"
     },
     "price": 6.2,
     "primaryCategory": "Veg",
     "secondaryCategory": "Vegetarian",
     "options": [
       {
-        "name": "Sweet & Sour"
+        "name": "Sweet & Sour 古"
       },
       {
-        "name": "Black Bean Sauce"
+        "name": "Black Bean Sauce 士召"
       },
       {
-        "name": "Mushroom"
+        "name": "Mushroom 毛菇"
       },
       {
-        "name": "Curry"
+        "name": "Curry 加喱"
       }
     ]
   },
@@ -2548,7 +2556,7 @@
     "id": "218a",
     "name": {
       "en": "Vegetarian Crispy Aromatic Duck",
-      "zh": "素香酥鸭"
+      "zh": "斋香酥鸭"
     },
     "price": 9,
     "primaryCategory": "Veg",
@@ -2558,7 +2566,7 @@
     "id": "219",
     "name": {
       "en": "Mixed Vegetables in Satay Sauce",
-      "zh": "沙爹杂菜"
+      "zh": "沙爹什才"
     },
     "price": 5.5,
     "primaryCategory": "Veg",
@@ -2568,7 +2576,7 @@
     "id": "220",
     "name": {
       "en": "Mixed Vegetables Kung Po Style",
-      "zh": "宫保杂菜"
+      "zh": "公保什才"
     },
     "price": 5.5,
     "primaryCategory": "Veg",
@@ -2578,7 +2586,7 @@
     "id": "221",
     "name": {
       "en": "Mixed Vegetables Hong Kong Style",
-      "zh": "港式杂菜"
+      "zh": "港式古什才"
     },
     "price": 5.5,
     "primaryCategory": "Veg",
@@ -2588,7 +2596,7 @@
     "id": "222",
     "name": {
       "en": "Mixed Vegetables Szechuan Style",
-      "zh": "四川杂菜"
+      "zh": "四川什才"
     },
     "price": 5.5,
     "primaryCategory": "Veg",
@@ -2598,7 +2606,7 @@
     "id": "223",
     "name": {
       "en": "Mixed Vegetables with Cashew Nuts",
-      "zh": "腰果杂菜"
+      "zh": "腰果什才"
     },
     "price": 5.5,
     "primaryCategory": "Veg",
@@ -2608,7 +2616,7 @@
     "id": "224",
     "name": {
       "en": "Mixed Vegetables with Black Bean Sauce",
-      "zh": "豉汁杂菜"
+      "zh": "士召什才"
     },
     "price": 5.5,
     "primaryCategory": "Veg",
@@ -2638,7 +2646,7 @@
     "id": "228",
     "name": {
       "en": "Fried Mushrooms",
-      "zh": "炒蘑菇"
+      "zh": "炒毛菇"
     },
     "price": 5.5,
     "primaryCategory": "Mushroom",
@@ -2648,7 +2656,7 @@
     "id": "229",
     "name": {
       "en": "Fried Onion",
-      "zh": "炒洋葱"
+      "zh": "炒洋冲"
     },
     "price": 5.5,
     "primaryCategory": "Veg",
@@ -2658,7 +2666,7 @@
     "id": "230",
     "name": {
       "en": "Bean Curd with Mixed Vegetables",
-      "zh": "杂菜豆腐"
+      "zh": "什才豆腐"
     },
     "price": 5.6,
     "primaryCategory": "Veg",
@@ -2668,7 +2676,7 @@
     "id": "231",
     "name": {
       "en": "Bean Curd in Black Bean Sauce",
-      "zh": "豉汁豆腐"
+      "zh": "士召豆腐"
     },
     "price": 5.6,
     "primaryCategory": "Veg",
@@ -2688,7 +2696,7 @@
     "id": "231b",
     "name": {
       "en": "Bean Curd in Kung Po Sauce",
-      "zh": "宫保豆腐"
+      "zh": "公保豆腐"
     },
     "price": 5.6,
     "primaryCategory": "Veg",
@@ -2704,11 +2712,11 @@
     "secondaryCategory": "Rice",
     "options": [
       {
-        "name": "Small",
+        "name": "Small 小",
         "price": 3.1
       },
       {
-        "name": "Large",
+        "name": "Large 大",
         "price": 3.6
       }
     ]
@@ -2723,11 +2731,11 @@
     "secondaryCategory": "Rice",
     "options": [
       {
-        "name": "Small",
+        "name": "Small 小",
         "price": 2.6
       },
       {
-        "name": "Large",
+        "name": "Large 大",
         "price": 3.2
       }
     ]
@@ -2742,15 +2750,15 @@
     "secondaryCategory": "English",
     "options": [
       {
-        "name": "Small",
+        "name": "Small 小",
         "price": 2.6
       },
       {
-        "name": "Large",
+        "name": "Large 大",
         "price": 3.4
       },
       {
-        "name": "Few",
+        "name": "Few 少",
         "price": 0.7
       }
     ]
@@ -2765,11 +2773,11 @@
     "secondaryCategory": "Chow Mein",
     "options": [
       {
-        "name": "Small",
+        "name": "Small 小",
         "price": 3.4
       },
       {
-        "name": "Large",
+        "name": "Large 大",
         "price": 3.9
       }
     ]
@@ -2788,7 +2796,7 @@
     "id": "237",
     "name": {
       "en": "Chicken Nuggets (10)",
-      "zh": "炸鸡块 (10个)"
+      "zh": "鸡块(10)"
     },
     "price": 4.5,
     "primaryCategories": ["Btn 1", "Chicken"],
@@ -2798,7 +2806,7 @@
     "id": "237a",
     "name": {
       "en": "Chicken Nuggets & Chips",
-      "zh": "炸鸡块 & 薯条"
+      "zh": "鸡块薯条"
     },
     "price": 4.5,
     "primaryCategories": ["Btn 1", "Chicken", "Chips"],
@@ -2808,7 +2816,7 @@
     "id": "238",
     "name": {
       "en": "Onion Rings",
-      "zh": "洋葱圈"
+      "zh": "洋冲圈"
     },
     "price": 3,
     "primaryCategories": ["Btn 1", "Veg"],
@@ -2824,15 +2832,15 @@
     "secondaryCategory": "Starter",
     "options": [
       {
-        "name": "Small",
+        "name": "Small 小",
         "price": 1.5
       },
       {
-        "name": "Large",
+        "name": "Large 大",
         "price": 2
       },
       {
-        "name": "Don't Want",
+        "name": "Don't Want 不要",
         "price": 0
       }
     ]
@@ -2841,45 +2849,45 @@
     "id": "240",
     "name": {
       "en": "Sauce",
-      "zh": "酱汁"
+      "zh": "汁"
     },
     "primaryCategories": ["Btn 1", "Special"],
     "secondaryCategory": "Chef's",
     "options": [
       {
-        "name": "Small Curry Sauce",
+        "name": "Small Curry Sauce 加喱汁(小)",
         "price": 2.4
       },
       {
-        "name": "Large Curry Sauce",
+        "name": "Large Curry Sauce 加喱汁(大)",
         "price": 2.6
       },
       {
-        "name": "Small Sweet & Sour Sauce",
+        "name": "Small Sweet & Sour Sauce 古汁(小)",
         "price": 2.4
       },
       {
-        "name": "Large Sweet & Sour Sauce",
+        "name": "Large Sweet & Sour Sauce 古汁(大)",
         "price": 2.6
       },
       {
-        "name": "Small BBQ Sauce",
+        "name": "Small BBQ Sauce BBQ汁(小)",
         "price": 2.4
       },
       {
-        "name": "Large BBQ Sauce",
+        "name": "Large BBQ Sauce BBQ汁(大)",
         "price": 2.6
       },
       {
-        "name": "Small Satay Sauce",
+        "name": "Small Satay Sauce 沙爹汁(小)",
         "price": 2.4
       },
       {
-        "name": "Large Satay Sauce",
+        "name": "Large Satay Sauce 沙爹汁(大)",
         "price": 2.6
       },
       {
-        "name": "Duck Sauce",
+        "name": "Duck Sauce 鸭汁",
         "price": 2.4
       }
     ]
@@ -2888,7 +2896,7 @@
     "id": "242",
     "name": {
       "en": "Fried Mars Bars",
-      "zh": "炸玛氏巧克力棒"
+      "zh": "炸Mars Bar"
     },
     "price": 3.2,
     "primaryCategories": ["Special"],
@@ -2898,7 +2906,7 @@
     "id": "243",
     "name": {
       "en": "Banana Fritters in Syrup",
-      "zh": "炸香蕉"
+      "zh": "炸蕉"
     },
     "price": 3.2,
     "primaryCategories": ["Veg"],
@@ -2918,33 +2926,33 @@
     "id": "245",
     "name": {
       "en": "Cans",
-      "zh": "罐装饮料"
+      "zh": "罐装"
     },
     "primaryCategories": ["Btn 1"],
     "secondaryCategory": "English",
     "options": [
       {
-        "name": "Can of Coke",
+        "name": "Can of Coke 可乐",
         "price": 1.1
       },
       {
-        "name": "Can of Diet Coke",
+        "name": "Can of Diet Coke Diet可乐",
         "price": 1.1
       },
       {
-        "name": "Can of Pepsi Max",
+        "name": "Can of Pepsi Max Pepsi Max",
         "price": 1.1
       },
       {
-        "name": "Can of Fanta",
+        "name": "Can of Fanta 芬达",
         "price": 1.1
       },
       {
-        "name": "Can of Sprite",
+        "name": "Can of Sprite 雪碧",
         "price": 1.1
       },
       {
-        "name": "Can of Dr Pepper",
+        "name": "Can of Dr Pepper Dr Pepper",
         "price": 1.1
       }
     ]
@@ -2960,27 +2968,27 @@
     "secondaryCategory": "English",
     "options": [
       {
-        "name": "Can of Coke",
+        "name": "Can of Coke 可乐",
         "price": 2.2
       },
       {
-        "name": "Can of Diet Coke",
+        "name": "Can of Diet Coke Diet可乐",
         "price": 2.2
       },
       {
-        "name": "Can of Pepsi Max",
+        "name": "Can of Pepsi Max Pepsi Max",
         "price": 2.2
       },
       {
-        "name": "Can of Fanta",
+        "name": "Can of Fanta 芬达",
         "price": 2.2
       },
       {
-        "name": "Can of Sprite",
+        "name": "Can of Sprite 雪碧",
         "price": 2.2
       },
       {
-        "name": "Can of Dr Pepper",
+        "name": "Can of Dr Pepper Dr Pepper",
         "price": 2.2
       }
     ]
@@ -2989,20 +2997,20 @@
     "id": "S1",
     "name": {
       "en": "Sweet & Sour Chicken Balls (5) Snack Box",
-      "zh": "甜酸鸡球(5个)"
+      "zh": "古鸡球(5)盒"
     },
     "price": 6.5,
     "primaryCategory": "Chicken",
     "secondaryCategory": "Snack Box",
     "options": [
       {
-        "name": "Egg Fried Rice"
+        "name": "Egg Fried Rice 蛋炒饭"
       },
       {
-        "name": "Boiled Rice"
+        "name": "Boiled Rice 白饭"
       },
       {
-        "name": "Chips"
+        "name": "Chips 薯条"
       }
     ]
   },
@@ -3010,20 +3018,20 @@
     "id": "S2",
     "name": {
       "en": "Sweet & Sour Pork Balls (5) Snack Box",
-      "zh": "甜酸猪球(5个)"
+      "zh": "古肉球(5)盒"
     },
     "price": 6.5,
     "primaryCategory": "Pork",
     "secondaryCategory": "Snack Box",
     "options": [
       {
-        "name": "Egg Fried Rice"
+        "name": "Egg Fried Rice 蛋炒饭"
       },
       {
-        "name": "Boiled Rice"
+        "name": "Boiled Rice 白饭"
       },
       {
-        "name": "Chips"
+        "name": "Chips 薯条"
       }
     ]
   },
@@ -3031,20 +3039,20 @@
     "id": "S3",
     "name": {
       "en": "Chicken Curry Snack Box",
-      "zh": "咖喱鸡"
+      "zh": "加喱鸡盒"
     },
     "price": 6.5,
     "primaryCategory": "Chicken",
     "secondaryCategory": "Snack Box",
     "options": [
       {
-        "name": "Egg Fried Rice"
+        "name": "Egg Fried Rice 蛋炒饭"
       },
       {
-        "name": "Boiled Rice"
+        "name": "Boiled Rice 白饭"
       },
       {
-        "name": "Chips"
+        "name": "Chips 薯条"
       }
     ]
   },
@@ -3052,20 +3060,20 @@
     "id": "S4",
     "name": {
       "en": "Beef Curry Snack Box",
-      "zh": "咖喱牛"
+      "zh": "加喱牛盒"
     },
     "price": 6.5,
     "primaryCategory": "Beef",
     "secondaryCategory": "Snack Box",
     "options": [
       {
-        "name": "Egg Fried Rice"
+        "name": "Egg Fried Rice 蛋炒饭"
       },
       {
-        "name": "Boiled Rice"
+        "name": "Boiled Rice 白饭"
       },
       {
-        "name": "Chips"
+        "name": "Chips 薯条"
       }
     ]
   },
@@ -3073,20 +3081,20 @@
     "id": "S5",
     "name": {
       "en": "Char Sui Curry Snack Box",
-      "zh": "咖喱叉烧"
+      "zh": "加喱叉烧盒"
     },
     "price": 6.5,
     "primaryCategory": "Pork",
     "secondaryCategory": "Snack Box",
     "options": [
       {
-        "name": "Egg Fried Rice"
+        "name": "Egg Fried Rice 蛋炒饭"
       },
       {
-        "name": "Boiled Rice"
+        "name": "Boiled Rice 白饭"
       },
       {
-        "name": "Chips"
+        "name": "Chips 薯条"
       }
     ]
   },
@@ -3094,20 +3102,20 @@
     "id": "S6",
     "name": {
       "en": "Chicken Mushroom Snack Box",
-      "zh": "蘑菇鸡"
+      "zh": "毛菇鸡盒"
     },
     "price": 6.5,
     "primaryCategory": "Chicken",
     "secondaryCategory": "Snack Box",
     "options": [
       {
-        "name": "Egg Fried Rice"
+        "name": "Egg Fried Rice 蛋炒饭"
       },
       {
-        "name": "Boiled Rice"
+        "name": "Boiled Rice 白饭"
       },
       {
-        "name": "Chips"
+        "name": "Chips 薯条"
       }
     ]
   },
@@ -3115,20 +3123,20 @@
     "id": "S7",
     "name": {
       "en": "Beef Mushroom Snack Box",
-      "zh": "蘑菇牛"
+      "zh": "毛菇牛盒"
     },
     "price": 6.5,
     "primaryCategory": "Beef",
     "secondaryCategory": "Snack Box",
     "options": [
       {
-        "name": "Egg Fried Rice"
+        "name": "Egg Fried Rice 蛋炒饭"
       },
       {
-        "name": "Boiled Rice"
+        "name": "Boiled Rice 白饭"
       },
       {
-        "name": "Chips"
+        "name": "Chips 薯条"
       }
     ]
   },
@@ -3136,20 +3144,20 @@
     "id": "S8",
     "name": {
       "en": "Char Sui Mushroom Snack Box",
-      "zh": "蘑菇叉烧"
+      "zh": "毛菇叉烧盒"
     },
     "price": 6.5,
     "primaryCategory": "Pork",
     "secondaryCategory": "Snack Box",
     "options": [
       {
-        "name": "Egg Fried Rice"
+        "name": "Egg Fried Rice 蛋炒饭"
       },
       {
-        "name": "Boiled Rice"
+        "name": "Boiled Rice 白饭"
       },
       {
-        "name": "Chips"
+        "name": "Chips 薯条"
       }
     ]
   },
@@ -3157,20 +3165,20 @@
     "id": "S9",
     "name": {
       "en": "Chicken Black Bean Sauce Snack Box",
-      "zh": "豉汁鸡"
+      "zh": "士召鸡盒"
     },
     "price": 6.5,
     "primaryCategory": "Chicken",
     "secondaryCategory": "Snack Box",
     "options": [
       {
-        "name": "Egg Fried Rice"
+        "name": "Egg Fried Rice 蛋炒饭"
       },
       {
-        "name": "Boiled Rice"
+        "name": "Boiled Rice 白饭"
       },
       {
-        "name": "Chips"
+        "name": "Chips 薯条"
       }
     ]
   },
@@ -3178,20 +3186,20 @@
     "id": "S10",
     "name": {
       "en": "Beef Black Bean Sauce Snack Box",
-      "zh": "豉汁牛"
+      "zh": "士召牛盒"
     },
     "price": 6.5,
     "primaryCategory": "Beef",
     "secondaryCategory": "Snack Box",
     "options": [
       {
-        "name": "Egg Fried Rice"
+        "name": "Egg Fried Rice 蛋炒饭"
       },
       {
-        "name": "Boiled Rice"
+        "name": "Boiled Rice 白饭"
       },
       {
-        "name": "Chips"
+        "name": "Chips 薯条"
       }
     ]
   },
@@ -3199,20 +3207,20 @@
     "id": "S11",
     "name": {
       "en": "Char Sui Black Bean Sauce Snack Box",
-      "zh": "豉汁叉烧"
+      "zh": "士召叉烧盒"
     },
     "price": 6.5,
     "primaryCategory": "Pork",
     "secondaryCategory": "Snack Box",
     "options": [
       {
-        "name": "Egg Fried Rice"
+        "name": "Egg Fried Rice 蛋炒饭"
       },
       {
-        "name": "Boiled Rice"
+        "name": "Boiled Rice 白饭"
       },
       {
-        "name": "Chips"
+        "name": "Chips 薯条"
       }
     ]
   },
@@ -3220,20 +3228,20 @@
     "id": "S12",
     "name": {
       "en": "Sweet & Sour Chicken Hong Kong Style Snack Box",
-      "zh": "港式咕咾鸡"
+      "zh": "港式古鸡盒"
     },
     "price": 6.5,
     "primaryCategory": "Chicken",
     "secondaryCategory": "Snack Box",
     "options": [
       {
-        "name": "Egg Fried Rice"
+        "name": "Egg Fried Rice 蛋炒饭"
       },
       {
-        "name": "Boiled Rice"
+        "name": "Boiled Rice 白饭"
       },
       {
-        "name": "Chips"
+        "name": "Chips 薯条"
       }
     ]
   },
@@ -3241,20 +3249,20 @@
     "id": "S13",
     "name": {
       "en": "Sweet & Sour Pork Hong Kong Style Snack Box",
-      "zh": "港式咕咾肉"
+      "zh": "港式古肉盒"
     },
     "price": 6.5,
     "primaryCategory": "Pork",
     "secondaryCategory": "Snack Box",
     "options": [
       {
-        "name": "Egg Fried Rice"
+        "name": "Egg Fried Rice 蛋炒饭"
       },
       {
-        "name": "Boiled Rice"
+        "name": "Boiled Rice 白饭"
       },
       {
-        "name": "Chips"
+        "name": "Chips 薯条"
       }
     ]
   },
@@ -3262,20 +3270,20 @@
     "id": "S14",
     "name": {
       "en": "Shredded Beef in Chilli Sauce Snack Box",
-      "zh": "辣汁牛丝"
+      "zh": "辣汁牛丝盒"
     },
     "price": 6.5,
     "primaryCategory": "Beef",
     "secondaryCategory": "Snack Box",
     "options": [
       {
-        "name": "Egg Fried Rice"
+        "name": "Egg Fried Rice 蛋炒饭"
       },
       {
-        "name": "Boiled Rice"
+        "name": "Boiled Rice 白饭"
       },
       {
-        "name": "Chips"
+        "name": "Chips 薯条"
       }
     ]
   },
@@ -3283,20 +3291,20 @@
     "id": "S15",
     "name": {
       "en": "Shredded Chicken in Chilli Sauce Snack Box",
-      "zh": "辣汁鸡丝"
+      "zh": "辣汁鸡丝盒"
     },
     "price": 6.5,
     "primaryCategory": "Chicken",
     "secondaryCategory": "Snack Box",
     "options": [
       {
-        "name": "Egg Fried Rice"
+        "name": "Egg Fried Rice 蛋炒饭"
       },
       {
-        "name": "Boiled Rice"
+        "name": "Boiled Rice 白饭"
       },
       {
-        "name": "Chips"
+        "name": "Chips 薯条"
       }
     ]
   },
@@ -3304,7 +3312,7 @@
     "id": "S16",
     "name": {
       "en": "3 in 1 (Fried Rice, Chips & Curry)",
-      "zh": "三合一 (炒饭, 薯条, 咖喱)"
+      "zh": "三合一"
     },
     "price": 5,
     "primaryCategory": "Special",

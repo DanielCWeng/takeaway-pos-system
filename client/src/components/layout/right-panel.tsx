@@ -19,7 +19,6 @@ export const RightPanel = React.memo(function RightPanel({
   const [selectedSecondary, setSelectedSecondary] = useState<string | null>(null);
   const [page, setPage] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [heightAdjustment, setHeightAdjustment] = useState(0);
 
   const filteredItems = useMemo(() => {
     return menuItems.filter((item) => {
@@ -41,10 +40,24 @@ export const RightPanel = React.memo(function RightPanel({
     return exists ? selectedId : filteredItems[0].id;
   }, [filteredItems, selectedId]);
 
+  const resetToShowAll = useCallback(() => {
+    setSelectedPrimary(null);
+    setSelectedSecondary(null);
+    setSelectedId(null);
+  }, []);
+
+  const handleAddItem = useCallback(
+    (item: MenuItem) => {
+      onAddItem(item);
+      resetToShowAll();
+    },
+    [onAddItem, resetToShowAll],
+  );
+
   const handleAddSelected = useCallback(() => {
     const item = filteredItems.find((menuItem) => menuItem.id === activeSelectedId);
-    if (item) onAddItem(item);
-  }, [filteredItems, activeSelectedId, onAddItem]);
+    if (item) handleAddItem(item);
+  }, [filteredItems, activeSelectedId, handleAddItem]);
 
   const handleNavigate = useCallback(
     (direction: "up" | "down", pageSize: number = 1) => {
@@ -74,20 +87,15 @@ export const RightPanel = React.memo(function RightPanel({
     if (category === "Show All") {
       setSelectedPrimary(null);
       setSelectedSecondary(null);
+      setSelectedId(null);
       return;
     }
     setSelectedSecondary((prev) => (prev === category ? null : category));
   }, []);
 
-  const handleHeightAdjust = useCallback((adjustment: number) => {
-    setHeightAdjustment((prev) => {
-      // Prevent infinite loops or micro-oscillation by only updating if difference is significant (e.g. > 2px)
-      return Math.abs(prev - adjustment) > 2 ? adjustment : prev;
-    });
-  }, []);
-
   return (
     <div className="flex h-full min-h-0 flex-col gap-2">
+      {/* Menu table — flex-[5] takes the majority of space */}
       <MenuTable
         items={filteredItems}
         selectedId={activeSelectedId}
@@ -95,15 +103,12 @@ export const RightPanel = React.memo(function RightPanel({
         onAddSelected={handleAddSelected}
         onNavigate={handleNavigate}
         onOpenMenuRef={onOpenMenuRef}
-        onAddItem={onAddItem}
-        onHeightAdjust={handleHeightAdjust}
-        className="transition-all duration-300 ease-in-out"
-        style={{
-          flex: `0 0 calc(40% + ${heightAdjustment}px)`,
-        }}
+        onAddItem={handleAddItem}
+        className="min-h-0 flex-[5]"
       />
       <CategoryStrip selectedPrimary={selectedPrimary} onSelectPrimary={handleSelectPrimary} />
-      <div className="pos-panel min-h-0 flex-1 p-2">
+      {/* Category grid — flex-[4] is ~20% smaller than the original flex-1 split */}
+      <div className="pos-panel min-h-0 flex-[5] p-2">
         <CategoryGrid
           page={page}
           selectedSecondary={selectedSecondary}

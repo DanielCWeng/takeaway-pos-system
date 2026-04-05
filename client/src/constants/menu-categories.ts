@@ -10,6 +10,9 @@ export const PRIMARY_CATEGORIES = [
   { name: "Mushroom", icon: "🍄" },
   { name: "Veg", icon: "🥦" },
   { name: "Special", icon: "⭐" },
+  { name: "Btn 1", icon: "1️⃣" },
+  { name: "Btn 2", icon: "2️⃣" },
+  { name: "Btn 3", icon: "3️⃣" },
   { name: "Rice", icon: "🍚" },
   { name: "Chips", icon: "🍟" },
 ];
