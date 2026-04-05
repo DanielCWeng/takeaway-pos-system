@@ -55,7 +55,9 @@ const MenuTableComponent = React.forwardRef<HTMLDivElement, MenuTableProps>((pro
 
   // Keep a ref so the snap effect can read viewStartIndex without depending on it
   const viewStartIndexRef = useRef(viewStartIndex);
-  viewStartIndexRef.current = viewStartIndex;
+  useEffect(() => {
+    viewStartIndexRef.current = viewStartIndex;
+  });
 
   // Snap the view whenever the selected item is outside the visible range.
   // This covers category switches, Show All, and any external selection jump.
