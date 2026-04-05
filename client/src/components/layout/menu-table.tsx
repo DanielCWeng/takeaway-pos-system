@@ -17,8 +17,6 @@ interface MenuTableProps {
   onOpenMenuRef: () => void;
   onAddItem: (item: MenuItem) => void;
   className?: string;
-  onHeightAdjust?: (adjustment: number) => void;
-  style?: React.CSSProperties;
 }
 
 const MenuTableComponent = React.forwardRef<HTMLDivElement, MenuTableProps>((props, ref) => {
@@ -31,70 +29,88 @@ const MenuTableComponent = React.forwardRef<HTMLDivElement, MenuTableProps>((pro
     onOpenMenuRef,
     onAddItem,
     className,
-    onHeightAdjust,
-    style,
   } = props;
 
-  const empty = "\u2014";
   const viewportRef = useRef<HTMLDivElement>(null);
   const firstRowRef = useRef<HTMLButtonElement>(null);
   const [itemsPerPage, setItemsPerPage] = useState(1);
+  // Index of the first visible item — drives scrolling independently of selection
+  const [viewStartIndex, setViewStartIndex] = useState(0);
 
-  // Measure row and viewport height to calculate visible items
+  // Measure how many whole rows fit so the range badge stays accurate
   useLayoutEffect(() => {
-    const calculateItems = () => {
+    const calculate = () => {
       if (viewportRef.current && firstRowRef.current) {
         const viewportHeight = viewportRef.current.clientHeight;
         const rowHeight = firstRowRef.current.offsetHeight;
         if (rowHeight > 0) {
-          const count = Math.floor(viewportHeight / rowHeight);
-          const remainder = viewportHeight % rowHeight;
-          setItemsPerPage(Math.max(1, count));
-
-          if (onHeightAdjust) {
-            const adjustment = remainder > rowHeight / 2 ? rowHeight - remainder : -remainder;
-            onHeightAdjust(adjustment);
-          }
+          setItemsPerPage(Math.max(1, Math.floor(viewportHeight / rowHeight)));
         }
       }
     };
+    calculate();
+    window.addEventListener("resize", calculate);
+    return () => window.removeEventListener("resize", calculate);
+  }, []);
 
-    calculateItems();
-
-    // Recalculate on window resize
-    window.addEventListener("resize", calculateItems);
-    return () => window.removeEventListener("resize", calculateItems);
-  }, [items, onHeightAdjust]);
-
-  // Scroll current selection into view
-  useEffect(() => {
-    if (selectedId && viewportRef.current) {
-      const selectedEl = viewportRef.current.querySelector(`[data-id="${selectedId}"]`);
-      if (selectedEl) {
-        selectedEl.scrollIntoView({ block: "start", behavior: "smooth" });
-      }
+  // Snap the view whenever the selected item falls outside the visible range.
+  // Uses the "derived state during render" pattern to avoid setState-in-effect.
+  const [snapDeps, setSnapDeps] = useState({ selectedId, items, itemsPerPage });
+  if (snapDeps.selectedId !== selectedId || snapDeps.items !== items || snapDeps.itemsPerPage !== itemsPerPage) {
+    setSnapDeps({ selectedId, items, itemsPerPage });
+    const idx = selectedId ? items.findIndex((i) => i.id === selectedId) : 0;
+    const safeIdx = idx === -1 ? 0 : idx;
+    if (safeIdx < viewStartIndex || safeIdx >= viewStartIndex + itemsPerPage) {
+      setViewStartIndex(Math.floor(safeIdx / itemsPerPage) * itemsPerPage);
     }
-  }, [selectedId]);
+  }
 
-  // Calculate the current visible range for the indicator
+  // Distinguish programmatic scrolls from user scrolls to avoid feedback loops
+  const isProgrammaticScroll = useRef(false);
+
+  // Apply scroll snap + sync viewStartIndex when user manually scrolls
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+
+    viewport.style.scrollSnapType = "y mandatory";
+
+    const onScroll = () => {
+      if (isProgrammaticScroll.current) return;
+      if (!firstRowRef.current) return;
+      const rowHeight = firstRowRef.current.offsetHeight;
+      if (rowHeight <= 0) return;
+      const newStart = Math.round(viewport.scrollTop / rowHeight);
+      setViewStartIndex(newStart);
+    };
+
+    viewport.addEventListener("scroll", onScroll);
+    return () => viewport.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // Scroll only when viewStartIndex changes programmatically
+  useEffect(() => {
+    if (!viewportRef.current) return;
+    const anchor = items[viewStartIndex];
+    if (!anchor) return;
+    const el = viewportRef.current.querySelector(`[data-id="${anchor.id}"]`);
+    if (!el) return;
+    isProgrammaticScroll.current = true;
+    el.scrollIntoView({ block: "start", behavior: "instant" });
+    requestAnimationFrame(() => { isProgrammaticScroll.current = false; });
+  }, [viewStartIndex, items]);
+
   const { rangeText, pageKey } = useMemo(() => {
     if (!items.length) return { rangeText: "0 items", pageKey: "empty" };
-
-    const currentIndex = selectedId ? items.findIndex((item) => item.id === selectedId) : 0;
-    const safeIndex = currentIndex === -1 ? 0 : currentIndex;
-
-    const start = safeIndex + 1;
-    const end = Math.min(safeIndex + itemsPerPage, items.length);
-    const total = items.length;
-
+    const end = Math.min(viewStartIndex + itemsPerPage, items.length);
     return {
-      rangeText: `${start}-${end} of ${total}`,
-      pageKey: Math.floor(safeIndex / itemsPerPage),
+      rangeText: `${viewStartIndex + 1}-${end} of ${items.length}`,
+      pageKey: viewStartIndex,
     };
-  }, [items, selectedId, itemsPerPage]);
+  }, [items, viewStartIndex, itemsPerPage]);
 
   return (
-    <div ref={ref} className={cn("pos-panel flex h-full flex-col", className)} style={style}>
+    <div ref={ref} className={cn("pos-panel flex h-full flex-col", className)}>
       <div className="flex items-center justify-between border-b border-border/60 px-3 py-2">
         <div className="flex items-baseline gap-2">
           <span className="pos-kicker">Menu</span>
@@ -102,10 +118,7 @@ const MenuTableComponent = React.forwardRef<HTMLDivElement, MenuTableProps>((pro
             Items
           </span>
         </div>
-        <Badge
-          variant="accent"
-          className="font-mono text-[10px] px-2 py-0.5 whitespace-nowrap min-w-0"
-        >
+        <Badge variant="accent" className="font-mono text-[10px] px-2 py-0.5 whitespace-nowrap min-w-0">
           {rangeText}
         </Badge>
       </div>
@@ -139,7 +152,7 @@ const MenuTableComponent = React.forwardRef<HTMLDivElement, MenuTableProps>((pro
                   onAddItem(item);
                 }}
                 className={cn(
-                  "group relative grid w-full grid-cols-[3.25rem_1fr_4.5rem_4.5rem] items-center gap-2 px-3 py-2 text-left text-xs transition-all duration-300 pos-menu-row",
+                  "group relative grid w-full snap-start grid-cols-[3.25rem_1fr_4.5rem_4.5rem] items-center gap-2 px-3 py-3 text-left text-xs transition-all duration-300 pos-menu-row",
                   isSelected ? "bg-primary/10 text-foreground" : "hover:bg-white/5",
                 )}
               >
@@ -156,9 +169,6 @@ const MenuTableComponent = React.forwardRef<HTMLDivElement, MenuTableProps>((pro
                 </span>
                 <div className="min-w-0">
                   <p className="truncate font-semibold">{item.name.en}</p>
-                  <p className="truncate text-[10px] text-muted-foreground">
-                    {item.secondaryCategory || empty}
-                  </p>
                 </div>
                 <span className="truncate text-[11px] text-muted-foreground">{item.name.zh}</span>
                 <span className="pos-value text-right font-mono text-xs font-semibold">
@@ -185,7 +195,7 @@ const MenuTableComponent = React.forwardRef<HTMLDivElement, MenuTableProps>((pro
           Ref
         </Button>
         <Button
-          className="pos-menu-action h-10 flex-1 text-xs tracking-[0.14em]"
+          className="pos-menu-action h-10 flex-[3] text-xs tracking-[0.14em]"
           onClick={onAddSelected}
           disabled={!selectedId}
         >
@@ -194,22 +204,36 @@ const MenuTableComponent = React.forwardRef<HTMLDivElement, MenuTableProps>((pro
         </Button>
         <Button
           variant="outline"
-          size="icon"
-          className="pos-menu-action h-10 w-10 flex flex-col items-center justify-center p-0"
-          onClick={() => onNavigate("up", itemsPerPage)}
+          className="pos-menu-action h-10 flex-1 p-0"
+          onClick={() => {
+            const currentIndex = items.findIndex((i) => i.id === selectedId);
+            if (currentIndex === viewStartIndex && viewStartIndex > 0) {
+              // At top of view — flip back, selected item stays, view scrolls back
+              setViewStartIndex(Math.max(0, viewStartIndex - itemsPerPage + 1));
+            } else {
+              onNavigate("up", 1);
+            }
+          }}
           aria-label="Move selection up"
         >
-          <ChevronUp className="h-4 w-4" />
+          <ChevronUp className="h-5 w-5" />
         </Button>
-
         <Button
           variant="outline"
-          size="icon"
-          className="pos-menu-action h-10 w-10 flex flex-col items-center justify-center p-0"
-          onClick={() => onNavigate("down", itemsPerPage)}
+          className="pos-menu-action h-10 flex-1 p-0"
+          onClick={() => {
+            const currentIndex = items.findIndex((i) => i.id === selectedId);
+            const lastOnView = Math.min(viewStartIndex + itemsPerPage - 1, items.length - 1);
+            if (currentIndex === lastOnView && lastOnView < items.length - 1) {
+              // At bottom of view — flip forward, selected item stays, becomes first on new page
+              setViewStartIndex(currentIndex);
+            } else {
+              onNavigate("down", 1);
+            }
+          }}
           aria-label="Move selection down"
         >
-          <ChevronDown className="h-4 w-4" />
+          <ChevronDown className="h-5 w-5" />
         </Button>
       </div>
     </div>

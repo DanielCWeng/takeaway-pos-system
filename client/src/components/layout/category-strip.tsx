@@ -101,7 +101,7 @@ export const CategoryStrip = React.memo(function CategoryStrip({
   return (
     <TooltipProvider delayDuration={150}>
       <div className="pos-panel p-2">
-        <div className="flex items-center gap-2 overflow-x-auto">
+        <div className="flex items-center justify-start gap-2 overflow-x-auto">
           {PRIMARY_CATEGORIES.map((category) => {
             const isActive = selectedPrimary === category.name;
             const IconComponent = ICON_MAP[category.name];

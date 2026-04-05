@@ -41,6 +41,11 @@ const AddressSelectionModal = lazy(() =>
     default: m.AddressSelectionModal,
   })),
 );
+const ReceiptPreviewModal = lazy(() =>
+  import("../modals/receipt-preview-modal").then((m) => ({
+    default: m.ReceiptPreviewModal,
+  })),
+);
 
 const loaderSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" width="100%" height="100%">
     <defs>
@@ -116,10 +121,8 @@ export function PosDashboard() {
     setActiveOrderIndex,
     isZeroPriceMode,
     isSwapMode,
-    isShortMode,
     setIsZeroPriceMode,
     setIsSwapMode,
-    setIsShortMode,
     decrementItem,
   } = useOrder();
   const { activeModal, openModal, closeModal } = useUI();
@@ -171,8 +174,11 @@ export function PosDashboard() {
 
   useEffect(() => {
     if (selectedOrderIndex === null) return;
-    if (selectedOrderIndex < 0 || selectedOrderIndex >= order.items.length) {
+    const len = order.items.length;
+    if (len === 0) {
       setSelectedOrderIndex(null);
+    } else if (selectedOrderIndex >= len) {
+      setSelectedOrderIndex(len - 1);
     }
   }, [order.items.length, selectedOrderIndex]);
 
@@ -192,6 +198,7 @@ export function PosDashboard() {
     currentChoiceIndex: number;
   } | null>(null);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   const generateId = () => Math.random().toString(36).substring(2, 11);
 
@@ -364,7 +371,6 @@ export function PosDashboard() {
       setIsSwapMode((p) => !p);
     }
   }, [isHappyMealSelected, setIsIncMode, setIsSwapMode]);
-  const handleToggleShortMode = useCallback(() => setIsShortMode((p) => !p), [setIsShortMode]);
 
   return (
     <div className="h-screen">
@@ -409,8 +415,7 @@ export function PosDashboard() {
               isHappyMealSelected={isHappyMealSelected}
               isSetMealItemSelected={isSetMealItemSelected}
               onToggleSwapMode={handleToggleSwapMode}
-              isShortMode={isShortMode}
-              onToggleShortMode={handleToggleShortMode}
+              onPreview={() => setIsPreviewOpen(true)}
               onOpenAdmin={() => setIsAdminOpen(true)}
             />
           </motion.div>
@@ -548,6 +553,19 @@ export function PosDashboard() {
           )}
 
           {isAdminOpen && <AdminPage onClose={() => setIsAdminOpen(false)} />}
+
+          {isPreviewOpen && (
+            <ReceiptPreviewModal
+              key="receipt-preview-modal"
+              items={order.items}
+              orderType={order.orderType}
+              customerInfo={order.customerInfo}
+              subtotal={subtotal}
+              deliveryFee={deliveryCharge}
+              total={total}
+              onClose={() => setIsPreviewOpen(false)}
+            />
+          )}
         </Suspense>
       </AnimatePresence>
     </div>

@@ -41,8 +41,7 @@ interface LeftPanelProps {
   isIncMode: boolean;
   isHappyMealSelected: boolean;
   isSetMealItemSelected: boolean;
-  isShortMode: boolean;
-  onToggleShortMode: () => void;
+  onPreview: () => void;
   onOpenAdmin: () => void;
 }
 
@@ -74,8 +73,7 @@ export const LeftPanel = React.memo(function LeftPanel({
   isIncMode,
   isHappyMealSelected,
   isSetMealItemSelected,
-  isShortMode,
-  onToggleShortMode,
+  onPreview,
   onOpenAdmin,
 }: LeftPanelProps) {
   return (
@@ -120,8 +118,7 @@ export const LeftPanel = React.memo(function LeftPanel({
           onToggleSwapMode={onToggleSwapMode}
           isHappyMealSelected={isHappyMealSelected}
           isSetMealItemSelected={isSetMealItemSelected}
-          isShortMode={isShortMode}
-          onToggleShortMode={onToggleShortMode}
+          onPreview={onPreview}
         />
       </motion.div>
 
@@ -130,7 +127,6 @@ export const LeftPanel = React.memo(function LeftPanel({
           items={items}
           selectedIndex={selectedIndex}
           onSelect={onSelectIndex}
-          isShortMode={isShortMode}
         />
       </div>
 
@@ -139,18 +135,6 @@ export const LeftPanel = React.memo(function LeftPanel({
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, ease: "easeOut", delay: 0.08 }}
-        >
-          <OrderSummary
-            subtotal={subtotal}
-            deliveryFee={deliveryFee}
-            total={total}
-            onAccept={onAccept}
-          />
-        </motion.div>
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, ease: "easeOut", delay: 0.12 }}
           onClick={onCustomerInfoClick}
           className="cursor-pointer"
         >
@@ -158,6 +142,18 @@ export const LeftPanel = React.memo(function LeftPanel({
             orderType={orderType}
             onChangeOrderType={onChangeOrderType}
             customerInfo={customerInfo}
+          />
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: "easeOut", delay: 0.12 }}
+        >
+          <OrderSummary
+            subtotal={subtotal}
+            deliveryFee={deliveryFee}
+            total={total}
+            onAccept={onAccept}
           />
         </motion.div>
       </div>
