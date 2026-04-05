@@ -6,13 +6,13 @@
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
-    --foreground: 215 28% 17%;
-    --card: 0 0% 100%;
-    --card-foreground: 215 28% 17%;
-    --muted: 210 20% 96%;
-    --muted-foreground: 215 14% 34%;
-    --border: 214 32% 91%;
+    --background: 40 18% 94%;
+    --foreground: 220 22% 16%;
+    --card: 38 20% 97%;
+    --card-foreground: 220 22% 16%;
+    --muted: 38 14% 90%;
+    --muted-foreground: 218 12% 42%;
+    --border: 35 18% 84%;
     --primary: 239 84% 67%;
     --primary-foreground: 0 0% 100%;
     --accent: 158 82% 39%;
@@ -24,27 +24,25 @@
 
     --ring: 239 84% 67%;
     --radius: 8px;
-    --order-type-active: 217 91% 60%; /* Solid Blue for active side */
+    --order-type-active: 217 91% 60%;
     color-scheme: light;
   }
 
   .dark {
-    /* Tactile, functional dark mode for Physical POS */
-    --background: 220 13% 8%;
-    --foreground: 210 15% 95%;
-    --card: 220 13% 14%;
-    --card-foreground: 210 15% 95%;
-    /* Richer, slightly lighter elements to contrast with background */
-    --muted: 220 11% 20%;
-    --muted-foreground: 215 15% 65%;
-    --border: 220 11% 26%;
-    /* Functional, easily identifiable primary/accent */
-    --primary: 215 85% 55%;
+    /* Tactile, functional dark mode for Physical POS — softened for all-day use */
+    --background: 222 16% 11%;
+    --foreground: 214 14% 87%;
+    --card: 222 15% 16%;
+    --card-foreground: 214 14% 87%;
+    --muted: 222 12% 22%;
+    --muted-foreground: 215 12% 58%;
+    --border: 222 12% 28%;
+    --primary: 215 85% 58%;
     --primary-foreground: 0 0% 100%;
-    --accent: 145 70% 45%; /* A very distinct green, common in POS systems */
+    --accent: 145 60% 42%;
     --accent-foreground: 0 0% 100%;
-    --ring: 215 85% 55%;
-    --order-type-active: 217 91% 60%; /* Solid Blue for active side */
+    --ring: 215 85% 58%;
+    --order-type-active: 217 91% 60%;
     color-scheme: dark;
   }
 }
@@ -61,8 +59,8 @@
     margin: 0;
     /* Engineered machine grid background */
     background-image:
-      linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+      linear-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
     background-size: 24px 24px;
     background-position: center center;
   }
@@ -121,6 +119,12 @@
     @apply bg-card text-card-foreground border border-border shadow-soft transition-all duration-300;
   }
 
+  .dark body {
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  }
+
   .dark .pos-panel {
     /* Richer, slightly lighter elements to contrast with background in dark mode */
     background-image: linear-gradient(
@@ -135,7 +139,7 @@
 
   /* Standard Category & Item Buttons */
   .pos-btn-tactile {
-    @apply border border-zinc-200 shadow-sm transition-all duration-150 bg-white text-foreground;
+    @apply border border-border shadow-sm transition-all duration-150 bg-card text-foreground;
   }
 
   .pos-btn-tactile:hover {
@@ -173,7 +177,7 @@
   }
 
   .pos-btn-destructive {
-    @apply bg-white dark:bg-zinc-900/50 text-destructive border-2 border-destructive/30 shadow-none transition-all duration-150;
+    @apply bg-card dark:bg-zinc-900/50 text-destructive border-2 border-destructive/30 shadow-none transition-all duration-150;
   }
   .pos-btn-destructive:hover {
     @apply bg-destructive/5 border-destructive/50;
