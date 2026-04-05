@@ -26,6 +26,6 @@ describe("AppErrorBoundary", () => {
       expect.objectContaining({ message: "kaboom" }),
       expect.any(String),
     );
-    expect(screen.getByRole("button", { name: "Reload POS" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Reload POS/i })).toBeTruthy();
   });
 });
