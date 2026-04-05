@@ -180,7 +180,7 @@ export const apiClient = {
   },
 
   // Calls
-  async dial(phone: string): Promise<{ ok: boolean; phone: string }> {
+  async dial(phone: string): Promise<{ ok: boolean; phone: string; provider?: string }> {
     return request("/calls/dial", {
       method: "POST",
       body: JSON.stringify({ phone }),
