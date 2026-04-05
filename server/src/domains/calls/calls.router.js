@@ -6,7 +6,7 @@
  */
 
 import { Router } from "express";
-import { dial } from "../../hardware/tapiDevice.js";
+import { dial, isBridgeConnected } from "../../hardware/tapiDevice.js";
 import { config } from "../../config/index.js";
 
 export const callsRouter = Router();
@@ -25,6 +25,15 @@ callsRouter.post("/dial", (req, res) => {
     });
   }
 
+  if (!isBridgeConnected()) {
+    return res.status(503).json({
+      error: {
+        code: "TAPI_UNAVAILABLE",
+        message: "TAPI bridge is enabled but not currently connected.",
+      },
+    });
+  }
+
   const { phone } = req.body ?? {};
   if (!phone || typeof phone !== "string") {
     return res.status(400).json({
@@ -40,6 +49,15 @@ callsRouter.post("/dial", (req, res) => {
     });
   }
 
-  dial(normalised);
+  const accepted = dial(normalised);
+  if (!accepted) {
+    return res.status(503).json({
+      error: {
+        code: "TAPI_UNAVAILABLE",
+        message: "TAPI bridge is not ready to accept dial commands.",
+      },
+    });
+  }
+
   res.status(202).json({ ok: true, phone: normalised });
 });
