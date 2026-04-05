@@ -13,5 +13,7 @@ interface Config {
 export const config: Config = {
   apiUrl: import.meta.env.VITE_API_URL || "http://localhost:4000/api",
   wsUrl: import.meta.env.VITE_WS_URL || "ws://localhost:4000",
-  adminPassword: import.meta.env.VITE_ADMIN_PASSWORD || undefined,
+  // Prefer explicit token naming, keep legacy VITE_ADMIN_PASSWORD for backwards compatibility.
+  adminPassword:
+    import.meta.env.VITE_ADMIN_API_TOKEN || import.meta.env.VITE_ADMIN_PASSWORD || undefined,
 };
