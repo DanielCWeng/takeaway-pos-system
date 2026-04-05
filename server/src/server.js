@@ -31,9 +31,20 @@ import {
   stopListening as stopCallerIdListening,
 } from "./hardware/callerIdDevice.js";
 import {
+  startListening as startTapiListening,
+  stopListening as stopTapiListening,
+} from "./hardware/tapiDevice.js";
+import { startBridge, stopBridge } from "./hardware/tapiBridgeProcess.js";
+import {
   init as initCallerIdService,
   handlePhoneDetected,
 } from "./domains/callerIdService/callerIdService.service.js";
+import {
+  init as initTapiService,
+  handleOffering,
+  handleConnected,
+  handleDisconnected,
+} from "./domains/tapiService/tapiService.service.js";
 
 // ---------------------------------------------------------------------------
 // Database — open connection and run migrations synchronously
@@ -118,7 +129,10 @@ const server = app.listen(config.port, () => {
   // Step 7: Inject broadcast into callerIdService (transport → domain boundary)
   initCallerIdService({ broadcast });
 
-  // Step 8: Start hardware listeners (degrades gracefully if hardware is missing)
+  // Step 8: Wire tapiService → callerIdService (reuse lookup + broadcast logic)
+  initTapiService({ handlePhoneDetected });
+
+  // Step 9: Start hardware listeners (both degrade gracefully if unavailable)
   startCallerIdListening((phone) => {
     void handlePhoneDetected(phone);
   }).catch((err) => {
@@ -127,6 +141,18 @@ const server = app.listen(config.port, () => {
       error: err?.message ?? String(err),
     });
   });
+
+  if (config.tapi.bridgePort > 0) {
+    // Launch the C# bridge first, then open the WS connection to it
+    startBridge();
+    startTapiListening({
+      onOffering:     (phone, callId) => void handleOffering(phone, callId),
+      onConnected:    (callId)        => handleConnected(callId),
+      onDisconnected: (callId, phone, duration) => void handleDisconnected(callId, phone, duration),
+    });
+  } else {
+    logger.info("TAPI integration disabled (TAPI_BRIDGE_PORT=0)");
+  }
 });
 
 // ---------------------------------------------------------------------------
@@ -139,6 +165,16 @@ function shutdown(signal) {
   // 1. Run explicit cleanup immediately
   try {
     stopCallerIdListening();
+  } catch (e) {
+    // ignore shutdown cleanup errors
+  }
+  try {
+    stopTapiListening();
+  } catch (e) {
+    // ignore shutdown cleanup errors
+  }
+  try {
+    stopBridge();
   } catch (e) {
     // ignore shutdown cleanup errors
   }

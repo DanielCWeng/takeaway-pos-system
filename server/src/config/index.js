@@ -61,6 +61,18 @@ const envSchema = z.object({
   // Optional — auto-detected if blank
   CALLER_DEVICE_PATH: z.string().optional().default(""),
 
+  // Optional — TAPI bridge WebSocket port (default 8765). Set to 0 to disable.
+  TAPI_BRIDGE_PORT: z
+    .string()
+    .regex(/^\d+$/, "TAPI_BRIDGE_PORT must be a non-negative integer")
+    .optional()
+    .default("8765")
+    .transform(Number)
+    .pipe(z.number().int().min(0).max(65535)),
+
+  // Optional — override path to TapiBridge.exe (absolute or relative to repo root)
+  TAPI_BRIDGE_EXE_PATH: z.string().optional().default(""),
+
   DELIVERY_BASE_CHARGE: z
     .string()
     .regex(/^\d+(\.\d+)?$/, "DELIVERY_BASE_CHARGE must be a decimal number")
@@ -166,6 +178,11 @@ export const config = {
 
   callerDevice: {
     path: env.CALLER_DEVICE_PATH,
+  },
+
+  tapi: {
+    bridgePort: env.TAPI_BRIDGE_PORT,
+    bridgeExePath: env.TAPI_BRIDGE_EXE_PATH,
   },
 
   business: {
