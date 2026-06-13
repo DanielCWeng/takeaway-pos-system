@@ -219,6 +219,7 @@ ordersRouter.post("/print", async (req, res, next) => {
       order: orderData,
       archivedAt: result.archivedAt,
       status: result.status,
+      estimatedReadyAt: result.estimatedReadyAt ?? null,
     });
     return res.status(200).json({ orderId: result.orderId, printed: result.printed });
   } catch (err) {

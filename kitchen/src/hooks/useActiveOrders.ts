@@ -21,6 +21,7 @@ function mapApiRow(
     order: KitchenOrder["order"];
     status: OrderStatus;
     archivedAt: string;
+    estimatedReadyAt?: string | null;
     actualReadyAt?: string | null;
   },
   menu: MenuItem[],
@@ -31,7 +32,7 @@ function mapApiRow(
     order: row.order,
     status: row.status,
     archivedAt: row.archivedAt,
-    estimatedReadyAt: calcEstimatedReady(row.order, menu, row.archivedAt).toISOString(),
+    estimatedReadyAt: row.estimatedReadyAt ?? calcEstimatedReady(row.order, menu, row.archivedAt).toISOString(),
     actualReadyAt: row.actualReadyAt ?? undefined,
     deadline: calcDeadline(row.order.orderType, row.archivedAt, busyMode).toISOString(),
   };
@@ -74,6 +75,7 @@ export function useActiveOrders(menu: MenuItem[]) {
               order: event.payload.order,
               status: event.payload.status,
               archivedAt: event.payload.archivedAt,
+              estimatedReadyAt: event.payload.estimatedReadyAt ?? null,
             },
             menuRef.current,
             busyModeRef.current,

@@ -12,7 +12,15 @@ interface ReceiptPreviewModalProps {
   subtotal: number;
   deliveryFee: number;
   total: number;
+  etaMins?: number | null;
+  etaRangeLow?: number | null;
+  etaRangeHigh?: number | null;
   onClose: () => void;
+}
+
+function fmtTime(mins: number): string {
+  const d = new Date(Date.now() + mins * 60_000);
+  return d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
 }
 
 export function ReceiptPreviewModal({
@@ -22,6 +30,9 @@ export function ReceiptPreviewModal({
   subtotal,
   deliveryFee,
   total,
+  etaMins,
+  etaRangeLow,
+  etaRangeHigh,
   onClose,
 }: ReceiptPreviewModalProps) {
   const topLevelItems = items.filter((i) => !i.parentId);
@@ -63,6 +74,26 @@ export function ReceiptPreviewModal({
           </div>
 
           <Divider />
+
+          {/* ETA */}
+          {etaMins != null ? (
+            <>
+              <div className="mb-2 text-center">
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                  {orderType === "delivery" ? "Food ready by" : "Ready by"}
+                </p>
+                <p className="text-base font-bold text-foreground tabular-nums">
+                  ~{fmtTime(etaMins)}
+                </p>
+                {etaRangeLow != null && etaRangeHigh != null && (
+                  <p className="text-[10px] text-muted-foreground tabular-nums">
+                    {fmtTime(etaRangeLow)} – {fmtTime(etaRangeHigh)}
+                  </p>
+                )}
+              </div>
+              <Divider />
+            </>
+          ) : null}
 
           {/* Customer info (delivery only) */}
           {orderType === "delivery" && customerInfo && (

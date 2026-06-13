@@ -207,6 +207,7 @@ export function PosDashboard() {
   } | null>(null);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewEta, setPreviewEta] = useState<{ mins: number; low: number; high: number } | null>(null);
 
   const generateId = () => Math.random().toString(36).substring(2, 11);
 
@@ -432,7 +433,16 @@ export function PosDashboard() {
               isHappyMealSelected={isHappyMealSelected}
               isSetMealItemSelected={isSetMealItemSelected}
               onToggleSwapMode={handleToggleSwapMode}
-              onPreview={() => setIsPreviewOpen(true)}
+              onPreview={() => {
+                setIsPreviewOpen(true);
+                setPreviewEta(null);
+                const topLevelCount = order.items.filter((i) => !i.parentId).reduce((s, i) => s + (i.quantity ?? 1), 0);
+                if (topLevelCount > 0) {
+                  apiClient.fetchEta(order.orderType, topLevelCount)
+                    .then((r) => setPreviewEta({ mins: r.predictedMins, low: r.rangeLow, high: r.rangeHigh }))
+                    .catch(() => {/* non-fatal */});
+                }
+              }}
               onOpenAdmin={() => setIsAdminOpen(true)}
             />
           </motion.div>
@@ -582,6 +592,9 @@ export function PosDashboard() {
               subtotal={subtotal}
               deliveryFee={deliveryCharge}
               total={total}
+              etaMins={previewEta?.mins}
+              etaRangeLow={previewEta?.low}
+              etaRangeHigh={previewEta?.high}
               onClose={() => setIsPreviewOpen(false)}
             />
           )}

@@ -18,6 +18,7 @@ import { addressesRouter } from "../domains/addresses/addresses.router.js";
 import { telemetryRouter } from "../domains/telemetry/telemetry.router.js";
 import { callsRouter } from "../domains/calls/calls.router.js";
 import { menuRouter } from "../domains/menu/menu.router.js";
+import { etaRouter } from "../domains/eta/eta.router.js";
 import { errorHandler as globalErrorHandler } from "../shared/middleware/errorHandler.js";
 
 export const apiRouter = Router();
@@ -32,6 +33,7 @@ apiRouter.use("/addresses", addressesRouter);
 apiRouter.use("/telemetry", telemetryRouter);
 apiRouter.use("/calls", callsRouter);
 apiRouter.use("/menu", menuRouter);
+apiRouter.use("/eta", etaRouter);
 
 // ---------------------------------------------------------------------------
 // 404 handler - unknown API route

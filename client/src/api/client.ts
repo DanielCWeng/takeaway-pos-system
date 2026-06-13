@@ -202,6 +202,11 @@ export const apiClient = {
     return request(`/menu/${id}`, { method: "DELETE" });
   },
 
+  // ETA
+  async fetchEta(orderType: "collection" | "delivery", itemCount: number): Promise<{ predictedMins: number; rangeLow: number; rangeHigh: number; queueDepth: number }> {
+    return request(`/eta?orderType=${orderType}&itemCount=${itemCount}`);
+  },
+
   // Addresses
   async lookupPostcode(postcode: string): Promise<{ addresses: Address[]; source: string }> {
     return request("/addresses/lookup", {

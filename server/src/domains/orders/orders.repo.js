@@ -36,6 +36,7 @@ const stmts = {
   setStatus: null,
   getActive: null,
   getPrevStatus: null,
+  getEtaData: null,
 };
 
 /**
@@ -63,16 +64,29 @@ function getStmts() {
       ORDER BY archived_at DESC
     `);
     // kitchen screen statements
-    stmts.initStatus = db.prepare(
-      "INSERT INTO order_status (order_id, status, estimated_ready_at) VALUES (?, ?, ?)",
-    );
+    stmts.initStatus = db.prepare(`
+      INSERT INTO order_status
+        (order_id, status, estimated_ready_at, item_count, complexity, queue_depth, is_delivery, predicted_mins)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `);
     stmts.setStatus = db.prepare(`
       UPDATE order_status
       SET status     = $status,
           updated_at = datetime('now'),
           updated_by = $updatedBy,
-          actual_ready_at = CASE WHEN $status = 'ready' THEN datetime('now') ELSE actual_ready_at END
+          actual_ready_at = CASE
+            WHEN $status IN ('ready', 'complete') AND actual_ready_at IS NULL
+            THEN datetime('now')
+            ELSE actual_ready_at
+          END
       WHERE order_id = $orderId
+    `);
+    stmts.getEtaData = db.prepare(`
+      SELECT s.item_count, s.complexity, s.queue_depth, s.is_delivery,
+             s.actual_ready_at, o.archived_at
+      FROM order_status s
+      JOIN orders o ON o.id = s.order_id
+      WHERE s.order_id = ?
     `);
     stmts.getActive = db.prepare(`
       SELECT o.id, o.data, o.archived_at,
@@ -304,12 +318,43 @@ export function findOrdersByPhone(phone) {
  * Insert an initial status row for a newly archived order.
  *
  * @param {number} orderId
- * @param {'new'|'cooking'} initialStatus - 'cooking' for auto-started collection orders
- * @param {string|null} estimatedReadyAt  - ISO string, null in Phase 1 (calculated client-side)
+ * @param {'new'|'cooking'} initialStatus
+ * @param {string|null} estimatedReadyAt - ISO string from the RLS model
+ * @param {{ itemCount: number, complexity: number, queueDepth: number, isDelivery: boolean, predictedMins: number }|null} etaData
  */
-export function initOrderStatus(orderId, initialStatus = "new", estimatedReadyAt = null) {
+export function initOrderStatus(orderId, initialStatus = "new", estimatedReadyAt = null, etaData = null) {
   const { initStatus } = getStmts();
-  initStatus.run(orderId, initialStatus, estimatedReadyAt);
+  initStatus.run(
+    orderId,
+    initialStatus,
+    estimatedReadyAt,
+    etaData?.itemCount ?? null,
+    etaData?.complexity ?? null,
+    etaData?.queueDepth ?? null,
+    etaData?.isDelivery ? 1 : (etaData ? 0 : null),
+    etaData?.predictedMins ?? null,
+  );
+}
+
+/**
+ * Return the stored ETA feature data and timing for a completed order.
+ * Used to trigger the RLS model update.
+ *
+ * @param {number} orderId
+ * @returns {{ itemCount: number, complexity: number, queueDepth: number, isDelivery: boolean, actualReadyAt: string|null, archivedAt: string }|null}
+ */
+export function getOrderEtaData(orderId) {
+  const { getEtaData } = getStmts();
+  const row = getEtaData.get(orderId);
+  if (!row) return null;
+  return {
+    itemCount: row.item_count,
+    complexity: row.complexity,
+    queueDepth: row.queue_depth,
+    isDelivery: row.is_delivery === 1,
+    actualReadyAt: row.actual_ready_at ?? null,
+    archivedAt: row.archived_at,
+  };
 }
 
 /**

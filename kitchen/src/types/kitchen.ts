@@ -179,7 +179,7 @@ export type StationLoadMap = Partial<Record<StationType, StationLoad>>;
 // ---------------------------------------------------------------------------
 
 export type KitchenSocketEvent =
-  | { type: "order_created";       payload: { orderId: number; order: FullOrder; archivedAt: string; status: OrderStatus } }
+  | { type: "order_created";       payload: { orderId: number; order: FullOrder; archivedAt: string; status: OrderStatus; estimatedReadyAt?: string | null } }
   | { type: "order_status_changed"; payload: { orderId: number; previousStatus: OrderStatus; status: OrderStatus; updatedAt: string } }
   | { type: "order_cancelled";      payload: { orderId: number } }
   | { type: "order_eta_updated";    payload: { orderId: number; estimatedReadyAt: string } }

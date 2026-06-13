@@ -1,12 +1,7 @@
 import { useEffect, useState } from "react";
-import type { MenuItem, OrderStatus } from "../types/kitchen";
+import type { MenuItem } from "../types/kitchen";
 import { useActiveOrders } from "../hooks/useActiveOrders";
-import { useBusyMode } from "../hooks/useBusyMode";
-import { useStationLoad } from "../hooks/useStationLoad";
-import { useBatchDetection } from "../hooks/useBatchDetection";
-import { BusyModeBanner } from "./BusyModeBanner";
-import { KanbanColumn } from "./KanbanColumn";
-import { StationLoadPanel } from "./StationLoadPanel";
+import { OrderCard } from "./OrderCard";
 
 // ---------------------------------------------------------------------------
 // Clock
@@ -61,27 +56,10 @@ interface Props {
 }
 
 export function KitchenBoard({ menu }: Props) {
-  const { orders, isLoading, connected, busyMode, setBusyMode, updateStatus } =
-    useActiveOrders(menu);
+  const { orders, isLoading, connected, updateStatus } = useActiveOrders(menu);
 
-  const { busyMode: derivedBusy, priorityOrderId, missWindowIds } =
-    useBusyMode(orders, busyMode);
-
-  // Sync derived busy mode back so useActiveOrders can recalculate delivery deadlines
-  useEffect(() => {
-    setBusyMode(derivedBusy);
-  }, [derivedBusy, setBusyMode]);
-
-  const stationLoad = useStationLoad(orders, menu);
-  const batchMap    = useBatchDetection(orders);
-
-  // Split orders into columns
-  const newOrders      = orders.filter((o) => o.status === "new");
-  const cookingOrders  = orders.filter((o) => o.status === "accepted" || o.status === "cooking");
-  const readyOrders    = orders.filter((o) => o.status === "ready");
-
-  const handleStatusChange = (orderId: number, status: OrderStatus) => {
-    void updateStatus(orderId, status);
+  const handleDone = (orderId: number) => {
+    void updateStatus(orderId, "complete");
   };
 
   if (isLoading) {
@@ -106,56 +84,32 @@ export function KitchenBoard({ menu }: Props) {
           </span>
           <span className="font-chinese text-zinc-600 text-sm mt-0.5">厨房显示屏</span>
         </div>
-
         <div className="flex items-center gap-5">
-          <ConnectionDot connected={connected} />
-          {derivedBusy && (
-            <span className="text-xs font-bold uppercase tracking-widest text-amber-400 bg-amber-400/10 border border-amber-400/20 px-3 py-1 rounded-full">
+          {orders.length > 0 && (
+            <span className="text-xs font-bold uppercase tracking-widest text-zinc-400 bg-zinc-800 border border-zinc-700/40 px-3 py-1 rounded-full">
               {orders.length} active
             </span>
           )}
+          <ConnectionDot connected={connected} />
           <LiveClock />
         </div>
       </header>
 
-      {/* ── Busy mode banner ────────────────────────────────────────── */}
-      {derivedBusy && <BusyModeBanner />}
-
-      {/* ── Station load panel ──────────────────────────────────────── */}
-      <StationLoadPanel load={stationLoad} />
-
-      {/* ── Kanban columns ──────────────────────────────────────────── */}
-      <main className="flex-1 flex gap-3 p-3 min-h-0 overflow-hidden">
-        <KanbanColumn
-          title="New"
-          titleZh="新订单"
-          accentClass="bg-kitchen-new"
-          orders={newOrders}
-          priorityOrderId={derivedBusy ? priorityOrderId : null}
-          missWindowIds={missWindowIds}
-          batchMap={batchMap}
-          onStatusChange={handleStatusChange}
-        />
-        <KanbanColumn
-          title="Cooking"
-          titleZh="烹饪中"
-          accentClass="bg-kitchen-cooking"
-          orders={cookingOrders}
-          priorityOrderId={derivedBusy ? priorityOrderId : null}
-          missWindowIds={missWindowIds}
-          batchMap={batchMap}
-          onStatusChange={handleStatusChange}
-        />
-        <KanbanColumn
-          title="Ready"
-          titleZh="已就绪"
-          accentClass="bg-kitchen-ready"
-          orders={readyOrders}
-          priorityOrderId={null}
-          missWindowIds={[]}
-          batchMap={batchMap}
-          onStatusChange={handleStatusChange}
-        />
+      {/* ── Order grid ──────────────────────────────────────────────── */}
+      <main className="flex-1 p-4 overflow-y-auto min-h-0">
+        {orders.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full text-zinc-700 gap-3">
+            <span className="text-5xl">○</span>
+            <span className="text-sm uppercase tracking-widest">No active orders</span>
+            <span className="font-chinese text-zinc-800">暂无订单</span>
+          </div>
+        ) : (
+          <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(280px,1fr))]">
+            {orders.map((o) => (
+              <OrderCard key={o.orderId} kitchenOrder={o} onDone={handleDone} />
+            ))}
+          </div>
+        )}
       </main>
     </div>
   );

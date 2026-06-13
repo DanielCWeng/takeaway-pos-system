@@ -14,6 +14,7 @@
 
 import * as repo from "./orders.repo.js";
 import * as customers from "../customers/customers.service.js";
+import * as etaService from "../eta/eta.service.js";
 import { config } from "../../config/index.js";
 import { getDb } from "../../infrastructure/db.js";
 import { logger } from "../../infrastructure/logger.js";
@@ -178,7 +179,18 @@ export async function printAndArchiveOrder(orderData, clientOrderId) {
       ? "cooking"
       : "new";
 
-  repo.initOrderStatus(archived.id, initialStatus, null);
+  // Compute RLS-based ETA and store metadata for self-updating model
+  const isDelivery = orderData.orderType === "delivery";
+  const itemCount = etaService.deriveItemCount(orderData.items);
+  const complexity = etaService.deriveComplexity(orderData.items);
+  const queueDepth = activeOrders.length;
+  const { predictedMins } = etaService.predict(itemCount, complexity, queueDepth, isDelivery);
+  const estimatedReadyAt = new Date(
+    new Date(archived.archivedAt).getTime() + predictedMins * 60_000,
+  ).toISOString();
+
+  const etaData = { itemCount, complexity, queueDepth, isDelivery, predictedMins };
+  repo.initOrderStatus(archived.id, initialStatus, estimatedReadyAt, etaData);
 
   let printed = false;
   try {
@@ -194,7 +206,7 @@ export async function printAndArchiveOrder(orderData, clientOrderId) {
     });
   }
 
-  return { orderId: archived.id, printed, status: initialStatus, archivedAt: archived.archivedAt };
+  return { orderId: archived.id, printed, status: initialStatus, archivedAt: archived.archivedAt, estimatedReadyAt };
 }
 
 // ---------------------------------------------------------------------------
@@ -237,6 +249,34 @@ export function setKitchenStatus(id, status, updatedBy = "kitchen") {
   }
 
   repo.setOrderStatus(id, status, updatedBy);
+
+  if (status === "complete") {
+    try {
+      const etaData = repo.getOrderEtaData(id);
+      if (
+        etaData?.itemCount != null &&
+        etaData.complexity != null &&
+        etaData.queueDepth != null &&
+        etaData.isDelivery != null &&
+        etaData.actualReadyAt &&
+        etaData.archivedAt
+      ) {
+        const actualMins =
+          (new Date(etaData.actualReadyAt).getTime() - new Date(etaData.archivedAt).getTime()) /
+          60_000;
+        etaService.updateModelWithObservation(
+          etaData.itemCount,
+          etaData.complexity,
+          etaData.queueDepth,
+          etaData.isDelivery,
+          actualMins,
+        );
+      }
+    } catch (err) {
+      logger.warn("ETA model update failed (non-fatal)", { orderId: id, error: err?.message });
+    }
+  }
+
   return { previousStatus, updatedAt: new Date().toISOString() };
 }
 
