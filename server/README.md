@@ -121,6 +121,17 @@ Telemetry:
 
 - `POST /api/telemetry/client-error`
 
+Menu:
+
+- `GET /api/menu` (public read for POS and kitchen screens)
+- `POST /api/menu`
+- `PUT /api/menu/:id`
+- `DELETE /api/menu/:id`
+
+Menu writes, order history/reprint/delete/cleanup, and customer export/erasure
+require `Authorization: Bearer <ADMIN_API_TOKEN>`. Order creation and kitchen
+status transitions remain available to the trusted POS/KDS clients.
+
 ## Database and Migrations
 
 - Orders and customers are stored in SQLite (`DB_PATH`)

@@ -93,7 +93,7 @@ export const LeftPanel = React.memo(function LeftPanel({
             <Button
               variant="outline"
               size="sm"
-              className="h-8 px-3 text-xs border-zinc-700 hover:bg-zinc-800"
+              className="h-8 px-3 text-xs"
               onClick={onOpenAdmin}
             >
               Admin

@@ -30,7 +30,7 @@ export function CustomerCard({
             Details
           </span>
         </div>
-        <Button variant="info" size="sm" className="h-9 px-3 text-xs">
+        <Button variant="positive" size="sm" className="h-9 px-3 text-xs">
           Add
         </Button>
       </div>

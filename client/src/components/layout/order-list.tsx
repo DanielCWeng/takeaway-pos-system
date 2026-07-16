@@ -80,8 +80,8 @@ export const OrderList = React.memo(function OrderList({
                     className={cn(
                       "group relative flex w-full items-center justify-between rounded-lg border px-3 py-2.5 text-left text-xs transition-all duration-200 pos-order-row",
                       isSelected
-                        ? "border-primary/40 bg-primary/10 text-foreground font-semibold shadow-sm"
-                        : "border-border/40 bg-transparent text-foreground hover:bg-muted/50 hover:border-border/60",
+                        ? "border-green-700 bg-green-400 text-foreground font-semibold shadow-sm"
+                        : "border-border/40 bg-card text-foreground hover:bg-accent/70 hover:border-border/60",
                       isChild &&
                         "ml-4 w-[calc(100%-1rem)] border-dashed border-border/30 bg-muted/20",
                     )}
@@ -102,7 +102,7 @@ export const OrderList = React.memo(function OrderList({
                         {item.isFoc && !item.isIncluded && (
                           <Badge
                             variant="outline"
-                            className="bg-green-500/10 text-green-500 border-green-500/20 px-1 py-0 h-3 text-[8px] uppercase font-bold"
+                            className="bg-green-200 text-green-800 border-green-600 px-1 py-0 h-3 text-[8px] uppercase font-bold"
                           >
                             FOC
                           </Badge>
@@ -110,7 +110,7 @@ export const OrderList = React.memo(function OrderList({
                         {item.isIncluded && (
                           <Badge
                             variant="outline"
-                            className="bg-blue-500/10 text-blue-500 border-blue-500/20 px-1 py-0 h-3 text-[8px] uppercase font-bold"
+                            className="bg-yellow-200 text-yellow-800 border-yellow-600 px-1 py-0 h-3 text-[8px] uppercase font-bold"
                           >
                             Inc
                           </Badge>

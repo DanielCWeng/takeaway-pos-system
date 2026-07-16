@@ -153,14 +153,14 @@ const MenuTableComponent = React.forwardRef<HTMLDivElement, MenuTableProps>((pro
                 }}
                 className={cn(
                   "group relative grid w-full snap-start grid-cols-[3.25rem_1fr_4.5rem_4.5rem] items-center gap-2 px-3 py-3 text-left text-xs transition-all duration-300 pos-menu-row",
-                  isSelected ? "bg-primary/10 text-foreground" : "hover:bg-white/5",
+                  isSelected ? "bg-accent text-accent-foreground" : "hover:bg-accent/70",
                 )}
               >
                 <span
                   className={cn(
                     "absolute left-0 top-0 h-full w-[3px] opacity-0 transition-opacity",
                     isSelected
-                      ? "bg-primary opacity-100 shadow-[0_0_15px_hsl(var(--primary))]"
+                      ? "bg-primary opacity-100"
                       : "bg-primary opacity-0 group-hover:opacity-20",
                   )}
                 />

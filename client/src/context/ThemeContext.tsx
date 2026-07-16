@@ -24,7 +24,7 @@ interface ThemeContextValue {
   toggleTheme: () => void;
 }
 
-const STORAGE_KEY = "pos-theme";
+const STORAGE_KEY = "pos-theme-v2";
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
@@ -40,7 +40,7 @@ function getStoredTheme(): Theme | null {
 function getInitialTheme(): Theme {
   const stored = getStoredTheme();
   if (stored) return stored;
-  if (typeof document === "undefined") return "dark";
+  if (typeof document === "undefined") return "light";
   return document.documentElement.classList.contains("dark") ? "dark" : "light";
 }
 

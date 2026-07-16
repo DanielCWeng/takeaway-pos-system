@@ -52,6 +52,11 @@ export function useActiveOrders(menu: MenuItem[]) {
   const [orders, setOrders] = useState<KitchenOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [busyMode, setBusyMode] = useState(false);
+  const ordersRef = useRef<KitchenOrder[]>([]);
+
+  useEffect(() => {
+    ordersRef.current = orders;
+  }, [orders]);
 
   // Keep a stable ref to the current menu so callbacks don't go stale
   const menuRef = useRef(menu);
@@ -183,6 +188,7 @@ export function useActiveOrders(menu: MenuItem[]) {
 
   const updateStatus = useCallback(
     async (orderId: number, status: OrderStatus) => {
+      const previousOrder = ordersRef.current.find((order) => order.orderId === orderId);
       // Optimistic update
       setOrders((prev) =>
         prev
@@ -199,13 +205,20 @@ export function useActiveOrders(menu: MenuItem[]) {
       );
 
       try {
-        await fetch(`${API_URL}/api/orders/${orderId}/status`, {
+        const response = await fetch(`${API_URL}/api/orders/${orderId}/status`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ status }),
         });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
       } catch {
-        // WS event from server will reconcile if the request eventually succeeds
+        if (!previousOrder) return;
+        setOrders((current) => {
+          const withoutCurrent = current.filter((order) => order.orderId !== orderId);
+          return [...withoutCurrent, previousOrder].sort(
+            (a, b) => new Date(a.archivedAt).getTime() - new Date(b.archivedAt).getTime(),
+          );
+        });
       }
     },
     [],

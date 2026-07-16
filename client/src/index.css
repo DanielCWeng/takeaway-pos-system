@@ -6,44 +6,47 @@
 
 @layer base {
   :root {
-    --background: 40 18% 94%;
-    --foreground: 220 22% 16%;
-    --card: 38 20% 97%;
-    --card-foreground: 220 22% 16%;
-    --muted: 38 14% 90%;
-    --muted-foreground: 218 12% 42%;
-    --border: 35 18% 84%;
-    --primary: 239 84% 67%;
+    /* Legacy POS palette: light grey surfaces, green actions, yellow highlights. */
+    --background: 210 20% 98%;
+    --foreground: 220 20% 15%;
+    --card: 220 14% 96%;
+    --card-foreground: 220 20% 15%;
+    --muted: 216 12% 84%;
+    --muted-foreground: 218 39% 25%;
+    --border: 220 9% 46%;
+    --primary: 142 71% 45%;
     --primary-foreground: 0 0% 100%;
-    --accent: 158 82% 39%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 54 97% 88%;
+    --accent-foreground: 220 20% 15%;
 
-    --positive: 158 82% 39%;
-    --info: 217 91% 60%;
+    --positive: 142 71% 45%;
+    --info: 53 98% 60%;
     --destructive: 0 84% 60%;
 
-    --ring: 239 84% 67%;
+    --ring: 142 71% 45%;
     --radius: 8px;
-    --order-type-active: 217 91% 60%;
+    --order-type-active: 142 71% 45%;
     color-scheme: light;
   }
 
   .dark {
     /* Tactile, functional dark mode for Physical POS — softened for all-day use */
-    --background: 222 16% 11%;
-    --foreground: 214 14% 87%;
-    --card: 222 15% 16%;
-    --card-foreground: 214 14% 87%;
-    --muted: 222 12% 22%;
-    --muted-foreground: 215 12% 58%;
-    --border: 222 12% 28%;
-    --primary: 215 85% 58%;
+    --background: 210 20% 98%;
+    --foreground: 220 20% 15%;
+    --card: 220 14% 96%;
+    --card-foreground: 220 20% 15%;
+    --muted: 216 12% 84%;
+    --muted-foreground: 218 39% 25%;
+    --border: 220 9% 46%;
+    --primary: 142 71% 45%;
     --primary-foreground: 0 0% 100%;
-    --accent: 145 60% 42%;
-    --accent-foreground: 0 0% 100%;
-    --ring: 215 85% 58%;
-    --order-type-active: 217 91% 60%;
-    color-scheme: dark;
+    --accent: 54 97% 88%;
+    --accent-foreground: 220 20% 15%;
+    --positive: 142 71% 45%;
+    --info: 53 98% 60%;
+    --ring: 142 71% 45%;
+    --order-type-active: 142 71% 45%;
+    color-scheme: light;
   }
 }
 
@@ -119,31 +122,17 @@
     @apply bg-card text-card-foreground border border-border shadow-soft transition-all duration-300;
   }
 
-  .dark body {
-    background-image:
-      linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
-  }
-
-  .dark .pos-panel {
-    /* Richer, slightly lighter elements to contrast with background in dark mode */
-    background-image: linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.03) 0%,
-      rgba(255, 255, 255, 0) 100%
-    );
-    box-shadow:
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.05),
-      0 4px 12px rgba(0, 0, 0, 0.3);
-  }
-
   /* Standard Category & Item Buttons */
   .pos-btn-tactile {
-    @apply border border-border shadow-sm transition-all duration-150 bg-card text-foreground;
+    @apply border-2 border-border shadow-sm transition-all duration-150 bg-muted text-foreground;
+    border-top-color: hsl(0 0% 100%);
+    border-left-color: hsl(0 0% 100%);
+    border-bottom-color: hsl(var(--border));
+    border-right-color: hsl(var(--border));
   }
 
   .pos-btn-tactile:hover {
-    @apply bg-muted;
+    @apply bg-card;
   }
 
   .pos-btn-tactile:active,
@@ -151,18 +140,10 @@
     @apply bg-primary text-primary-foreground border-primary shadow-inner brightness-100;
   }
 
-  .dark .pos-btn-tactile {
-    @apply border border-zinc-800 bg-zinc-900/50 shadow-sm text-foreground;
-  }
-
-  .dark .pos-btn-tactile:hover {
-    @apply bg-zinc-800;
-  }
-
   /* Semantic Action Buttons */
   .pos-btn-positive {
     background-color: hsl(var(--positive));
-    @apply text-white border border-transparent shadow-sm transition-all duration-150;
+    @apply text-white border-2 border-green-700 shadow-sm transition-all duration-150;
   }
   .pos-btn-positive:active {
     @apply brightness-90 translate-y-px;
@@ -170,7 +151,7 @@
 
   .pos-btn-info {
     background-color: hsl(var(--info));
-    @apply text-white border border-transparent shadow-sm transition-all duration-150;
+    @apply text-foreground border-2 border-yellow-600 shadow-sm transition-all duration-150;
   }
   .pos-btn-info:active {
     @apply brightness-90 translate-y-px;
@@ -196,29 +177,17 @@
 
   /* Utility Buttons */
   .pos-btn-utility {
-    @apply bg-muted text-foreground border-transparent shadow-none transition-all duration-150;
+    @apply bg-muted text-foreground border-2 border-border shadow-none transition-all duration-150;
   }
   .pos-btn-utility:active {
     @apply bg-border translate-y-px;
   }
 
   .pos-btn-tactile-primary {
-    @apply bg-primary text-primary-foreground border border-primary/50 shadow-sm transition-all duration-150;
+    @apply bg-primary text-primary-foreground border-2 border-green-700 shadow-sm transition-all duration-150;
     box-shadow:
       inset 0 1px 1px 0 rgba(255, 255, 255, 0.2),
       0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-
-  .dark .pos-btn-tactile-primary {
-    background-image: linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.15) 0%,
-      rgba(255, 255, 255, 0) 100%
-    );
-    box-shadow:
-      inset 0 1px 1px 0 rgba(255, 255, 255, 0.2),
-      0 2px 4px rgba(0, 0, 0, 0.2);
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
   }
 
   .pos-btn-tactile-primary:active {
@@ -226,13 +195,9 @@
     box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.2) !important;
   }
 
-  .dark .pos-btn-tactile-primary:active {
-    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.5) !important;
-  }
-
   /* Tabs / Segmented Controls */
   .pos-tabs-list {
-    @apply bg-zinc-100 dark:bg-zinc-900 p-1 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-inner;
+    @apply bg-muted p-1 border-2 border-border rounded-lg shadow-inner;
   }
 
   .pos-tabs-trigger {
@@ -242,10 +207,6 @@
   .pos-tabs-trigger[data-state="active"] {
     background-color: hsl(var(--order-type-active));
     @apply text-white shadow-md scale-[1.02];
-  }
-
-  .dark .pos-tabs-trigger[data-state="active"] {
-    @apply shadow-[0_0_15px_rgba(37,99,235,0.3)];
   }
 
   .pos-kicker {

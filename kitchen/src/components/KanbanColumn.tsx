@@ -21,9 +21,6 @@ export function KanbanColumn({
   titleZh,
   accentClass,
   orders,
-  priorityOrderId,
-  missWindowIds,
-  batchMap,
   onStatusChange,
 }: Props) {
   return (
@@ -63,10 +60,7 @@ export function KanbanColumn({
             <OrderCard
               key={o.orderId}
               kitchenOrder={o}
-              isPriority={o.orderId === priorityOrderId}
-              isMissWindow={missWindowIds.includes(o.orderId)}
-              batchWith={batchMap.get(o.orderId) ?? []}
-              onStatusChange={onStatusChange}
+              onDone={(orderId) => onStatusChange(orderId, "complete")}
             />
           ))
         )}

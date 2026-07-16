@@ -19,7 +19,7 @@ export function OrderTabs({ orders, activeIndex, onSelectIndex }: OrderTabsProps
               "relative flex h-10 w-12 flex-shrink-0 items-center justify-center rounded-md border font-display text-sm font-semibold transition pos-order-tab",
               isActive
                 ? "border-primary bg-primary text-primary-foreground shadow-[0_0_10px_hsl(var(--primary)/0.2)]"
-                : "border-white/10 bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-foreground",
+                : "border-border bg-muted text-muted-foreground hover:bg-card hover:text-foreground",
             )}
           >
             {order.id}

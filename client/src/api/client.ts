@@ -178,7 +178,11 @@ export const apiClient = {
     secondaryCookTime?: number | null;
     portionCapacity?: number | null;
   }): Promise<unknown> {
-    return request("/menu", { method: "POST", body: JSON.stringify(item) });
+    return request("/menu", {
+      method: "POST",
+      headers: adminAuthHeaders(),
+      body: JSON.stringify(item),
+    });
   },
 
   async updateMenuItem(
@@ -195,11 +199,18 @@ export const apiClient = {
       portionCapacity?: number | null;
     },
   ): Promise<unknown> {
-    return request(`/menu/${id}`, { method: "PUT", body: JSON.stringify(updates) });
+    return request(`/menu/${id}`, {
+      method: "PUT",
+      headers: adminAuthHeaders(),
+      body: JSON.stringify(updates),
+    });
   },
 
   async deleteMenuItem(id: string): Promise<void> {
-    return request(`/menu/${id}`, { method: "DELETE" });
+    return request(`/menu/${id}`, {
+      method: "DELETE",
+      headers: adminAuthHeaders(),
+    });
   },
 
   // ETA

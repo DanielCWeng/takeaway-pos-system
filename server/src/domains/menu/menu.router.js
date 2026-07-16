@@ -14,6 +14,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { sendValidationError } from "../../shared/middleware/sendValidationError.js";
 import { logger } from "../../infrastructure/logger.js";
+import { requireAdminAuth } from "../../shared/middleware/requireAdminAuth.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const MENU_PATH = path.resolve(__dirname, "../../../../client/src/assets/menu.json");
@@ -77,7 +78,7 @@ menuRouter.get("/", async (_req, res, next) => {
   }
 });
 
-menuRouter.post("/", async (req, res, next) => {
+menuRouter.post("/", requireAdminAuth, async (req, res, next) => {
   try {
     const parsed = createSchema.safeParse(req.body);
     if (!parsed.success) return sendValidationError(res, parsed.error);
@@ -110,7 +111,7 @@ menuRouter.post("/", async (req, res, next) => {
   }
 });
 
-menuRouter.put("/:id", async (req, res, next) => {
+menuRouter.put("/:id", requireAdminAuth, async (req, res, next) => {
   try {
     const parsed = kitchenFieldsSchema.extend({
       nameEn: z.string().min(1).optional(),
@@ -155,7 +156,7 @@ menuRouter.put("/:id", async (req, res, next) => {
   }
 });
 
-menuRouter.delete("/:id", async (req, res, next) => {
+menuRouter.delete("/:id", requireAdminAuth, async (req, res, next) => {
   try {
     const menu = await readMenu();
     const idx = menu.findIndex((item) => item.id === req.params.id);

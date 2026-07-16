@@ -40,32 +40,6 @@ const updateAddressSchema = z.object({
 // ---------------------------------------------------------------------------
 
 /**
- * GET /api/customers/:phone
- * Fetch a customer by phone number. Returns 404 if not found.
- */
-customersRouter.get("/:phone", (req, res, next) => {
-  const { phone } = req.params;
-
-  // Basic sanity check before hitting service
-  if (!phone || phone.length < 10) {
-    return res.status(400).json({
-      error: {
-        code: "VALIDATION_ERROR",
-        message: "Phone number must contain between 10 and 13 digits",
-        details: { phone: ["Phone number is too short or missing"] },
-      },
-    });
-  }
-
-  try {
-    const customer = service.getCustomerByPhone(phone);
-    return res.json({ customer });
-  } catch (err) {
-    next(err);
-  }
-});
-
-/**
  * POST /api/customers/:phone/address
  * Update address fields for an existing customer.
  */
@@ -94,6 +68,33 @@ customersRouter.get("/:phone/export", requireAdminAuth, (req, res, next) => {
   try {
     const data = service.exportCustomerData(req.params.phone);
     return res.json(data);
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * GET /api/customers/:phone
+ * Fetch a customer by phone number. Returns 404 if not found.
+ *
+ * This stays after /export because Express matches routes in declaration order.
+ */
+customersRouter.get("/:phone", (req, res, next) => {
+  const { phone } = req.params;
+
+  if (!phone || phone.length < 10) {
+    return res.status(400).json({
+      error: {
+        code: "VALIDATION_ERROR",
+        message: "Phone number must contain between 10 and 13 digits",
+        details: { phone: ["Phone number is too short or missing"] },
+      },
+    });
+  }
+
+  try {
+    const customer = service.getCustomerByPhone(phone);
+    return res.json({ customer });
   } catch (err) {
     next(err);
   }

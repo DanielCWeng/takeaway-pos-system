@@ -12,7 +12,6 @@ Monorepo for a custom takeaway point-of-sale platform with a React client and a 
 - `client/` - React + TypeScript + Vite frontend for the POS UI
 - `server/` - Express + SQLite backend, WebSocket transport, and hardware adapters
 - `kitchen/` - React kitchen display screen (KDS) — real-time Kanban board for the kitchen
-- `docs/` - project documentation and planning materials
 - `_legacy/` - legacy reference code retained for migration context
 
 ## Prerequisites
@@ -23,6 +22,11 @@ Monorepo for a custom takeaway point-of-sale platform with a React client and a 
 For production hardware support (USB printer and caller ID device), see `server/README.md` for native dependency setup.
 
 ## Quick Start
+
+On Windows, after installing dependencies and configuring `server/.env`, run
+`start.bat` from the repository root. It opens the POS client and starts the
+server and kitchen display in separate terminal windows. When TAPI is enabled,
+the server also starts `TapiBridge.exe` automatically.
 
 1. Install dependencies
 
@@ -78,6 +82,18 @@ Default URLs:
 cd server && npm test
 cd client && npm test -- --run
 ```
+
+## Administration and Network Access
+
+Set the same `ADMIN_API_TOKEN` on the server and `VITE_ADMIN_API_TOKEN` on the
+client when using order history, customer export/erasure, menu editing, or
+retention cleanup. The client token is delivered to the browser, so this is an
+operator-control token for a trusted POS network, not a substitute for a
+separate identity provider.
+
+The server CORS policy allows `PATCH` because the kitchen display advances
+order statuses through `PATCH /api/orders/:id/status`. If the client and server
+origins differ, set `CORS_ORIGIN` to the exact client origin.
 
 ## Formatting
 
