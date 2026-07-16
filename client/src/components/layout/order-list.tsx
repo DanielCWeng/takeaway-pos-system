@@ -1,5 +1,4 @@
 import React, { useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import type { OrderItem } from "../../types";
 import { formatCurrency } from "../../lib/format";
 import { cn } from "../../lib/utils";
@@ -17,7 +16,7 @@ export const OrderList = React.memo(function OrderList({
   onSelect,
 }: OrderListProps) {
   const viewportRef = useRef<HTMLDivElement>(null);
-  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   useEffect(() => {
     if (selectedIndex === null) return;
@@ -38,7 +37,7 @@ export const OrderList = React.memo(function OrderList({
   }, [selectedIndex]);
 
   return (
-    <div className="pos-panel flex h-full flex-col">
+    <div className="pos-panel pos-order-list flex h-full flex-col">
       <div className="flex items-center justify-between border-b border-border/60 px-3 py-2">
         <div className="flex items-baseline gap-2">
           <span className="pos-kicker">Items</span>
@@ -55,47 +54,27 @@ export const OrderList = React.memo(function OrderList({
         className="min-h-0 flex-1 overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:w-2.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted/65 [&::-webkit-scrollbar-thumb:hover]:bg-accent/60"
         style={{ touchAction: "pan-y", WebkitOverflowScrolling: "touch" } as React.CSSProperties}
       >
-        <motion.div layout className="flex flex-col gap-1.5 p-2">
-          <AnimatePresence initial={false} mode="popLayout">
-            {items.map((item, index) => {
+        <div className="flex min-h-full flex-col">
+          {items.length === 0 && (
+            <div className="h-11 w-full flex-none border-b border-blue-800 bg-blue-600" />
+          )}
+          {items.map((item, index) => {
               const isSelected = selectedIndex === index;
               const isChild = !!item.parentId;
 
               return (
-                <motion.div
-                  layout
+                <button
                   key={item.uniqueId || `${item.name}-${index}`}
                   ref={(el) => { itemRefs.current[index] = el; }}
-                  initial={{ opacity: 0, height: 0, marginBottom: 0 }}
-                  animate={{ opacity: 1, height: "auto", marginBottom: 6 }}
-                  exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-                  transition={{
-                    duration: 0.2,
-                    ease: "circOut",
-                  }}
-                  className="overflow-hidden"
+                  onClick={() => onSelect(index)}
+                  className={cn(
+                    "group relative flex w-full flex-none items-center justify-between border-x-0 border-t-0 border-b px-3 py-2.5 text-left text-xs pos-order-row",
+                    isSelected
+                      ? "pos-order-row-selected border-blue-800 font-semibold"
+                      : "border-border/40 bg-transparent text-foreground hover:bg-blue-300",
+                    isChild && "pl-7",
+                  )}
                 >
-                  <motion.button
-                    onClick={() => onSelect(index)}
-                    className={cn(
-                      "group relative flex w-full items-center justify-between rounded-lg border px-3 py-2.5 text-left text-xs transition-all duration-200 pos-order-row",
-                      isSelected
-                        ? "border-green-700 bg-green-400 text-foreground font-semibold shadow-sm"
-                        : "border-border/40 bg-card text-foreground hover:bg-accent/70 hover:border-border/60",
-                      isChild &&
-                        "ml-4 w-[calc(100%-1rem)] border-dashed border-border/30 bg-muted/20",
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        "absolute left-0 top-2 h-[calc(100%-1rem)] w-[4px] rounded-full opacity-0 transition-all",
-                        isSelected
-                          ? "bg-primary opacity-100 scale-y-100"
-                          : "bg-primary/30 group-hover:opacity-40 scale-y-50",
-                        isChild &&
-                          "left-[-4px] w-[2px] h-[calc(100%+8px)] top-[-4px] rounded-none opacity-10 bg-foreground/20",
-                      )}
-                    />
                     <div className="min-w-0 pr-2">
                       <div className="flex items-center gap-1.5">
                         <p className="truncate text-xs font-semibold">{item.name}</p>
@@ -125,12 +104,10 @@ export const OrderList = React.memo(function OrderList({
                         {formatCurrency(item.price * item.quantity)}
                       </span>
                     </div>
-                  </motion.button>
-                </motion.div>
+                </button>
               );
             })}
-          </AnimatePresence>
-        </motion.div>
+        </div>
       </div>
     </div>
   );

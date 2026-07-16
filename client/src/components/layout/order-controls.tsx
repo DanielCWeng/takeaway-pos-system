@@ -53,7 +53,7 @@ export function OrderControls({
   useEffect(() => () => { if (armTimerRef.current) clearTimeout(armTimerRef.current); }, []);
 
   return (
-    <div className="pos-order-controls grid grid-cols-5 grid-rows-2 auto-rows-[minmax(3.25rem,1fr)] gap-1 p-2 border-b border-border/60">
+    <div className="pos-order-controls grid grid-cols-5 grid-rows-2 auto-rows-[2.25rem] gap-1 border-t border-border/60 pt-1">
       <Button
         variant="utility"
         className="row-span-2 h-full text-xl"

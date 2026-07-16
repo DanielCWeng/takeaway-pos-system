@@ -6,46 +6,46 @@
 
 @layer base {
   :root {
-    /* Legacy POS palette: light grey surfaces, green actions, yellow highlights. */
-    --background: 210 20% 98%;
-    --foreground: 220 20% 15%;
-    --card: 220 14% 96%;
-    --card-foreground: 220 20% 15%;
-    --muted: 216 12% 84%;
-    --muted-foreground: 218 39% 25%;
+    /* Legacy POS palette, matching Tailwind's original gray/blue/green controls. */
+    --background: 220 13% 91%;
+    --foreground: 0 0% 0%;
+    --card: 220 13% 91%;
+    --card-foreground: 0 0% 0%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 215 14% 34%;
     --border: 220 9% 46%;
-    --primary: 142 71% 45%;
+    --primary: 221 83% 53%;
     --primary-foreground: 0 0% 100%;
-    --accent: 54 97% 88%;
-    --accent-foreground: 220 20% 15%;
+    --accent: 55 92% 88%;
+    --accent-foreground: 0 0% 0%;
 
     --positive: 142 71% 45%;
-    --info: 53 98% 60%;
+    --info: 48 96% 53%;
     --destructive: 0 84% 60%;
 
     --ring: 142 71% 45%;
-    --radius: 8px;
-    --order-type-active: 142 71% 45%;
+    --radius: 0px;
+    --order-type-active: 48 96% 53%;
     color-scheme: light;
   }
 
   .dark {
-    /* Tactile, functional dark mode for Physical POS — softened for all-day use */
-    --background: 210 20% 98%;
-    --foreground: 220 20% 15%;
-    --card: 220 14% 96%;
-    --card-foreground: 220 20% 15%;
-    --muted: 216 12% 84%;
-    --muted-foreground: 218 39% 25%;
+    /* Keep the physical POS on the same high-contrast legacy palette. */
+    --background: 220 13% 91%;
+    --foreground: 0 0% 0%;
+    --card: 220 13% 91%;
+    --card-foreground: 0 0% 0%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 215 14% 34%;
     --border: 220 9% 46%;
-    --primary: 142 71% 45%;
+    --primary: 221 83% 53%;
     --primary-foreground: 0 0% 100%;
-    --accent: 54 97% 88%;
-    --accent-foreground: 220 20% 15%;
+    --accent: 55 92% 88%;
+    --accent-foreground: 0 0% 0%;
     --positive: 142 71% 45%;
-    --info: 53 98% 60%;
-    --ring: 142 71% 45%;
-    --order-type-active: 142 71% 45%;
+    --info: 48 96% 53%;
+    --ring: 221 83% 53%;
+    --order-type-active: 48 96% 53%;
     color-scheme: light;
   }
 }
@@ -60,12 +60,7 @@
     font-family: "Outfit", sans-serif;
     min-height: 100vh;
     margin: 0;
-    /* Engineered machine grid background */
-    background-image:
-      linear-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
-    background-size: 24px 24px;
-    background-position: center center;
+    background-image: none;
   }
 
   h1,
@@ -118,8 +113,38 @@
   .pos-panel {
     position: relative;
     overflow: hidden;
-    border-radius: var(--radius);
-    @apply bg-card text-card-foreground border border-border shadow-soft transition-all duration-300;
+    border-radius: 0;
+    @apply bg-card text-card-foreground border-2 transition-none;
+    border-top-color: hsl(220 14% 96%);
+    border-left-color: hsl(220 14% 96%);
+    border-right-color: hsl(220 9% 46%);
+    border-bottom-color: hsl(220 9% 46%);
+    box-shadow: none;
+  }
+
+  .pos-panel-divider {
+    background-color: hsl(var(--card));
+    border-left: 2px solid hsl(220 14% 96%);
+    border-right: 2px solid hsl(220 9% 46%);
+  }
+
+  .pos-order-list {
+    background-color: hsl(213 97% 87%);
+  }
+
+  .pos-menu-table {
+    background-color: hsl(55 92% 88%);
+  }
+
+  .pos-menu-row-selected,
+  .pos-order-row-selected {
+    background-color: hsl(221 83% 53%) !important;
+    color: white !important;
+  }
+
+  .pos-menu-row-selected *,
+  .pos-order-row-selected * {
+    color: white !important;
   }
 
   /* Standard Category & Item Buttons */
@@ -184,7 +209,7 @@
   }
 
   .pos-btn-tactile-primary {
-    @apply bg-primary text-primary-foreground border-2 border-green-700 shadow-sm transition-all duration-150;
+    @apply bg-primary text-primary-foreground border-2 border-blue-800 shadow-sm transition-all duration-150;
     box-shadow:
       inset 0 1px 1px 0 rgba(255, 255, 255, 0.2),
       0 2px 4px rgba(0, 0, 0, 0.1);
@@ -238,7 +263,32 @@
   }
 
   html.touch-ui .pos-order-controls {
-    min-height: 6rem;
+    min-height: 4.75rem;
+  }
+
+  .pos-order-type-trigger[data-state="active"] {
+    background-color: hsl(var(--info));
+    color: hsl(var(--foreground));
+    border-top-color: hsl(220 9% 46%);
+    border-left-color: hsl(220 9% 46%);
+    border-right-color: hsl(220 14% 96%);
+    border-bottom-color: hsl(220 14% 96%);
+    box-shadow: inset 1px 1px 2px rgba(0, 0, 0, 0.2);
+    transform: none;
+  }
+
+  .pos-order-type-trigger:active {
+    filter: brightness(0.72);
+    border-top-color: hsl(220 9% 34%);
+    border-left-color: hsl(220 9% 34%);
+    transform: translateY(1px);
+  }
+
+  html.touch-ui .pos-left-command-box button,
+  html.touch-ui .pos-order-controls button {
+    min-height: 0;
+    min-width: 0;
+    padding: 0.25rem 0.5rem;
   }
 
   html.touch-ui .pos-menu-action {
@@ -287,6 +337,41 @@
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
+/* Large, native draggable grip for the touchscreen modifier catalogue. */
+.pos-ingredient-scroll {
+  scrollbar-color: #4b72d1 #c9c7bd;
+  scrollbar-width: auto;
+  touch-action: pan-y;
+}
+
+.pos-ingredient-scroll::-webkit-scrollbar {
+  width: 32px;
+}
+
+.pos-ingredient-scroll::-webkit-scrollbar-track {
+  background: #c9c7bd;
+  border-left: 2px solid #6b7280;
+}
+
+.pos-ingredient-scroll::-webkit-scrollbar-thumb {
+  min-height: 96px;
+  border: 5px solid #c9c7bd;
+  border-radius: 4px;
+  background: #4b72d1;
+  background-clip: padding-box;
+}
+
+.pos-ingredient-scroll::-webkit-scrollbar-thumb:hover {
+  border: 5px solid #c9c7bd;
+  background: #365fbd;
+  background-clip: padding-box;
+}
+
+.pos-ingredient-scroll::-webkit-scrollbar-thumb:active {
+  background: #294d9c;
+}
+
 
 ::selection {
   background: hsl(var(--primary) / 0.3);

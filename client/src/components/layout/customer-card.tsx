@@ -20,38 +20,33 @@ export function CustomerCard({
     ? "Anonymous"
     : customerInfo?.phone || empty;
   const canDial = Boolean(customerInfo?.phone && !customerInfo.phone.startsWith("UNKNOWN-"));
+  const addressValue =
+    customerInfo?.address ||
+    [customerInfo?.houseNumber, customerInfo?.street, customerInfo?.town, customerInfo?.postcode]
+      .filter(Boolean)
+      .join(", ") ||
+    empty;
 
   return (
-    <div className="pos-panel flex h-full flex-col p-3">
-      <div className="flex items-start justify-between">
-        <div className="flex flex-col gap-0.5">
-          <span className="pos-kicker">Customer</span>
-          <span className="font-display text-sm font-semibold tracking-tight text-foreground">
-            Details
-          </span>
-        </div>
-        <Button variant="positive" size="sm" className="h-9 px-3 text-xs">
-          Add
-        </Button>
-      </div>
-
+    <div className="pos-panel flex h-full flex-col p-2">
       <Tabs
         value={orderType}
         onValueChange={(value) => onChangeOrderType(value as OrderType)}
-        className="mt-2"
       >
-        <TabsList className="h-11 w-full pos-tabs-list">
+        <TabsList className="h-14 w-full gap-1 border-2 border-b-gray-500 border-r-gray-500 border-l-gray-100 border-t-gray-100 bg-gray-300 p-1">
           <TabsTrigger
-            className="flex-1 text-sm tracking-[0.05em] pos-tabs-trigger"
+            className="pos-order-type-trigger h-full flex-1 gap-2 border-2 border-b-gray-500 border-r-gray-500 border-l-gray-100 border-t-gray-100 bg-gray-300 px-2 text-base font-bold text-black"
             value="collection"
           >
-            Collection
+            <span className="text-xl" aria-hidden="true">🏪</span>
+            <span>Collection</span>
           </TabsTrigger>
           <TabsTrigger
-            className="flex-1 text-sm tracking-[0.05em] pos-tabs-trigger"
+            className="pos-order-type-trigger h-full flex-1 gap-2 border-2 border-b-gray-500 border-r-gray-500 border-l-gray-100 border-t-gray-100 bg-gray-300 px-2 text-base font-bold text-black"
             value="delivery"
           >
-            Delivery
+            <span className="text-xl" aria-hidden="true">🚚</span>
+            <span>Delivery</span>
           </TabsTrigger>
         </TabsList>
       </Tabs>
@@ -97,12 +92,12 @@ export function CustomerCard({
           <span className="text-muted-foreground">Address</span>
           <span
             className={
-              customerInfo?.address || customerInfo?.postcode
+              addressValue !== empty
                 ? "pos-value font-mono text-foreground"
                 : "pos-value font-mono text-muted-foreground"
             }
           >
-            {customerInfo?.address || customerInfo?.postcode || empty}
+            {addressValue}
           </span>
         </div>
       </div>

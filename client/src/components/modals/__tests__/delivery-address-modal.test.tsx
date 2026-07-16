@@ -65,6 +65,7 @@ describe("DeliveryAddressModal", () => {
           phone: "07911123456",
           name: "Alex",
           postcode: "NG9 8GF",
+          deliveryTime: expect.stringMatching(/^\d{2}:\d{2}$/),
         }),
       );
     });

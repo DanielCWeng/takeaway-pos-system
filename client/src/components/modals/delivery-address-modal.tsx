@@ -86,6 +86,18 @@ function buildPendingCallPrefill(pendingCall: CallDetectedPayload): Partial<Cust
   };
 }
 
+function getCurrentUkTime(): string {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/London",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(new Date());
+  const hour = parts.find((part) => part.type === "hour")?.value ?? "00";
+  const minute = parts.find((part) => part.type === "minute")?.value ?? "00";
+  return `${hour}:${minute}`;
+}
+
 export function DeliveryAddressModal({
   customerInfo,
   pendingCall,
@@ -106,6 +118,7 @@ export function DeliveryAddressModal({
     latitude: null,
     longitude: null,
     ...customerInfo,
+    deliveryTime: customerInfo.deliveryTime || getCurrentUkTime(),
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -326,8 +339,12 @@ export function DeliveryAddressModal({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex flex-col bg-background"
+      className="fixed inset-0 z-50 flex justify-center bg-black/20"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget && !isLoading) onClose();
+      }}
     >
+      <div className="flex h-full w-full max-w-6xl flex-col bg-background shadow-2xl">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border/60 px-4 py-3 bg-muted/20 shrink-0">
         <div className="flex items-center gap-3">
@@ -601,7 +618,7 @@ export function DeliveryAddressModal({
       {/* Always-on keyboard */}
       <div className="shrink-0 border-t border-border/60 bg-background/95">
         <div className="mx-auto max-w-4xl">
-          <KeyboardPanel compact />
+          <KeyboardPanel compact onEnter={handleSave} />
         </div>
       </div>
 
@@ -616,6 +633,7 @@ export function DeliveryAddressModal({
           />
         )}
       </AnimatePresence>
+      </div>
     </motion.div>
   );
 }

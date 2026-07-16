@@ -79,6 +79,7 @@ interface OrderContextType {
   setActiveOrderIndex: (index: number) => void;
   createNewOrder: () => void;
   clearOrder: () => void; // Delete current order
+  deleteActiveOrder: () => void;
 
   addItem: (item: AddableItem, options?: AddItemOptions) => void;
   removeItem: (index: number) => void;
@@ -432,6 +433,27 @@ export function OrderProvider({ children }: { children: ReactNode }) {
     });
     setActiveOrderIndexState((prev) => Math.max(0, prev - 1));
   }, [safeIndex]);
+
+  const deleteActiveOrder = useCallback(() => {
+    setOrders((prev) => {
+      const active = prev[safeIndex];
+      if (!active) return prev;
+
+      // Order 1 is permanent: reset its contents and customer/order-type details,
+      // but retain the numbered tab itself.
+      if (active.id === 1) {
+        const nextOrders = [...prev];
+        nextOrders[safeIndex] = generateInitialOrder(1);
+        return nextOrders;
+      }
+
+      return prev.filter((_, index) => index !== safeIndex);
+    });
+    setActiveOrderIndexState((prev) => (order.id === 1 ? prev : Math.max(0, prev - 1)));
+    setIsZeroPriceMode(false);
+    setIsSwapMode(false);
+    setIsIncMode(false);
+  }, [order.id, safeIndex]);
 
   const addItem = useCallback(
     (item: AddableItem, options: AddItemOptions = {}) => {
@@ -828,6 +850,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
         setActiveOrderIndex,
         createNewOrder,
         clearOrder,
+        deleteActiveOrder,
 
         addItem,
         removeItem,

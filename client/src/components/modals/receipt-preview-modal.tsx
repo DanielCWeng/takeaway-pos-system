@@ -5,7 +5,7 @@ import { formatCurrency } from "../../lib/format";
 import { cn } from "../../lib/utils";
 import type { CustomerInfo, OrderItem, OrderType } from "../../types";
 
-interface ReceiptPreviewModalProps {
+export interface ReceiptPreviewModalProps {
   items: OrderItem[];
   orderType: OrderType;
   customerInfo?: CustomerInfo;
@@ -16,6 +16,7 @@ interface ReceiptPreviewModalProps {
   etaRangeLow?: number | null;
   etaRangeHigh?: number | null;
   onClose: () => void;
+  embedded?: boolean;
 }
 
 function fmtTime(mins: number): string {
@@ -34,6 +35,7 @@ export function ReceiptPreviewModal({
   etaRangeLow,
   etaRangeHigh,
   onClose,
+  embedded = false,
 }: ReceiptPreviewModalProps) {
   const topLevelItems = items.filter((i) => !i.parentId);
 
@@ -42,8 +44,12 @@ export function ReceiptPreviewModal({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4"
-      onClick={onClose}
+      className={
+        embedded
+          ? "contents"
+          : "fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4"
+      }
+      onClick={embedded ? undefined : onClose}
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.92, y: 12 }}
@@ -99,6 +105,11 @@ export function ReceiptPreviewModal({
           {orderType === "delivery" && customerInfo && (
             <>
               <div className="mb-2 space-y-0.5 text-[10px] text-muted-foreground">
+                {customerInfo.deliveryTime && (
+                  <p className="mb-1 text-center text-sm font-bold text-foreground">
+                    Requested Time: {customerInfo.deliveryTime}
+                  </p>
+                )}
                 {customerInfo.name && <p>{customerInfo.name}</p>}
                 {customerInfo.phone && <p>{customerInfo.phone}</p>}
                 {(customerInfo.houseNumber || customerInfo.street) && (
