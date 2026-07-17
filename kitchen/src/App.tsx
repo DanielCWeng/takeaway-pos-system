@@ -30,7 +30,7 @@ export default function App() {
   const menu = useMenu();
 
   return (
-    <div className="h-screen bg-[#0a0a0a] flex flex-col overflow-hidden font-sans">
+    <div className="h-screen bg-[#303338] text-white flex flex-col overflow-hidden font-sans">
       <KitchenBoard menu={menu} />
     </div>
   );

@@ -20,7 +20,7 @@ function LiveClock() {
       <div className="font-mono font-bold text-2xl text-white tabular-nums leading-none">
         {time.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
       </div>
-      <div className="text-zinc-600 text-xs mt-0.5 tracking-wide">
+      <div className="text-zinc-300 text-xs mt-0.5 tracking-wide">
         {time.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}
       </div>
     </div>
@@ -65,8 +65,8 @@ export function KitchenBoard({ menu }: Props) {
   if (isLoading) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4 text-zinc-600">
-          <div className="w-10 h-10 rounded-full border-2 border-zinc-700 border-t-amber-500 animate-spin" />
+        <div className="flex flex-col items-center gap-4 text-zinc-200">
+          <div className="w-10 h-10 rounded-full border-2 border-zinc-500 border-t-amber-400 animate-spin" />
           <span className="text-sm uppercase tracking-widest">Connecting to kitchen...</span>
           <span className="font-chinese text-zinc-700">连接厨房系统中...</span>
         </div>
@@ -77,7 +77,7 @@ export function KitchenBoard({ menu }: Props) {
   return (
     <div className="flex flex-col h-full">
       {/* ── Header ──────────────────────────────────────────────────── */}
-      <header className="flex items-center justify-between px-5 py-3 bg-[#0c0c0c] border-b border-[#181818] shrink-0">
+      <header className="flex items-center justify-between px-5 py-3 bg-[#3b3f45] border-b border-[#62676f] shrink-0 shadow-sm">
         <div className="flex flex-col">
           <span className="font-bold text-white text-lg tracking-wide leading-none">
             Kitchen Screen
@@ -98,7 +98,7 @@ export function KitchenBoard({ menu }: Props) {
       {/* ── Order grid ──────────────────────────────────────────────── */}
       <main className="flex-1 p-4 overflow-y-auto min-h-0">
         {orders.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-zinc-700 gap-3">
+          <div className="flex flex-col items-center justify-center h-full text-zinc-300 gap-3">
             <span className="text-5xl">○</span>
             <span className="text-sm uppercase tracking-widest">No active orders</span>
             <span className="font-chinese text-zinc-800">暂无订单</span>

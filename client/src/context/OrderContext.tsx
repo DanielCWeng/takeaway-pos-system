@@ -548,11 +548,14 @@ export function OrderProvider({ children }: { children: ReactNode }) {
         }
 
         const itemToRemove = prev.items[index];
-        const idToRemove = itemToRemove.uniqueId;
+        const groupParent = itemToRemove.parentId
+          ? prev.items.find((item) => item.uniqueId === itemToRemove.parentId)
+          : itemToRemove;
+        const idToRemove = groupParent?.uniqueId ?? itemToRemove.uniqueId;
 
-        // Filter out the item itself and all its children
-        const nextItems = prev.items.filter((item, idx) => {
-          if (idx === index) return false;
+        // A grouped child belongs to its parent: remove the complete meal/group.
+        const nextItems = prev.items.filter((item) => {
+          if (item.uniqueId === idToRemove) return false;
           if (item.parentId === idToRemove) return false;
           return true;
         });
@@ -597,6 +600,19 @@ export function OrderProvider({ children }: { children: ReactNode }) {
       updateOrderState((prev) => {
         if (index < 0 || index >= prev.items.length) return {};
         const item = prev.items[index];
+        const groupParent = item.parentId
+          ? prev.items.find((candidate) => candidate.uniqueId === item.parentId)
+          : item;
+        const groupId = groupParent?.uniqueId ?? item.uniqueId;
+        const isGrouped = Boolean(item.parentId) || prev.items.some((candidate) => candidate.parentId === groupId);
+
+        if (isGrouped) {
+          return {
+            items: prev.items.filter(
+              (candidate) => candidate.uniqueId !== groupId && candidate.parentId !== groupId,
+            ),
+          };
+        }
 
         if (item.quantity <= 1) {
           // Fallback to removeItem if quantity is 1

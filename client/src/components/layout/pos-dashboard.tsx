@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, lazy, Suspense } from "react";
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Trash2 } from "lucide-react";
 import type { MenuItem, OrderItem, MenuContent } from "../../types";
@@ -148,12 +148,41 @@ export function PosDashboard() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [isMenuLoading, setIsMenuLoading] = useState(true);
   const [selectedOrderIndex, setSelectedOrderIndex] = useState<number | null>(null);
+  const selectionStateRef = useRef({
+    orderId: order.clientOrderId,
+    itemCount: order.items.length,
+    manuallySelected: false,
+  });
   const selectedItem = selectedOrderIndex !== null ? order.items[selectedOrderIndex] : undefined;
 
-  // Every order opens with a stable selection on its first item.
+  // Follow newly added items until the operator deliberately selects another row.
+  // After a removal, select the final remaining row instead of snapping to the top.
   useEffect(() => {
-    setSelectedOrderIndex(order.items.length > 0 ? 0 : null);
-  }, [order.clientOrderId]);
+    const previous = selectionStateRef.current;
+    const itemCount = order.items.length;
+    const changedOrder = previous.orderId !== order.clientOrderId;
+
+    setSelectedOrderIndex((current) => {
+      if (itemCount === 0) return null;
+      if (changedOrder || itemCount < previous.itemCount) return itemCount - 1;
+      if (itemCount > previous.itemCount && !previous.manuallySelected) return itemCount - 1;
+      if (current === null || current >= itemCount) return itemCount - 1;
+      return current;
+    });
+
+    selectionStateRef.current = {
+      orderId: order.clientOrderId,
+      itemCount,
+      manuallySelected: changedOrder || itemCount < previous.itemCount
+        ? false
+        : previous.manuallySelected,
+    };
+  }, [order.clientOrderId, order.items.length]);
+
+  const handleSelectOrderItem = useCallback((index: number) => {
+    selectionStateRef.current.manuallySelected = true;
+    setSelectedOrderIndex(index);
+  }, []);
 
   // Lazy-load menu data to keep the entry bundle small and show loader long enough to avoid flicker.
   const MIN_LOADER_MS = 1500;
@@ -184,15 +213,6 @@ export function PosDashboard() {
       isMounted = false;
     };
   }, []);
-
-  useEffect(() => {
-    const len = order.items.length;
-    if (len === 0) {
-      setSelectedOrderIndex(null);
-    } else if (selectedOrderIndex === null || selectedOrderIndex >= len) {
-      setSelectedOrderIndex(0);
-    }
-  }, [order.items.length, selectedOrderIndex]);
 
   // Modal States
   const [configuringItem, setConfiguringItem] = useState<MenuItem | null>(null);
@@ -409,7 +429,7 @@ export function PosDashboard() {
               onSelectOrder={setActiveOrderIndex}
               items={order.items}
               selectedIndex={selectedOrderIndex}
-              onSelectIndex={setSelectedOrderIndex}
+              onSelectIndex={handleSelectOrderItem}
               onDecrementSelected={handleDecrementSelected}
               onClearOrder={clearOrder}
               subtotal={subtotal}

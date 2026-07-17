@@ -12,6 +12,7 @@ import * as repo from "./eta.repo.js";
 
 const LAMBDA = 0.95;
 const N = 5;
+const MAX_LEARNING_DURATION_MINS = 180;
 
 // ---------------------------------------------------------------------------
 // Linear algebra helpers (N-vector / N×N matrix)
@@ -105,7 +106,9 @@ export function predict(itemCount, complexity, queueDepth, isDelivery) {
 
 export function updateModelWithObservation(itemCount, complexity, queueDepth, isDelivery, actualMins) {
   if (
-    !Number.isFinite(actualMins) || actualMins < 1 || actualMins > 180 ||
+    !Number.isFinite(actualMins) ||
+    actualMins < 1 ||
+    actualMins >= MAX_LEARNING_DURATION_MINS ||
     !Number.isFinite(itemCount) || !Number.isFinite(complexity) || !Number.isFinite(queueDepth)
   ) return;
 

@@ -210,7 +210,7 @@ export function AdminPage({ onClose }: AdminPageProps) {
       setOrders([]);
     } catch (err) {
       console.error("Failed to delete orders", err);
-      setFetchError("Failed to delete orders. Please try again.");
+      setFetchError(getAdminApiErrorMessage(err, "Failed to delete orders. Please try again."));
     } finally {
       setIsDeleting(false);
     }

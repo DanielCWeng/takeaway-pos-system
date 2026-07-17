@@ -30,6 +30,9 @@ const stmts = {
   delete: null,
   deleteByDate: null,
   deleteBeforeDate: null,
+  deleteStatus: null,
+  deleteStatusByDate: null,
+  deleteStatusBeforeDate: null,
   findByCustomerPhone: null,
   // kitchen screen
   initStatus: null,
@@ -56,6 +59,15 @@ function getStmts() {
     stmts.delete = db.prepare("DELETE FROM orders WHERE id = ?");
     stmts.deleteByDate = db.prepare("DELETE FROM orders WHERE archived_at LIKE ?");
     stmts.deleteBeforeDate = db.prepare("DELETE FROM orders WHERE archived_at < ?");
+    stmts.deleteStatus = db.prepare("DELETE FROM order_status WHERE order_id = ?");
+    stmts.deleteStatusByDate = db.prepare(`
+      DELETE FROM order_status
+      WHERE order_id IN (SELECT id FROM orders WHERE archived_at LIKE ?)
+    `);
+    stmts.deleteStatusBeforeDate = db.prepare(`
+      DELETE FROM order_status
+      WHERE order_id IN (SELECT id FROM orders WHERE archived_at < ?)
+    `);
     stmts.findByCustomerPhone = db.prepare(`
       SELECT id, data, archived_at
       FROM orders
@@ -203,8 +215,12 @@ export function findOrdersByDate(date) {
  * @returns {void}
  */
 export function deleteOrder(id) {
-  const { delete: delStmt } = getStmts();
-  delStmt.run(id);
+  const db = getDb();
+  const { delete: delStmt, deleteStatus } = getStmts();
+  db.transaction(() => {
+    deleteStatus.run(id);
+    delStmt.run(id);
+  })();
 }
 
 /**
@@ -214,8 +230,13 @@ export function deleteOrder(id) {
  * @returns {void}
  */
 export function deleteOrdersByDate(date) {
-  const { deleteByDate } = getStmts();
-  deleteByDate.run(`${date}%`);
+  const db = getDb();
+  const { deleteByDate, deleteStatusByDate } = getStmts();
+  const pattern = `${date}%`;
+  db.transaction(() => {
+    deleteStatusByDate.run(pattern);
+    deleteByDate.run(pattern);
+  })();
 }
 /**
  * Delete all orders archived before a specific ISO 8601 timestamp.
@@ -224,9 +245,12 @@ export function deleteOrdersByDate(date) {
  * @returns {number} Number of deleted rows
  */
 export function deleteOrdersBefore(date) {
-  const { deleteBeforeDate } = getStmts();
-  const result = deleteBeforeDate.run(date);
-  return result.changes;
+  const db = getDb();
+  const { deleteBeforeDate, deleteStatusBeforeDate } = getStmts();
+  return db.transaction(() => {
+    deleteStatusBeforeDate.run(date);
+    return deleteBeforeDate.run(date).changes;
+  })();
 }
 
 /**

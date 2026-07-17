@@ -49,7 +49,12 @@ export function ItemOptionsModal({ item, onConfirm, onClose }: ItemOptionsModalP
   }, [item]);
 
   const handleSelectionChange = (group: string, value: string) => {
-    setSelections((prev) => ({ ...prev, [group]: value }));
+    setSelections((prev) => {
+      const next = { ...prev };
+      if (next[group] === value) delete next[group];
+      else next[group] = value;
+      return next;
+    });
   };
 
   const handleConfirm = () => {
