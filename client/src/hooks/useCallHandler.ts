@@ -13,6 +13,7 @@ import { useCaller } from "../context/CallerContext";
 import { useOrder } from "../context/OrderContext";
 import { useUI } from "../context/UIContext";
 import type { Address, CallDetectedPayload, WebSocketMessage, CustomerInfo } from "../types";
+import { apiClient } from "../api/client";
 
 export function useCallHandler() {
   const { subscribe, isConnected } = useCaller();
@@ -25,24 +26,43 @@ export function useCallHandler() {
 
   const hasActiveOrder = useMemo(() => order.items.length > 0, [order.items]);
 
+  const buildCustomerInfo = useCallback((payload: CallDetectedPayload, address?: Address) => {
+    const customerHouseNumber = payload.customer?.houseNumber ?? undefined;
+    const customerStreet = payload.customer?.street ?? undefined;
+    const resolvedStreet = address?.line1 ?? customerStreet;
+    const resolvedTown = address?.town ?? payload.customer?.town ?? undefined;
+    const fallbackAddress = [customerHouseNumber, resolvedStreet].filter(Boolean).join(" ");
+    const resolvedAddress =
+      address && address.line1
+        ? [customerHouseNumber, address.line1, address.line2, address.town]
+            .filter(Boolean)
+            .join(", ")
+        : fallbackAddress || undefined;
+
+    return {
+      phone: payload.phone,
+      name: payload.customer?.name ?? undefined,
+      address: resolvedAddress,
+      houseNumber: customerHouseNumber,
+      street: resolvedStreet,
+      town: resolvedTown,
+      postcode: address?.postcode ?? payload.customer?.postcode ?? undefined,
+      distance: payload.distance ?? payload.customer?.distance ?? undefined,
+      latitude: address?.latitude ?? payload.customer?.latitude ?? undefined,
+      longitude: address?.longitude ?? payload.customer?.longitude ?? undefined,
+    } satisfies CustomerInfo;
+  }, []);
+
   const resolveCustomerInfo = useCallback(
     (payload: CallDetectedPayload, address?: Address) => {
-      const customerHouseNumber = payload.customer?.houseNumber ?? undefined;
-      const customerStreet = payload.customer?.street ?? undefined;
-      const fallbackAddress =
-        [customerHouseNumber, customerStreet].filter(Boolean).join(" ") || undefined;
-
-      const info: CustomerInfo = {
-        phone: payload.phone,
-        name: payload.customer?.name ?? undefined,
-        address:
-          address && address.line1
-            ? [address.line1, address.line2, address.town].filter(Boolean).join(", ")
-            : fallbackAddress,
-        postcode: address?.postcode ?? payload.customer?.postcode ?? undefined,
-        distance: payload.distance ?? payload.customer?.distance ?? undefined,
-      };
-
+      const info = buildCustomerInfo(payload, address);
+      if (payload.callId) {
+        void apiClient.updateCallSession(payload.callId, {
+          selectedCustomerPhone: info.phone,
+          selectedCustomerName: info.name,
+          selectedAddress: info.address,
+        });
+      }
       setCustomerInfo(info);
       const wantsDelivery = Boolean(address) || Boolean(info.postcode) || Boolean(info.address);
       setOrderType(wantsDelivery ? "delivery" : "collection");
@@ -50,7 +70,7 @@ export function useCallHandler() {
       setPendingCall(null);
       setAddressOptions([]);
     },
-    [closeModal, setCustomerInfo, setOrderType],
+    [buildCustomerInfo, closeModal, setCustomerInfo, setOrderType],
   );
 
   const handleIncomingCall = useCallback(
@@ -83,7 +103,7 @@ export function useCallHandler() {
 
   useEffect(() => {
     const unsubscribe = subscribe((msg: WebSocketMessage) => {
-      if (msg.type === "incoming_call") {
+      if (msg.type === "incoming_call" || msg.type === "incoming_call_multi_address") {
         handleIncomingCall(msg.payload);
       }
     });
@@ -106,11 +126,44 @@ export function useCallHandler() {
     closeModal();
   }, [closeModal]);
 
+  const startNewCustomerFromPending = useCallback(() => {
+    if (!pendingCall) return;
+    const singleAddress =
+      pendingCall.addresses?.length === 1 ? pendingCall.addresses[0] : undefined;
+    const info = buildCustomerInfo(pendingCall, singleAddress);
+    setCustomerInfo(info);
+    const wantsDelivery = Boolean(singleAddress) || Boolean(info.postcode) || Boolean(info.address);
+    setOrderType(wantsDelivery ? "delivery" : "collection");
+    setAddressOptions([]);
+    openModal("customer");
+  }, [buildCustomerInfo, openModal, pendingCall, setCustomerInfo, setOrderType]);
+
+  const resolvePendingCall = useCallback(() => {
+    setPendingCall(null);
+    setAddressOptions([]);
+  }, []);
+
+  const attachPendingCallSelection = useCallback(
+    (info: CustomerInfo, notes?: string) => {
+      if (!pendingCall?.callId) return;
+      void apiClient.updateCallSession(pendingCall.callId, {
+        selectedCustomerPhone: info.phone,
+        selectedCustomerName: info.name,
+        selectedAddress: info.address,
+        notes,
+      });
+    },
+    [pendingCall],
+  );
+
   return {
     lastCall,
     pendingCall,
     addressOptions,
     selectAddress,
+    startNewCustomerFromPending,
+    resolvePendingCall,
+    attachPendingCallSelection,
     clearCall,
     isConnected,
   };

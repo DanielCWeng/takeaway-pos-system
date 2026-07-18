@@ -60,4 +60,24 @@ describe("telemetry router", () => {
     expect(res.body.error.details).toHaveProperty("type");
     expect(res.body.error.details).toHaveProperty("message");
   });
+
+  it("redacts phone-like values and customer path params in logs", async () => {
+    const res = await request(app).post("/api/telemetry/client-error").send({
+      type: "api.error",
+      message: "GET /api/customers/07911123456 failed",
+      source: "/customers/07911123456/export",
+      stack: "Bearer abc.def.ghi 07911123456",
+      route: "/customers/07911123456",
+    });
+
+    expect(res.status).toBe(204);
+    expect(logger.error).toHaveBeenCalledWith(
+      "Client runtime error reported",
+      expect.objectContaining({
+        message: "GET /api/customers/[redacted] failed",
+        source: "/customers/[redacted]/export",
+        route: "/customers/[redacted]",
+      }),
+    );
+  });
 });

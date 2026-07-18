@@ -4,21 +4,39 @@ import { Button } from "../ui/button";
 import { X } from "lucide-react";
 import { formatCurrency } from "../../lib/format";
 import { cn } from "../../lib/utils";
+import {
+  ReceiptPreviewModal,
+  type ReceiptPreviewModalProps,
+} from "./receipt-preview-modal";
 
 interface ConfirmationModalProps {
   orderTotal: number;
   errorMessage?: string | null;
   onClose: () => void;
   onConfirm: (paymentDetails: { amountPaid: number; changeDue: number }) => void | Promise<void>;
+  receiptPreview?: Omit<ReceiptPreviewModalProps, "onClose" | "embedded">;
 }
 
 const NUMPAD = ["7", "8", "9", "4", "5", "6", "1", "2", "3", "C", "0", "."];
+
+function formatReadyTime(minutes: number): string {
+  return new Date(Date.now() + minutes * 60_000).toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function getTenMinuteRange(minutes: number): { low: number; high: number } {
+  const low = Math.max(0, Math.floor(minutes / 10) * 10);
+  return { low, high: low + 10 };
+}
 
 export function ConfirmationModal({
   orderTotal,
   errorMessage,
   onClose,
   onConfirm,
+  receiptPreview,
 }: ConfirmationModalProps) {
   const [amountPaidStr, setAmountPaidStr] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -31,6 +49,8 @@ export function ConfirmationModal({
       setAmountPaidStr("");
     } else if (key === "." && amountPaidStr.includes(".")) {
       return;
+    } else if (!/^\d$/.test(key) && key !== ".") {
+      return; // reject comma and any other non-numeric character
     } else if (amountPaidStr.length < 8) {
       setAmountPaidStr((prev) => prev + key);
     }
@@ -61,13 +81,19 @@ export function ConfirmationModal({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="modal-keyboard-aware fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4"
+      onClick={() => {
+        if (!isSubmitting) onClose();
+      }}
     >
+      <div className="flex max-h-full w-full items-center justify-center gap-4">
+      {receiptPreview && <ReceiptPreviewModal {...receiptPreview} embedded onClose={onClose} />}
       <motion.div
         initial={{ opacity: 0, scale: 0.9, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: 10 }}
         transition={{ type: "spring", duration: 0.3, bounce: 0.2 }}
         className="pos-panel flex w-full max-w-sm flex-col shadow-2xl overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-border/60 px-6 py-4">
           <span className="font-display text-lg font-bold tracking-tight">Checkout</span>
@@ -83,6 +109,30 @@ export function ConfirmationModal({
         </div>
 
         <div className="flex flex-col gap-6 p-6">
+          <div className="border-2 border-border bg-yellow-100 px-4 py-3 text-center">
+            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              Estimated Time / 预计时间
+            </p>
+            {receiptPreview?.etaMins != null ? (() => {
+              const range = getTenMinuteRange(receiptPreview.etaMins);
+              return (
+                <div className="mt-1">
+                  <p className="font-mono text-2xl font-black text-foreground">
+                    Ready in {range.low}–{range.high} mins
+                  </p>
+                  <p className="text-sm font-bold text-foreground">预计 {range.low}–{range.high} 分钟</p>
+                  <p className="mt-1 font-mono text-xl font-black text-primary">
+                    {formatReadyTime(range.low)}–{formatReadyTime(range.high)}
+                  </p>
+                </div>
+              );
+            })() : (
+              <p className="mt-1 font-mono text-lg font-bold text-muted-foreground">
+                Calculating… / 计算中…
+              </p>
+            )}
+          </div>
+
           {/* Totals Display */}
           <div className="space-y-3 rounded-xl bg-muted/40 p-4 border border-border/40 shadow-inner">
             <div className="flex justify-between items-center opacity-70">
@@ -164,6 +214,7 @@ export function ConfirmationModal({
           </div>
         </div>
       </motion.div>
+      </div>
     </motion.div>
   );
 }

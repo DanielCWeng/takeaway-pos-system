@@ -12,6 +12,16 @@ import { sendValidationError } from "../../shared/middleware/sendValidationError
 
 export const telemetryRouter = Router();
 
+function redactSensitiveText(value) {
+  if (!value || typeof value !== "string") return value;
+
+  return value
+    .replace(/\b(?:\+?44|0)\d{9,12}\b/g, "[REDACTED_PHONE]")
+    .replace(/\b(?:ANON|UNKNOWN)-[A-Za-z0-9-]+\b/g, "[REDACTED_ID]")
+    .replace(/\/customers\/[^/\s?]+/gi, "/customers/[redacted]")
+    .replace(/\bBearer\s+[A-Za-z0-9\-._~+/]+=*\b/gi, "Bearer [REDACTED_TOKEN]");
+}
+
 const clientErrorSchema = z.object({
   type: z.string().min(1).max(64),
   message: z.string().min(1).max(2000),
@@ -33,11 +43,11 @@ telemetryRouter.post("/client-error", (req, res) => {
     requestId: req.requestId,
     client: true,
     errorType: payload.type,
-    message: payload.message,
-    source: payload.source,
-    stack: payload.stack,
+    message: redactSensitiveText(payload.message),
+    source: redactSensitiveText(payload.source),
+    stack: redactSensitiveText(payload.stack),
     userAgent: payload.userAgent,
-    route: payload.route,
+    route: redactSensitiveText(payload.route),
     clientTime: payload.time,
   });
 

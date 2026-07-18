@@ -61,6 +61,44 @@ const envSchema = z.object({
   // Optional — auto-detected if blank
   CALLER_DEVICE_PATH: z.string().optional().default(""),
 
+  // Optional — TAPI bridge WebSocket port (default 8765). Set to 0 to disable.
+  TAPI_BRIDGE_PORT: z
+    .string()
+    .regex(/^\d+$/, "TAPI_BRIDGE_PORT must be a non-negative integer")
+    .optional()
+    .default("8765")
+    .transform(Number)
+    .pipe(z.number().int().min(0).max(65535)),
+
+  // Optional — override path to TapiBridge.exe (absolute or relative to repo root)
+  TAPI_BRIDGE_EXE_PATH: z.string().optional().default(""),
+  // Optional — shared secret used by Node <-> bridge DIAL commands
+  TAPI_BRIDGE_TOKEN: z.string().optional().default(""),
+
+  TELEPHONY_PROVIDER: z.enum(["none", "tapi", "asterisk_ami"]).optional(),
+  ASTERISK_AMI_HOST: z.string().optional().default("127.0.0.1"),
+  ASTERISK_AMI_PORT: z
+    .string()
+    .regex(/^\d+$/, "ASTERISK_AMI_PORT must be a positive integer")
+    .optional()
+    .default("5038")
+    .transform(Number)
+    .pipe(z.number().int().min(1).max(65535)),
+  ASTERISK_AMI_USERNAME: z.string().optional().default(""),
+  ASTERISK_AMI_SECRET: z.string().optional().default(""),
+  ASTERISK_AMI_CHANNEL_TEMPLATE: z.string().optional().default("PJSIP/{number}"),
+  ASTERISK_AMI_CONTEXT: z.string().optional().default("from-internal"),
+  ASTERISK_AMI_EXTEN_TEMPLATE: z.string().optional().default("{number}"),
+  ASTERISK_AMI_PRIORITY: z
+    .string()
+    .regex(/^\d+$/, "ASTERISK_AMI_PRIORITY must be a positive integer")
+    .optional()
+    .default("1")
+    .transform(Number)
+    .pipe(z.number().int().min(1)),
+  ASTERISK_AMI_CALLER_ID: z.string().optional().default(""),
+  ASTERISK_AMI_OUTBOUND_CONTEXT: z.string().optional().default("from-internal"),
+
   DELIVERY_BASE_CHARGE: z
     .string()
     .regex(/^\d+(\.\d+)?$/, "DELIVERY_BASE_CHARGE must be a decimal number")
@@ -96,6 +134,64 @@ const envSchema = z.object({
     .regex(/^\d+$/, "MAX_CONCURRENT_ORDERS must be a positive integer")
     .transform(Number)
     .pipe(z.number().int().min(1)),
+
+  DATA_RETENTION_YEARS: z
+    .string()
+    .regex(/^\d+$/, "DATA_RETENTION_YEARS must be a positive integer")
+    .default("6")
+    .transform(Number)
+    .pipe(z.number().int().min(1)),
+
+  // Required for privileged GDPR/admin endpoints (export/erase/retention cleanup).
+  // Leave blank only if those endpoints are intentionally disabled.
+  ADMIN_API_TOKEN: z.string().optional().default(""),
+
+  API_RATE_LIMIT_WINDOW_MS: z
+    .string()
+    .regex(/^\d+$/, "API_RATE_LIMIT_WINDOW_MS must be a positive integer")
+    .default("60000")
+    .transform(Number)
+    .pipe(z.number().int().min(1)),
+
+  API_RATE_LIMIT_MAX_REQUESTS: z
+    .string()
+    .regex(/^\d+$/, "API_RATE_LIMIT_MAX_REQUESTS must be a positive integer")
+    .default("600")
+    .transform(Number)
+    .pipe(z.number().int().min(1)),
+
+  API_RATE_LIMIT_MAX_BUCKETS: z
+    .string()
+    .regex(/^\d+$/, "API_RATE_LIMIT_MAX_BUCKETS must be a positive integer")
+    .default("5000")
+    .transform(Number)
+    .pipe(z.number().int().min(1)),
+
+  ADMIN_AUTH_FAILURE_WINDOW_MS: z
+    .string()
+    .regex(/^\d+$/, "ADMIN_AUTH_FAILURE_WINDOW_MS must be a positive integer")
+    .default("60000")
+    .transform(Number)
+    .pipe(z.number().int().min(1)),
+
+  ADMIN_AUTH_FAILURE_MAX_ATTEMPTS: z
+    .string()
+    .regex(/^\d+$/, "ADMIN_AUTH_FAILURE_MAX_ATTEMPTS must be a positive integer")
+    .default("25")
+    .transform(Number)
+    .pipe(z.number().int().min(1)),
+
+  ADMIN_AUTH_FAILURE_MAX_BUCKETS: z
+    .string()
+    .regex(/^\d+$/, "ADMIN_AUTH_FAILURE_MAX_BUCKETS must be a positive integer")
+    .default("2000")
+    .transform(Number)
+    .pipe(z.number().int().min(1)),
+
+  TRUST_PROXY: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((v) => v === "true"),
 
   LOG_LEVEL: z.enum(["error", "warn", "info", "debug"]).default("info"),
   WS_HEARTBEAT_MS: z
@@ -157,6 +253,28 @@ export const config = {
     path: env.CALLER_DEVICE_PATH,
   },
 
+  tapi: {
+    bridgePort: env.TAPI_BRIDGE_PORT,
+    bridgeExePath: env.TAPI_BRIDGE_EXE_PATH,
+    bridgeToken: env.TAPI_BRIDGE_TOKEN,
+  },
+
+  telephony: {
+    provider: env.TELEPHONY_PROVIDER ?? (env.TAPI_BRIDGE_PORT > 0 ? "tapi" : "none"),
+    asterisk: {
+      host: env.ASTERISK_AMI_HOST,
+      port: env.ASTERISK_AMI_PORT,
+      username: env.ASTERISK_AMI_USERNAME,
+      secret: env.ASTERISK_AMI_SECRET,
+      channelTemplate: env.ASTERISK_AMI_CHANNEL_TEMPLATE,
+      context: env.ASTERISK_AMI_CONTEXT,
+      extenTemplate: env.ASTERISK_AMI_EXTEN_TEMPLATE,
+      priority: env.ASTERISK_AMI_PRIORITY,
+      callerId: env.ASTERISK_AMI_CALLER_ID,
+      outboundContext: env.ASTERISK_AMI_OUTBOUND_CONTEXT,
+    },
+  },
+
   business: {
     deliveryBaseCharge: env.DELIVERY_BASE_CHARGE,
     deliveryDistanceThresholdMiles: env.DELIVERY_DISTANCE_THRESHOLD_MILES,
@@ -164,10 +282,29 @@ export const config = {
     orderAutoReloadCount: env.ORDER_AUTO_RELOAD_COUNT,
     orderAutoCleanupMinutes: env.ORDER_AUTO_CLEANUP_MINUTES,
     maxConcurrentOrders: env.MAX_CONCURRENT_ORDERS,
+    dataRetentionYears: env.DATA_RETENTION_YEARS,
+  },
+
+  security: {
+    adminApiToken: env.ADMIN_API_TOKEN,
+    trustProxy: env.TRUST_PROXY,
+    apiRateLimitWindowMs: env.API_RATE_LIMIT_WINDOW_MS,
+    apiRateLimitMaxRequests: env.API_RATE_LIMIT_MAX_REQUESTS,
+    apiRateLimitMaxBuckets: env.API_RATE_LIMIT_MAX_BUCKETS,
+    adminAuthFailureWindowMs: env.ADMIN_AUTH_FAILURE_WINDOW_MS,
+    adminAuthFailureMaxAttempts: env.ADMIN_AUTH_FAILURE_MAX_ATTEMPTS,
+    adminAuthFailureMaxBuckets: env.ADMIN_AUTH_FAILURE_MAX_BUCKETS,
   },
 
   ws: {
     heartbeatInterval: env.WS_HEARTBEAT_MS,
   },
+
+  kitchen: {
+    // Number of active orders that triggers busy mode on the kitchen screen.
+    // Tune this after observing real usage — 4 is a conservative starting point.
+    busyThreshold: 4,
+  },
+
   logLevel: env.LOG_LEVEL,
 };

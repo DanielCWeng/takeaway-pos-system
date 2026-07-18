@@ -72,15 +72,14 @@ interface OrderContextType {
   isZeroPriceMode: boolean;
   isSwapMode: boolean;
   isIncMode: boolean;
-  isShortMode: boolean;
   setIsZeroPriceMode: (value: boolean | ((prev: boolean) => boolean)) => void;
   setIsSwapMode: (value: boolean | ((prev: boolean) => boolean)) => void;
   setIsIncMode: (value: boolean | ((prev: boolean) => boolean)) => void;
-  setIsShortMode: (value: boolean | ((prev: boolean) => boolean)) => void;
 
   setActiveOrderIndex: (index: number) => void;
   createNewOrder: () => void;
   clearOrder: () => void; // Delete current order
+  deleteActiveOrder: () => void;
 
   addItem: (item: AddableItem, options?: AddItemOptions) => void;
   removeItem: (index: number) => void;
@@ -93,7 +92,7 @@ interface OrderContextType {
   setCustomerInfo: (info: CustomerInfo | undefined) => void;
   updatePayment: (payment: PaymentDetails) => void;
   setNotes: (notes?: string) => void;
-  printOrder: (orderToPrint?: FullOrder) => Promise<PrintResult>;
+  printOrder: (orderToPrint?: FullOrder, paymentOverride?: PaymentDetails) => Promise<PrintResult>;
   pendingPrintJobs: number;
   isFlushingPrintQueue: boolean;
   lastPrintAlert: string | null;
@@ -295,7 +294,16 @@ function shouldQueuePrintError(error: unknown) {
 }
 
 function getErrorMessage(error: unknown) {
-  if (error instanceof Error) return error.message;
+  if (error instanceof Error) {
+    const withDetails = error as Error & { details?: Record<string, string[]> };
+    if (withDetails.details && typeof withDetails.details === "object") {
+      const fieldErrors = Object.entries(withDetails.details)
+        .map(([field, errors]) => `${field}: ${errors.join(", ")}`)
+        .join("; ");
+      if (fieldErrors) return `${error.message} (${fieldErrors})`;
+    }
+    return error.message;
+  }
   return "Unknown print error";
 }
 
@@ -313,7 +321,7 @@ const generateInitialOrder = (id: number): OrderState => ({
 const OrderContext = createContext<OrderContextType | undefined>(undefined);
 
 function deriveTotals(order: OrderState) {
-  const subtotal = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const subtotal = order.items.reduce((sum, item) => sum + (item.finalPrice ?? item.price) * item.quantity, 0);
   const deliveryCharge =
     order.orderType === "delivery" ? calculateDeliveryCharge(order.customerInfo?.distance) : 0;
 
@@ -339,7 +347,6 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   const [isZeroPriceMode, setIsZeroPriceMode] = useState(false);
   const [isSwapMode, setIsSwapMode] = useState(false);
   const [isIncMode, setIsIncMode] = useState(false);
-  const [isShortMode, setIsShortMode] = useState(false);
   const [printQueue, setPrintQueue] = useState<PrintQueueItem[]>(loadPrintQueue);
   const [isFlushingPrintQueue, setIsFlushingPrintQueue] = useState(false);
   const [lastPrintAlert, setLastPrintAlert] = useState<string | null>(null);
@@ -426,6 +433,27 @@ export function OrderProvider({ children }: { children: ReactNode }) {
     });
     setActiveOrderIndexState((prev) => Math.max(0, prev - 1));
   }, [safeIndex]);
+
+  const deleteActiveOrder = useCallback(() => {
+    setOrders((prev) => {
+      const active = prev[safeIndex];
+      if (!active) return prev;
+
+      // Order 1 is permanent: reset its contents and customer/order-type details,
+      // but retain the numbered tab itself.
+      if (active.id === 1) {
+        const nextOrders = [...prev];
+        nextOrders[safeIndex] = generateInitialOrder(1);
+        return nextOrders;
+      }
+
+      return prev.filter((_, index) => index !== safeIndex);
+    });
+    setActiveOrderIndexState((prev) => (order.id === 1 ? prev : Math.max(0, prev - 1)));
+    setIsZeroPriceMode(false);
+    setIsSwapMode(false);
+    setIsIncMode(false);
+  }, [order.id, safeIndex]);
 
   const addItem = useCallback(
     (item: AddableItem, options: AddItemOptions = {}) => {
@@ -520,11 +548,14 @@ export function OrderProvider({ children }: { children: ReactNode }) {
         }
 
         const itemToRemove = prev.items[index];
-        const idToRemove = itemToRemove.uniqueId;
+        const groupParent = itemToRemove.parentId
+          ? prev.items.find((item) => item.uniqueId === itemToRemove.parentId)
+          : itemToRemove;
+        const idToRemove = groupParent?.uniqueId ?? itemToRemove.uniqueId;
 
-        // Filter out the item itself and all its children
-        const nextItems = prev.items.filter((item, idx) => {
-          if (idx === index) return false;
+        // A grouped child belongs to its parent: remove the complete meal/group.
+        const nextItems = prev.items.filter((item) => {
+          if (item.uniqueId === idToRemove) return false;
           if (item.parentId === idToRemove) return false;
           return true;
         });
@@ -569,6 +600,19 @@ export function OrderProvider({ children }: { children: ReactNode }) {
       updateOrderState((prev) => {
         if (index < 0 || index >= prev.items.length) return {};
         const item = prev.items[index];
+        const groupParent = item.parentId
+          ? prev.items.find((candidate) => candidate.uniqueId === item.parentId)
+          : item;
+        const groupId = groupParent?.uniqueId ?? item.uniqueId;
+        const isGrouped = Boolean(item.parentId) || prev.items.some((candidate) => candidate.parentId === groupId);
+
+        if (isGrouped) {
+          return {
+            items: prev.items.filter(
+              (candidate) => candidate.uniqueId !== groupId && candidate.parentId !== groupId,
+            ),
+          };
+        }
 
         if (item.quantity <= 1) {
           // Fallback to removeItem if quantity is 1
@@ -599,16 +643,27 @@ export function OrderProvider({ children }: { children: ReactNode }) {
         const nextItems = [...prev.items];
         const item = nextItems[index];
 
-        if (item.isFoc && item.name.endsWith(" (FOC)")) {
-          return {};
+        if (item.isFoc) {
+          // Reverse FOC — restore original price and name
+          nextItems[index] = {
+            ...item,
+            price: item.preFocPrice ?? item.price,
+            isFoc: false,
+            preFocPrice: undefined,
+            name: item.name.endsWith(" (FOC)")
+              ? item.name.slice(0, -6)
+              : item.name,
+          };
+        } else {
+          // Apply FOC — zero price, stash original
+          nextItems[index] = {
+            ...item,
+            preFocPrice: item.price,
+            price: 0,
+            isFoc: true,
+            name: `${item.name} (FOC)`,
+          };
         }
-
-        nextItems[index] = {
-          ...item,
-          price: 0,
-          isFoc: true,
-          name: item.name.endsWith(" (FOC)") ? item.name : `${item.name} (FOC)`,
-        };
         return { items: nextItems };
       });
     },
@@ -651,7 +706,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
     try {
       for (const job of queued) {
         try {
-          const result = await apiClient.submitOrder(job.order);
+          const result = await apiClient.submitOrder(job.order, job.clientOrderId);
           setPrintQueue((prev) =>
             prev.filter((entry) => entry.clientOrderId !== job.clientOrderId),
           );
@@ -710,14 +765,31 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const printOrder = useCallback(
-    async (orderToPrint?: FullOrder): Promise<PrintResult> => {
+    async (orderToPrint?: FullOrder, paymentOverride?: PaymentDetails): Promise<PrintResult> => {
       const source = orderToPrint ? orderToPrint : order;
       const totals = deriveTotals(source as OrderState);
       const payload: FullOrder = {
         ...source,
         items: source.items.map((item) => ({ ...item })),
-        customerInfo: source.customerInfo ? { ...source.customerInfo } : undefined,
-        payment: { ...source.payment },
+        customerInfo: source.customerInfo
+          ? {
+              ...source.customerInfo,
+              distance:
+                source.customerInfo.distance !== undefined && source.customerInfo.distance !== null
+                  ? Number(source.customerInfo.distance)
+                  : undefined,
+              latitude:
+                source.customerInfo.latitude !== undefined && source.customerInfo.latitude !== null
+                  ? Number(source.customerInfo.latitude)
+                  : undefined,
+              longitude:
+                source.customerInfo.longitude !== undefined &&
+                source.customerInfo.longitude !== null
+                  ? Number(source.customerInfo.longitude)
+                  : undefined,
+            }
+          : undefined,
+        payment: paymentOverride ? { ...paymentOverride } : { ...source.payment },
         subtotal: totals.subtotal,
         deliveryCharge: totals.deliveryCharge,
         total: totals.total,
@@ -725,7 +797,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
       const clientOrderId = orderToPrint ? generateClientOrderId() : order.clientOrderId;
 
       try {
-        const result = await apiClient.submitOrder(payload);
+        const result = await apiClient.submitOrder(payload, clientOrderId);
         if (!orderToPrint) {
           clearOrder();
         }
@@ -787,15 +859,14 @@ export function OrderProvider({ children }: { children: ReactNode }) {
         isZeroPriceMode,
         isSwapMode,
         isIncMode,
-        isShortMode,
         setIsZeroPriceMode,
         setIsSwapMode,
         setIsIncMode,
-        setIsShortMode,
 
         setActiveOrderIndex,
         createNewOrder,
         clearOrder,
+        deleteActiveOrder,
 
         addItem,
         removeItem,

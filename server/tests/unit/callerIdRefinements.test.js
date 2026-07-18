@@ -64,6 +64,7 @@ describe("CallerID Service Refinements", () => {
       "incoming_call",
       expect.objectContaining({
         addresses: mockAddresses,
+        mode: "single_address",
       }),
     );
   });
@@ -79,6 +80,7 @@ describe("CallerID Service Refinements", () => {
       expect.objectContaining({
         phone: "01150000000",
         addresses: [],
+        mode: "none",
       }),
     );
   });

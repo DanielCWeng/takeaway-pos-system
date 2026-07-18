@@ -25,15 +25,26 @@ import { openDb, runMigrations, closeDb } from "./infrastructure/db.js";
 import { logger } from "./infrastructure/logger.js";
 import { apiRouter, globalErrorHandler } from "./api/router.js";
 import { createWsServer, broadcast, closeWsServer } from "./api/websocket.js";
+import { createRateLimiter } from "./shared/middleware/rateLimit.js";
 import { closePostcodeDb } from "./shared/postcodes.js";
 import {
   startListening as startCallerIdListening,
   stopListening as stopCallerIdListening,
 } from "./hardware/callerIdDevice.js";
 import {
+  startListening as startTelephonyListening,
+  stopListening as stopTelephonyListening,
+} from "./hardware/telephonyDevice.js";
+import {
   init as initCallerIdService,
   handlePhoneDetected,
 } from "./domains/callerIdService/callerIdService.service.js";
+import {
+  init as initTapiService,
+  handleOffering,
+  handleConnected,
+  handleDisconnected,
+} from "./domains/tapiService/tapiService.service.js";
 
 // ---------------------------------------------------------------------------
 // Database — open connection and run migrations synchronously
@@ -43,17 +54,31 @@ import {
 openDb();
 runMigrations();
 
+if (!config.security.adminApiToken) {
+  logger.warn(
+    "ADMIN_API_TOKEN is not configured. GDPR/admin endpoints are disabled and will return 503.",
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Express app setup
 // ---------------------------------------------------------------------------
 
 const app = express();
+const apiRateLimiter = createRateLimiter({
+  windowMs: config.security.apiRateLimitWindowMs,
+  maxRequests: config.security.apiRateLimitMaxRequests,
+  maxBuckets: config.security.apiRateLimitMaxBuckets,
+  trustProxy: config.security.trustProxy,
+  scope: "api",
+});
+app.set("trust proxy", config.security.trustProxy);
 
 // Enable Cross-Origin Resource Sharing (CORS) for the frontend
 app.use(
   cors({
     origin: config.corsOrigin,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
@@ -94,7 +119,7 @@ app.use((req, res, next) => {
 });
 
 // Mount all API routes under /api
-app.use("/api", apiRouter);
+app.use("/api", apiRateLimiter, apiRouter);
 
 // Global error handler — must be last
 app.use(globalErrorHandler);
@@ -112,11 +137,27 @@ const server = app.listen(config.port, () => {
   // Step 7: Inject broadcast into callerIdService (transport → domain boundary)
   initCallerIdService({ broadcast });
 
-  // Step 8: Start hardware listeners (degrades gracefully if hardware is missing)
+  // Step 8: Wire tapiService → callerIdService (reuse lookup + broadcast logic)
+  initTapiService({ handlePhoneDetected });
+
+  // Step 9: Start hardware listeners (both degrade gracefully if unavailable)
   startCallerIdListening((phone) => {
     void handlePhoneDetected(phone);
   }).catch((err) => {
     logger.error("Caller ID listener failed to start", {
+      hardware: true,
+      error: err?.message ?? String(err),
+    });
+  });
+
+  Promise.resolve(
+    startTelephonyListening({
+      onOffering: (phone, callId) => void handleOffering(phone, callId),
+      onConnected: (callId) => handleConnected(callId),
+      onDisconnected: (callId, phone, duration) => void handleDisconnected(callId, phone, duration),
+    }),
+  ).catch((err) => {
+    logger.error("Telephony listener failed to start", {
       hardware: true,
       error: err?.message ?? String(err),
     });
@@ -133,6 +174,11 @@ function shutdown(signal) {
   // 1. Run explicit cleanup immediately
   try {
     stopCallerIdListening();
+  } catch (e) {
+    // ignore shutdown cleanup errors
+  }
+  try {
+    stopTelephonyListening();
   } catch (e) {
     // ignore shutdown cleanup errors
   }

@@ -11,7 +11,8 @@ vi.mock("../../../api/client", () => ({
 
 vi.mock("../../../config", () => ({
   config: {
-    adminPassword: "1234",
+    adminApiToken: "1234",
+    adminTokenMismatch: false,
     apiUrl: "http://localhost:4000/api",
     wsUrl: "ws://localhost:4000",
   },

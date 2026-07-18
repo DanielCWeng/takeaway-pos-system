@@ -18,6 +18,7 @@ describe("server lifecycle", () => {
     };
     const app = {
       use: vi.fn(),
+      set: vi.fn(),
       listen: vi.fn((_port, cb) => {
         queueMicrotask(() => cb?.());
         return server;
@@ -36,14 +37,30 @@ describe("server lifecycle", () => {
     const closePostcodeDb = vi.fn();
     const startListening = vi.fn().mockResolvedValue(undefined);
     const stopListening = vi.fn();
+    const startTelephonyListening = vi.fn();
+    const stopTelephonyListening = vi.fn();
     const initCallerIdService = vi.fn();
+    const initTapiService = vi.fn();
     const handlePhoneDetected = vi.fn();
-    const logger = { info: vi.fn(), error: vi.fn() };
+    const handleOffering = vi.fn();
+    const handleConnected = vi.fn();
+    const handleDisconnected = vi.fn();
+    const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
 
     vi.doMock("express", () => ({ default: express }));
     vi.doMock("cors", () => ({ default: cors }));
     vi.doMock("../../src/config/index.js", () => ({
-      config: { port: 4444, corsOrigin: "http://localhost:5173" },
+      config: {
+        port: 4444,
+        corsOrigin: "http://localhost:5173",
+        security: {
+          adminApiToken: "test-admin-token",
+          trustProxy: false,
+          apiRateLimitWindowMs: 60000,
+          apiRateLimitMaxRequests: 600,
+          apiRateLimitMaxBuckets: 5000,
+        },
+      },
     }));
     vi.doMock("../../src/infrastructure/db.js", () => ({
       openDb,
@@ -65,9 +82,19 @@ describe("server lifecycle", () => {
       startListening,
       stopListening,
     }));
+    vi.doMock("../../src/hardware/telephonyDevice.js", () => ({
+      startListening: startTelephonyListening,
+      stopListening: stopTelephonyListening,
+    }));
     vi.doMock("../../src/domains/callerIdService/callerIdService.service.js", () => ({
       init: initCallerIdService,
       handlePhoneDetected,
+    }));
+    vi.doMock("../../src/domains/tapiService/tapiService.service.js", () => ({
+      init: initTapiService,
+      handleOffering,
+      handleConnected,
+      handleDisconnected,
     }));
 
     const processOnSpy = vi.spyOn(process, "on").mockImplementation((event, handler) => {
@@ -92,8 +119,14 @@ describe("server lifecycle", () => {
       closePostcodeDb,
       startListening,
       stopListening,
+      startTelephonyListening,
+      stopTelephonyListening,
       initCallerIdService,
+      initTapiService,
       handlePhoneDetected,
+      handleOffering,
+      handleConnected,
+      handleDisconnected,
       logger,
       processOnSpy,
       processExitSpy,
@@ -114,7 +147,15 @@ describe("server lifecycle", () => {
     expect(ctx.initCallerIdService).toHaveBeenCalledWith({
       broadcast: ctx.broadcast,
     });
+    expect(ctx.initTapiService).toHaveBeenCalledWith({
+      handlePhoneDetected: ctx.handlePhoneDetected,
+    });
     expect(ctx.startListening).toHaveBeenCalledWith(expect.any(Function));
+    expect(ctx.startTelephonyListening).toHaveBeenCalledWith({
+      onOffering: expect.any(Function),
+      onConnected: expect.any(Function),
+      onDisconnected: expect.any(Function),
+    });
 
     const phoneHandler = ctx.startListening.mock.calls[0][0];
     await phoneHandler("07911123456");
@@ -127,6 +168,7 @@ describe("server lifecycle", () => {
     ctx.handlers.SIGTERM();
 
     expect(ctx.stopListening).toHaveBeenCalledTimes(1);
+    expect(ctx.stopTelephonyListening).toHaveBeenCalledTimes(1);
     expect(ctx.closePostcodeDb).toHaveBeenCalledTimes(1);
     expect(ctx.closeWsServer).toHaveBeenCalledTimes(1);
     expect(ctx.server.closeAllConnections).toHaveBeenCalledTimes(1);

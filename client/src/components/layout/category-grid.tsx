@@ -18,7 +18,7 @@ export const CategoryGrid = React.memo(function CategoryGrid({
   const categories = SECONDARY_CATEGORY_PAGES[page] || [];
 
   return (
-    <div className="grid h-full grid-cols-7 grid-rows-5 gap-2">
+    <div className="grid h-full grid-cols-7 grid-rows-5 gap-px bg-gray-500 p-px">
       {categories.map((category, index) => {
         const isPager = category.en === "<<" || category.en === ">>";
         const isEmpty = !category.en;
@@ -41,16 +41,16 @@ export const CategoryGrid = React.memo(function CategoryGrid({
             disabled={isEmpty}
             onClick={handleClick}
             className={cn(
-              "relative flex h-full w-full flex-col items-center justify-center rounded-md px-1 text-center text-[11px] font-semibold transition pos-grid-btn",
+              "relative flex h-full w-full flex-col items-center justify-center border-0 px-1 text-center text-[11px] font-semibold transition-none pos-grid-btn",
               isEmpty
                 ? "cursor-not-allowed opacity-20 bg-muted"
                 : isSelected
-                  ? "pos-btn-tactile-primary"
+                  ? "bg-blue-600 text-white"
                   : isPager
-                    ? "pos-btn-tactile text-muted-foreground opacity-80 hover:opacity-100 hover:bg-muted"
+                    ? "bg-red-400"
                     : category.en === "Show All"
-                      ? "pos-btn-tactile text-primary"
-                      : "pos-btn-tactile text-foreground",
+                      ? "bg-orange-400 text-black"
+                      : "bg-green-300 text-black",
             )}
           >
             <span className="font-display text-sm tracking-tight">{category.zh}</span>

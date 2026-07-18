@@ -7,7 +7,6 @@
     <title>client</title>
     <script>
       (() => {
-        const STORAGE_KEY = "pos-theme";
         const root = document.documentElement;
 
         // Detection for low-end ARM hardware (e.g. Raspberry Pi)
@@ -24,15 +23,8 @@
           console.info("[POS] Performance Mode: INSTANT (Animations Disabled)");
         }
 
-        try {
-          const stored = localStorage.getItem(STORAGE_KEY);
-          const theme = stored === "light" || stored === "dark" ? stored : "dark";
-          root.classList.toggle("dark", theme === "dark");
-          root.style.colorScheme = theme;
-        } catch (err) {
-          root.classList.add("dark");
-          root.style.colorScheme = "dark";
-        }
+        root.classList.remove("dark");
+        root.style.colorScheme = "light";
       })();
     </script>
   </head>

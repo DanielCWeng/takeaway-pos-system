@@ -127,4 +127,68 @@ describe("Orders Repository (Integration)", () => {
       expect(remaining[0].archivedAt).toContain("2026-03-26");
     });
   });
+
+  describe("GDPR helpers", () => {
+    it("findOrdersByPhone returns archivedAt for matching rows", () => {
+      repo.createOrder({
+        data: {
+          orderType: "delivery",
+          customerInfo: { phone: "07911123456", name: "Alice" },
+          items: [{ name: "Rice", price: 2, quantity: 1 }],
+          total: 2,
+        },
+        archivedAt: "2026-04-01T10:15:00.000Z",
+      });
+
+      const history = repo.findOrdersByPhone("07911123456");
+      expect(history).toHaveLength(1);
+      expect(history[0].archivedAt).toBe("2026-04-01T10:15:00.000Z");
+    });
+
+    it("anonymizeOrdersByPhone scrubs address/location/instructions fields", () => {
+      const created = repo.createOrder({
+        data: {
+          orderType: "delivery",
+          customerInfo: {
+            name: "Alice",
+            phone: "07911123456",
+            address: "42 Main Street",
+            houseNumber: "42",
+            street: "Main Street",
+            town: "Beeston",
+            postcode: "NG9 8GF",
+            latitude: 52.95,
+            longitude: -1.21,
+            distance: 1.5,
+            mapRef: "near park",
+            deliveryInstructions: "Blue door",
+            deliveryTime: "18:30",
+          },
+          items: [{ name: "Rice", price: 2, quantity: 1 }],
+          total: 2,
+        },
+      });
+
+      const count = repo.anonymizeOrdersByPhone("07911123456", "ANON-test-id");
+      expect(count).toBe(1);
+
+      const updated = repo.findOrderById(created.id);
+      expect(updated.data.customerInfo).toEqual({
+        name: "ANONYMISED",
+        phone: "ANON-test-id",
+        address: "REMOVED",
+        houseNumber: "REMOVED",
+        street: "REMOVED",
+        town: "REMOVED",
+        postcode: "REMOVED",
+        latitude: null,
+        longitude: null,
+        distance: null,
+        mapRef: "REMOVED",
+        deliveryInstructions: "REMOVED",
+        deliveryTime: null,
+        isAnonymised: true,
+      });
+    });
+  });
 });

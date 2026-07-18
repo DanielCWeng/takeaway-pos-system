@@ -22,6 +22,7 @@ process.env.DELIVERY_RATE_PER_MILE ||= "0.50";
 process.env.ORDER_AUTO_RELOAD_COUNT ||= "3";
 process.env.ORDER_AUTO_CLEANUP_MINUTES ||= "5";
 process.env.MAX_CONCURRENT_ORDERS ||= "9";
+process.env.ADMIN_API_TOKEN ||= "test-admin-token";
 
 process.env.LOG_LEVEL ||= "error";
 process.env.WS_HEARTBEAT_MS ||= "30000";

@@ -16,6 +16,7 @@
 
 import * as customerService from "../customers/customers.service.js";
 import { logger } from "../../infrastructure/logger.js";
+import { normaliseUkPhone } from "../../shared/phones.js";
 
 // Debounce map: phone -> timestamp
 const lastCallSeen = new Map();
@@ -42,13 +43,12 @@ export function init({ broadcast }) {
 /**
  * Handle a new phone number detected by the hardware layer.
  *
- * @param {string} phone - Raw phone number string from HID device
+ * @param {string} phone - Raw phone number string from hardware/TAPI source
+ * @param {{ callId?: number | null, source?: string }} [context]
  */
-export async function handlePhoneDetected(phone) {
+export async function handlePhoneDetected(phone, context = {}) {
   if (!phone) return;
-  // Normalise: Strip all non-digit characters (except maybe leading + for future-proofing)
-  // This ensures "(0115) 123 4567" and "01151234567" are treated identically.
-  const normPhone = phone.replace(/[^\d+]/g, "");
+  const normPhone = normaliseUkPhone(phone);
 
   if (!normPhone) {
     logger.warn("Received empty phone number");
@@ -101,11 +101,15 @@ export async function handlePhoneDetected(phone) {
 
   try {
     // 3. Prepare payload for the frontend
+    const mode =
+      addresses.length > 1 ? "multi_address" : addresses.length === 1 ? "single_address" : "none";
     const payload = {
       phone: normPhone,
       customer: enrichedCustomer || customer,
       addresses,
-      distance: enrichedCustomer?.distance || customer?.distance || null,
+      distance: enrichedCustomer?.distance ?? customer?.distance ?? null,
+      callId: Number.isFinite(context.callId) ? Number(context.callId) : undefined,
+      mode,
     };
 
     // 4. Push to all connected UIs
@@ -113,7 +117,8 @@ export async function handlePhoneDetected(phone) {
       logger.error("callerIdService.broadcast is not initialised — call init() at startup");
       return;
     }
-    broadcastFn("incoming_call", payload);
+    const eventType = mode === "multi_address" ? "incoming_call_multi_address" : "incoming_call";
+    broadcastFn(eventType, payload);
   } catch (err) {
     logger.error("Failed to broadcast incoming call", {
       phone: normPhone,

@@ -11,7 +11,7 @@ Monorepo for a custom takeaway point-of-sale platform with a React client and a 
 
 - `client/` - React + TypeScript + Vite frontend for the POS UI
 - `server/` - Express + SQLite backend, WebSocket transport, and hardware adapters
-- `docs/` - project documentation and planning materials
+- `kitchen/` - React kitchen display screen (KDS) — real-time Kanban board for the kitchen
 - `_legacy/` - legacy reference code retained for migration context
 
 ## Prerequisites
@@ -23,11 +23,17 @@ For production hardware support (USB printer and caller ID device), see `server/
 
 ## Quick Start
 
+On Windows, after installing dependencies and configuring `server/.env`, run
+`start.bat` from the repository root. It opens the POS client and starts the
+server and kitchen display in separate terminal windows. When TAPI is enabled,
+the server also starts `TapiBridge.exe` automatically.
+
 1. Install dependencies
 
 ```bash
 cd server && npm install
 cd ../client && npm install
+cd ../kitchen && npm install
 ```
 
 2. Configure environment files
@@ -57,11 +63,16 @@ npm run dev
 # terminal 2
 cd client
 npm run dev
+
+# terminal 3 (optional — kitchen display screen)
+cd kitchen
+npm run dev
 ```
 
 Default URLs:
 
 - Client: `http://localhost:5173`
+- Kitchen display: `http://localhost:5174`
 - Server API: `http://localhost:4000/api`
 - Server WebSocket: `ws://localhost:4000`
 
@@ -71,6 +82,18 @@ Default URLs:
 cd server && npm test
 cd client && npm test -- --run
 ```
+
+## Administration and Network Access
+
+Set the same `ADMIN_API_TOKEN` on the server and `VITE_ADMIN_API_TOKEN` on the
+client when using order history, customer export/erasure, menu editing, or
+retention cleanup. The client token is delivered to the browser, so this is an
+operator-control token for a trusted POS network, not a substitute for a
+separate identity provider.
+
+The server CORS policy allows `PATCH` because the kitchen display advances
+order statuses through `PATCH /api/orders/:id/status`. If the client and server
+origins differ, set `CORS_ORIGIN` to the exact client origin.
 
 ## Formatting
 
@@ -90,7 +113,32 @@ git config core.hooksPath .githooks
 
 This enables the repo pre-commit hook that runs Prettier on staged files before each commit.
 
+## New API endpoints (kitchen integration)
+
+Added as part of the kitchen display screen feature branch:
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/orders/active` | All non-complete/non-cancelled orders with live kitchen status |
+| `PATCH` | `/api/orders/:id/status` | Advance an order through the kitchen state machine |
+
+Valid statuses: `new → accepted → cooking → ready → complete / cancelled`
+
+### New WebSocket events
+
+| Event type | Payload |
+|------------|---------|
+| `order_created` | `{ orderId, order, archivedAt, status }` |
+| `order_status_changed` | `{ orderId, previousStatus, status, updatedAt }` |
+| `order_cancelled` | `{ orderId }` |
+| `order_eta_updated` | `{ orderId, estimatedReadyAt }` |
+
+The `WebSocketMessage` type in `client/src/types/index.ts` has been updated to include all four new event types alongside the existing `incoming_call` event.
+
+Migration `005_order_status.sql` adds the `order_status` table that backs these endpoints.
+
 ## Where To Go Next
 
 - Backend details: [server/README.md](server/README.md)
 - Frontend details: [client/README.md](client/README.md)
+- Kitchen display: [kitchen/README.md](kitchen/README.md)

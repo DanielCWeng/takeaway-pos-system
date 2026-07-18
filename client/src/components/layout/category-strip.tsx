@@ -18,6 +18,7 @@ import {
   ChipsIcon,
 } from "../icons";
 import type { AnimatedIconProps } from "../icons/chicken-icon";
+import { BookOpen } from "lucide-react";
 
 type IconComponent = React.FC<AnimatedIconProps>;
 
@@ -46,11 +47,17 @@ const ANIMATION_BREAK_MS = 1000;
 interface CategoryStripProps {
   selectedPrimary: string | null;
   onSelectPrimary: (category: string) => void;
+  isRefMode: boolean;
+  onOpenRef: () => void;
+  onShowGrid: () => void;
 }
 
 export const CategoryStrip = React.memo(function CategoryStrip({
   selectedPrimary,
   onSelectPrimary,
+  isRefMode,
+  onOpenRef,
+  onShowGrid,
 }: CategoryStripProps) {
   const [animationKeys, setAnimationKeys] = useState<Record<string, number>>({});
   const animationTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -101,7 +108,7 @@ export const CategoryStrip = React.memo(function CategoryStrip({
   return (
     <TooltipProvider delayDuration={150}>
       <div className="pos-panel p-2">
-        <div className="flex items-center gap-2 overflow-x-auto">
+        <div className="flex items-center justify-start gap-2 overflow-x-auto">
           {PRIMARY_CATEGORIES.map((category) => {
             const isActive = selectedPrimary === category.name;
             const IconComponent = ICON_MAP[category.name];
@@ -136,6 +143,27 @@ export const CategoryStrip = React.memo(function CategoryStrip({
               </Tooltip>
             );
           })}
+          <button
+            onClick={onOpenRef}
+            aria-label="Reference keypad"
+            className={cn(
+              "relative flex h-12 w-12 flex-shrink-0 flex-col items-center justify-center gap-0.5 rounded-xl text-xs font-bold pos-category-pill",
+              isRefMode ? "pos-btn-tactile-primary" : "pos-btn-tactile",
+            )}
+          >
+            <BookOpen className="h-6 w-6" />
+            <span>Ref</span>
+          </button>
+          <button
+            onClick={onShowGrid}
+            aria-label="Category grid"
+            className={cn(
+              "relative flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl text-2xl pos-category-pill",
+              !isRefMode ? "pos-btn-tactile-primary" : "pos-btn-tactile",
+            )}
+          >
+            ▦
+          </button>
         </div>
       </div>
     </TooltipProvider>

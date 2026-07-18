@@ -14,6 +14,8 @@ import { Router } from "express";
 import { z } from "zod";
 import * as service from "./orders.service.js";
 import { sendValidationError } from "../../shared/middleware/sendValidationError.js";
+import { requireAdminAuth } from "../../shared/middleware/requireAdminAuth.js";
+import { broadcast } from "../../api/websocket.js";
 
 export const ordersRouter = Router();
 
@@ -67,7 +69,14 @@ const customerInfoSchema = z
     houseNumber: z.string().optional(),
     street: z.string().optional(),
     town: z.string().optional(),
+    distance: z.coerce.number().optional(),
+    latitude: z.coerce.number().optional(),
+    longitude: z.coerce.number().optional(),
+    mapRef: z.string().optional(),
+    deliveryInstructions: z.string().optional(),
+    deliveryTime: z.string().optional(),
   })
+  .passthrough()
   .optional();
 
 const createOrderSchema = z.object({
@@ -116,7 +125,9 @@ const printableOrderSchema = z
         street: z.string().optional(),
         town: z.string().optional(),
         postcode: z.string().optional(),
-        distance: z.number().optional(),
+        distance: z.coerce.number().optional(),
+        latitude: z.coerce.number().optional(),
+        longitude: z.coerce.number().optional(),
         mapRef: z.string().optional(),
         deliveryInstructions: z.string().optional(),
         deliveryTime: z.string().optional(),
@@ -141,6 +152,7 @@ const printableOrderSchema = z
 const printOrderRequestSchema = z.object({
   order: printableOrderSchema,
   payment: paymentSchema.optional(),
+  clientOrderId: z.string().uuid().optional(),
 });
 
 // ---------------------------------------------------------------------------
@@ -193,7 +205,7 @@ ordersRouter.post("/print", async (req, res, next) => {
     return sendValidationError(res, details);
   }
 
-  const { order, payment } = parsed.data;
+  const { order, payment, clientOrderId } = parsed.data;
   const orderData = { ...order, payment: payment ?? order.payment };
 
   if (!orderData.payment) {
@@ -201,12 +213,68 @@ ordersRouter.post("/print", async (req, res, next) => {
   }
 
   try {
-    const result = await service.printAndArchiveOrder(orderData);
-    return res.status(200).json(result);
+    const result = await service.printAndArchiveOrder(orderData, clientOrderId);
+    broadcast("order_created", {
+      orderId: result.orderId,
+      order: orderData,
+      archivedAt: result.archivedAt,
+      status: result.status,
+      estimatedReadyAt: result.estimatedReadyAt ?? null,
+    });
+    return res.status(200).json({ orderId: result.orderId, printed: result.printed });
   } catch (err) {
     next(err);
   }
 });
+
+/**
+ * GET /api/orders/active
+ * Return all active (non-complete, non-cancelled) orders for the kitchen screen.
+ * Registered before /:id so 'active' is not swallowed as an ID param.
+ */
+ordersRouter.get("/active", (req, res, next) => {
+  try {
+    const orders = service.getActiveOrders();
+    return res.json({ orders });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * PATCH /api/orders/:id/status
+ * Transition a kitchen order to a new status.
+ * Broadcasts order_status_changed to all WS clients.
+ */
+const kitchenStatusSchema = z.object({
+  status: z.enum(["new", "accepted", "cooking", "ready", "complete", "cancelled"]),
+  updatedBy: z.string().optional(),
+});
+
+ordersRouter.patch("/:id/status", (req, res, next) => {
+  const id = parseId(req.params.id);
+  if (!id) {
+    return sendValidationError(res, {}, "Order id must be a positive integer");
+  }
+
+  const parsed = kitchenStatusSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return sendValidationError(res, parsed.error.flatten().fieldErrors);
+  }
+
+  const { status, updatedBy } = parsed.data;
+
+  try {
+    const { previousStatus, updatedAt } = service.setKitchenStatus(id, status, updatedBy);
+    broadcast("order_status_changed", { orderId: id, previousStatus, status, updatedAt });
+    return res.json({ orderId: id, status, updatedAt });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Everything below this point is admin-only (history reads, deletes, reprints, retention cleanup).
+ordersRouter.use(requireAdminAuth);
 
 /**
  * GET /api/orders
@@ -279,6 +347,19 @@ ordersRouter.post("/:id/reprint", async (req, res, next) => {
   try {
     const result = await service.reprintOrder(id);
     return res.status(200).json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * POST /api/orders/cleanup
+ * Trigger the data retention cleanup (delete orders older than X years).
+ */
+ordersRouter.post("/cleanup", requireAdminAuth, (req, res, next) => {
+  try {
+    const deletedCount = service.cleanupOldOrders();
+    return res.json({ success: true, deletedCount });
   } catch (err) {
     next(err);
   }

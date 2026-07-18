@@ -26,6 +26,7 @@ export interface OrderItem {
   >;
   parentId?: string;
   isFoc?: boolean;
+  preFocPrice?: number;
   isIncluded?: boolean;
 }
 
@@ -65,10 +66,13 @@ export interface CustomerInfo {
   street?: string;
   town?: string;
   postcode?: string;
-  distance?: number;
+  distance?: number | null;
+  latitude?: number | null;
+  longitude?: number | null;
   mapRef?: string;
   deliveryInstructions?: string;
   deliveryTime?: string;
+  isAnonymised?: boolean;
 }
 
 export interface PaymentDetails {
@@ -132,12 +136,25 @@ export interface CallDetectedPayload {
   customer: Customer | null;
   addresses: Address[];
   distance: number | null;
+  callId?: number;
+  mode?: "none" | "single_address" | "multi_address";
 }
 
-export type WebSocketMessage = {
-  type: "incoming_call";
-  payload: CallDetectedPayload;
-};
+export type OrderStatus =
+  | "new"
+  | "accepted"
+  | "cooking"
+  | "ready"
+  | "complete"
+  | "cancelled";
+
+export type WebSocketMessage =
+  | { type: "incoming_call"; payload: CallDetectedPayload }
+  | { type: "incoming_call_multi_address"; payload: CallDetectedPayload }
+  | { type: "order_created"; payload: { orderId: number; order: FullOrder; archivedAt: string; status: OrderStatus } }
+  | { type: "order_status_changed"; payload: { orderId: number; previousStatus: OrderStatus; status: OrderStatus; updatedAt: string } }
+  | { type: "order_cancelled"; payload: { orderId: number } }
+  | { type: "order_eta_updated"; payload: { orderId: number; estimatedReadyAt: string } };
 
 export interface ApiError {
   error: {

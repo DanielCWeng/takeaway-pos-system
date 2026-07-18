@@ -15,7 +15,10 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "migrate": "node scripts/migrate.js",
-    "db:seed-postcodes": "node scripts/seedPostcodes.js"
+    "db:seed-postcodes": "node scripts/seedPostcodes.js",
+    "caller-id:diagnose": "node scripts/diagnoseCallerId.js",
+    "caller-id:listen": "node scripts/diagnoseCallerId.js --listen",
+    "contacts:import-bt": "node scripts/importBtContacts.js"
   },
   "dependencies": {
     "better-sqlite3": "^12.6.2",

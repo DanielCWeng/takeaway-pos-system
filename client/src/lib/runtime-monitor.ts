@@ -39,7 +39,7 @@ function isChunkLoadFailure(message: string, source?: string) {
   );
 }
 
-function reportClientError(payload: ClientErrorPayload) {
+export function reportClientError(payload: ClientErrorPayload) {
   const sameOrigin = (() => {
     try {
       return (

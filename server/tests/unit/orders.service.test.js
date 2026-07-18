@@ -12,6 +12,8 @@ vi.mock("../../src/domains/orders/orders.repo.js", () => ({
   findOrdersByDate: vi.fn(),
   deleteOrder: vi.fn(),
   deleteOrdersByDate: vi.fn(),
+  getActiveOrders: vi.fn(() => []),
+  initOrderStatus: vi.fn(),
 }));
 
 // Mock the DB for transactions
@@ -30,6 +32,13 @@ vi.mock("../../src/infrastructure/logger.js", () => ({
 
 vi.mock("../../src/hardware/printer.js", () => ({
   printReceipt: vi.fn(),
+}));
+
+vi.mock("../../src/domains/eta/eta.service.js", () => ({
+  deriveItemCount: vi.fn(() => 1),
+  deriveComplexity: vi.fn(() => 0),
+  predict: vi.fn(() => ({ predictedMins: 20 })),
+  updateModelWithObservation: vi.fn(),
 }));
 
 import { printReceipt } from "../../src/hardware/printer.js";
@@ -132,6 +141,26 @@ describe("Orders Service", () => {
         }),
       ).not.toThrow();
     });
+
+    it("recalculates totals and ignores tampered subtotal/total values", () => {
+      repo.createOrder.mockReturnValue({ id: 1 });
+
+      service.createOrder({
+        orderType: "collection",
+        items: [{ name: "Beef", price: 7.5, quantity: 2 }],
+        subtotal: 0.01,
+        total: 0.01,
+        deliveryCharge: 999,
+      });
+
+      expect(repo.createOrder).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          subtotal: 15,
+          deliveryCharge: 0,
+          total: 15,
+        }),
+      });
+    });
   });
 
   describe("createOrder", () => {
@@ -145,7 +174,15 @@ describe("Orders Service", () => {
 
       const result = service.createOrder(orderData);
 
-      expect(repo.createOrder).toHaveBeenCalledWith({ data: orderData });
+      expect(repo.createOrder).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          orderType: "collection",
+          items: [{ name: "Chips", price: 2, quantity: 1 }],
+          subtotal: 2,
+          deliveryCharge: 0,
+          total: 2,
+        }),
+      });
       expect(result).toEqual(expectedResult);
     });
 
@@ -205,11 +242,19 @@ describe("Orders Service", () => {
       repo.createOrder.mockReturnValue(archived);
       printReceipt.mockResolvedValue({ printed: true });
 
-      await expect(service.printAndArchiveOrder(orderData)).resolves.toEqual({
+      await expect(service.printAndArchiveOrder(orderData)).resolves.toMatchObject({
         orderId: 1,
         printed: true,
       });
-      expect(repo.createOrder).toHaveBeenCalledWith({ data: orderData });
+      expect(repo.createOrder).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          orderType: "collection",
+          items: [{ name: "Chips", price: 2, quantity: 1 }],
+          subtotal: 2,
+          deliveryCharge: 0,
+          total: 2,
+        }),
+      });
       expect(printReceipt).toHaveBeenCalledWith(archived);
     });
 
@@ -225,7 +270,7 @@ describe("Orders Service", () => {
       });
       printReceipt.mockRejectedValue(new Error("Printer down"));
 
-      await expect(service.printAndArchiveOrder(orderData)).resolves.toEqual({
+      await expect(service.printAndArchiveOrder(orderData)).resolves.toMatchObject({
         orderId: 1,
         printed: false,
       });

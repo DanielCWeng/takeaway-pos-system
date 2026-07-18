@@ -17,10 +17,16 @@ export function SetMealChoiceModal({ choice, onConfirm, onClose }: SetMealChoice
   // Extract required count from description (e.g., "Choose 2 Soups" -> 2)
   const requiredCount = parseInt(choice.description?.match(/\d+/)?.[0] || "1", 10);
 
-  const addSelection = (option: string) => {
-    if (selections.length < requiredCount) {
-      setSelections((prev) => [...prev, option]);
-    }
+  const toggleSelection = (option: string) => {
+    setSelections((current) => {
+      if (requiredCount === 1) return current[0] === option ? [] : [option];
+
+      // Multi-person choices allow repeat portions (for example, two of Soup A).
+      if (current.length < requiredCount) return [...current, option];
+
+      // When every slot is full, replace the most recent choice in one tap.
+      return [...current.slice(0, -1), option];
+    });
   };
 
   const removeSelection = (index: number) => {
@@ -95,8 +101,7 @@ export function SetMealChoiceModal({ choice, onConfirm, onClose }: SetMealChoice
               return (
                 <button
                   key={option}
-                  onClick={() => addSelection(option)}
-                  disabled={selections.length >= requiredCount}
+                  onClick={() => toggleSelection(option)}
                   className={cn(
                     "relative flex items-center justify-between p-4 rounded-2xl border transition-all duration-200 group",
                     count > 0 ? "pos-btn-tactile-primary" : "pos-btn-tactile hover:bg-muted/50",

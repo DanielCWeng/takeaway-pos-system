@@ -13,6 +13,9 @@
  */
 
 import * as repo from "./orders.repo.js";
+import * as customers from "../customers/customers.service.js";
+import * as etaService from "../eta/eta.service.js";
+import { config } from "../../config/index.js";
 import { getDb } from "../../infrastructure/db.js";
 import { logger } from "../../infrastructure/logger.js";
 import { printReceipt } from "../../hardware/printer.js";
@@ -21,6 +24,47 @@ import { HardwareError, ValidationError, NotFoundError } from "../../shared/erro
 // ---------------------------------------------------------------------------
 // Validation
 // ---------------------------------------------------------------------------
+
+function roundMoney(value) {
+  return Math.round((value + Number.EPSILON) * 100) / 100;
+}
+
+function calculateDeliveryCharge(distanceMiles) {
+  const base = Number(config.business.deliveryBaseCharge) || 0;
+  const threshold = Number(config.business.deliveryDistanceThresholdMiles) || 0;
+  const rate = Number(config.business.deliveryRatePerMile) || 0;
+
+  if (!Number.isFinite(distanceMiles) || distanceMiles <= threshold) {
+    return roundMoney(base);
+  }
+
+  const milesOverThreshold = Math.floor(Math.max(0, distanceMiles - threshold));
+  return roundMoney(base + milesOverThreshold * rate);
+}
+
+function recalculateTotals(order) {
+  const subtotal = roundMoney(
+    order.items.reduce((sum, item) => {
+      const unitPrice =
+        typeof item.finalPrice === "number" &&
+        Number.isFinite(item.finalPrice) &&
+        item.finalPrice >= 0
+          ? item.finalPrice
+          : item.price;
+      return sum + unitPrice * item.quantity;
+    }, 0),
+  );
+
+  const distance = Number(order.customerInfo?.distance);
+  const deliveryCharge = order.orderType === "delivery" ? calculateDeliveryCharge(distance) : 0;
+
+  return {
+    ...order,
+    subtotal,
+    deliveryCharge,
+    total: roundMoney(subtotal + deliveryCharge),
+  };
+}
 
 /**
  * Validate an incoming order payload.
@@ -55,6 +99,14 @@ function validateOrder(order) {
     if (typeof item.quantity !== "number" || item.quantity < 1) {
       throw new ValidationError(`Item at index ${i} has an invalid quantity`, {
         field: `items[${i}].quantity`,
+      });
+    }
+    if (
+      item.finalPrice !== undefined &&
+      (typeof item.finalPrice !== "number" || item.finalPrice < 0)
+    ) {
+      throw new ValidationError(`Item at index ${i} has an invalid finalPrice`, {
+        field: `items[${i}].finalPrice`,
       });
     }
   }
@@ -93,25 +145,57 @@ function validateOrder(order) {
  * @returns {{ id: number, data: object, archivedAt: string }}
  * @throws {ValidationError} if the order fails business rules
  */
-export function createOrder(orderData) {
+export function createOrder(orderData, clientOrderId) {
   validateOrder(orderData);
-  return repo.createOrder({ data: orderData });
+  const normalizedOrderData = recalculateTotals(orderData);
+
+  // Auto-sync the customer profile so that Name/Address aren't missing in future searches/exports
+  if (normalizedOrderData.customerInfo) {
+    customers.syncCustomerFromOrder(normalizedOrderData.customerInfo);
+  }
+
+  return repo.createOrder({ data: normalizedOrderData, clientOrderId });
 }
 
 /**
  * Archive an order and attempt to print it.
+ * Also initialises the kitchen workflow status row.
  *
  * Saving the order is the critical operation; printing is best-effort (mirrors legacy behaviour).
  *
  * @param {object} orderData - Raw order payload from the route handler
- * @returns {Promise<{ orderId: number, printed: boolean }>}
+ * @param {string} [clientOrderId]
+ * @returns {Promise<{ orderId: number, printed: boolean, status: string, archivedAt: string }>}
  */
-export async function printAndArchiveOrder(orderData) {
-  const archived = createOrder(orderData);
+export async function printAndArchiveOrder(orderData, clientOrderId) {
+  const archived = createOrder(orderData, clientOrderId);
 
+  // Determine initial kitchen status:
+  //  - Collection + empty kitchen → auto-start cooking (no one needs to accept it)
+  //  - Everything else → 'new' (staff decide, or hold delivery for batching)
+  const activeOrders = repo.getActiveOrders();
+  const initialStatus =
+    orderData.orderType === "collection" && activeOrders.length === 0
+      ? "cooking"
+      : "new";
+
+  // Compute RLS-based ETA and store metadata for self-updating model
+  const isDelivery = orderData.orderType === "delivery";
+  const itemCount = etaService.deriveItemCount(orderData.items);
+  const complexity = etaService.deriveComplexity(orderData.items);
+  const queueDepth = activeOrders.length;
+  const { predictedMins } = etaService.predict(itemCount, complexity, queueDepth, isDelivery);
+  const estimatedReadyAt = new Date(
+    new Date(archived.archivedAt).getTime() + predictedMins * 60_000,
+  ).toISOString();
+
+  const etaData = { itemCount, complexity, queueDepth, isDelivery, predictedMins };
+  repo.initOrderStatus(archived.id, initialStatus, estimatedReadyAt, etaData);
+
+  let printed = false;
   try {
     const result = await printReceipt(archived);
-    return { orderId: archived.id, printed: result.printed === true };
+    printed = result.printed === true;
   } catch (err) {
     const isHardwareError = err instanceof HardwareError;
     logger.error("Order saved but printing failed", {
@@ -120,8 +204,80 @@ export async function printAndArchiveOrder(orderData) {
       error: err?.message ?? String(err),
       ...(isHardwareError ? { details: err.details } : {}),
     });
-    return { orderId: archived.id, printed: false };
   }
+
+  return { orderId: archived.id, printed, status: initialStatus, archivedAt: archived.archivedAt, estimatedReadyAt };
+}
+
+// ---------------------------------------------------------------------------
+// Kitchen screen
+// ---------------------------------------------------------------------------
+
+/**
+ * Return all active (non-complete, non-cancelled) orders for the kitchen screen.
+ *
+ * @returns {Array<object>}
+ */
+export function getActiveOrders() {
+  return repo.getActiveOrders();
+}
+
+const VALID_STATUSES = ["new", "accepted", "cooking", "ready", "complete", "cancelled"];
+
+/**
+ * Transition an order to a new kitchen status.
+ * Returns the previous status so the caller can broadcast the change.
+ *
+ * @param {number} id
+ * @param {string} status
+ * @param {string} [updatedBy]
+ * @returns {{ previousStatus: string|null, updatedAt: string }}
+ * @throws {ValidationError} if status is not one of the 6 valid values
+ * @throws {NotFoundError} if the order has no status row
+ */
+export function setKitchenStatus(id, status, updatedBy = "kitchen") {
+  if (!VALID_STATUSES.includes(status)) {
+    throw new ValidationError(
+      `Invalid status '${status}'. Must be one of: ${VALID_STATUSES.join(", ")}`,
+      { field: "status", received: status },
+    );
+  }
+
+  const previousStatus = repo.getPreviousStatus(id);
+  if (previousStatus === null) {
+    throw new NotFoundError(`No kitchen status found for order ${id}`, { id });
+  }
+
+  repo.setOrderStatus(id, status, updatedBy);
+
+  if (status === "complete") {
+    try {
+      const etaData = repo.getOrderEtaData(id);
+      if (
+        etaData?.itemCount != null &&
+        etaData.complexity != null &&
+        etaData.queueDepth != null &&
+        etaData.isDelivery != null &&
+        etaData.actualReadyAt &&
+        etaData.archivedAt
+      ) {
+        const actualMins =
+          (new Date(etaData.actualReadyAt).getTime() - new Date(etaData.archivedAt).getTime()) /
+          60_000;
+        etaService.updateModelWithObservation(
+          etaData.itemCount,
+          etaData.complexity,
+          etaData.queueDepth,
+          etaData.isDelivery,
+          actualMins,
+        );
+      }
+    } catch (err) {
+      logger.warn("ETA model update failed (non-fatal)", { orderId: id, error: err?.message });
+    }
+  }
+
+  return { previousStatus, updatedAt: new Date().toISOString() };
 }
 
 /**
@@ -153,6 +309,49 @@ export function deleteOrdersByDate(date) {
     throw new ValidationError("Invalid date format. Expected YYYY-MM-DD", { date });
   }
   repo.deleteOrdersByDate(date);
+}
+
+/**
+ * Delete archived orders older than the configured years (Retention Policy).
+ *
+ * @returns {number} Number of deleted rows
+ */
+export function cleanupOldOrders() {
+  const years = config.business.dataRetentionYears ?? 6;
+  const cutoff = new Date();
+  cutoff.setFullYear(cutoff.getFullYear() - years);
+
+  const isoCutoff = cutoff.toISOString();
+  const deletedCount = repo.deleteOrdersBefore(isoCutoff);
+
+  logger.info(`Retention cleanup: deleted ${deletedCount} orders older than ${years} years`, {
+    cutoff: isoCutoff,
+    deletedCount,
+  });
+
+  return deletedCount;
+}
+
+/**
+ * Scrub all PII from orders for a specific phone number.
+ *
+ * @param {string} phone
+ * @param {string} anonId
+ * @returns {number}
+ */
+export function scrubOrdersByPhone(phone, anonId) {
+  return repo.anonymizeOrdersByPhone(phone, anonId);
+}
+
+/**
+ * Find all order history for a specific phone number.
+ * (Used for Data Export / Access requests)
+ *
+ * @param {string} phone
+ * @returns {Array<{ id: number, data: object, archivedAt: string }>}
+ */
+export function getOrdersByPhone(phone) {
+  return repo.findOrdersByPhone(phone);
 }
 
 // ---------------------------------------------------------------------------

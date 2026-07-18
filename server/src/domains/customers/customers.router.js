@@ -12,6 +12,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import * as service from "./customers.service.js";
+import { requireAdminAuth } from "../../shared/middleware/requireAdminAuth.js";
 
 export const customersRouter = Router();
 
@@ -39,13 +40,48 @@ const updateAddressSchema = z.object({
 // ---------------------------------------------------------------------------
 
 /**
+ * POST /api/customers/:phone/address
+ * Update address fields for an existing customer.
+ */
+customersRouter.post("/:phone/address", (req, res, next) => {
+  const parsed = updateAddressSchema.safeParse(req.body);
+  if (!parsed.success) {
+    const details = parsed.error.flatten().fieldErrors;
+    return res
+      .status(400)
+      .json({ error: { code: "VALIDATION_ERROR", message: "Invalid request body", details } });
+  }
+
+  try {
+    const customer = service.updateCustomerAddress(req.params.phone, parsed.data);
+    return res.json({ customer });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * GET /api/customers/:phone/export
+ * Gather all data for a customer (Right of Access).
+ */
+customersRouter.get("/:phone/export", requireAdminAuth, (req, res, next) => {
+  try {
+    const data = service.exportCustomerData(req.params.phone);
+    return res.json(data);
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
  * GET /api/customers/:phone
  * Fetch a customer by phone number. Returns 404 if not found.
+ *
+ * This stays after /export because Express matches routes in declaration order.
  */
 customersRouter.get("/:phone", (req, res, next) => {
   const { phone } = req.params;
 
-  // Basic sanity check before hitting service
   if (!phone || phone.length < 10) {
     return res.status(400).json({
       error: {
@@ -65,21 +101,13 @@ customersRouter.get("/:phone", (req, res, next) => {
 });
 
 /**
- * POST /api/customers/:phone/address
- * Update address fields for an existing customer.
+ * DELETE /api/customers/:phone
+ * Permanently delete a customer and anonymize orders (Right to Erasure).
  */
-customersRouter.post("/:phone/address", (req, res, next) => {
-  const parsed = updateAddressSchema.safeParse(req.body);
-  if (!parsed.success) {
-    const details = parsed.error.flatten().fieldErrors;
-    return res
-      .status(400)
-      .json({ error: { code: "VALIDATION_ERROR", message: "Invalid request body", details } });
-  }
-
+customersRouter.delete("/:phone", requireAdminAuth, (req, res, next) => {
   try {
-    const customer = service.updateCustomerAddress(req.params.phone, parsed.data);
-    return res.json({ customer });
+    const result = service.deleteCustomerData(req.params.phone);
+    return res.json(result);
   } catch (err) {
     next(err);
   }

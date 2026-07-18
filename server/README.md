@@ -26,6 +26,7 @@ Backend service for the takeaway POS platform.
 - Integrates with optional hardware adapters:
   - USB ESC/POS thermal printer
   - HID caller ID device
+  - Telephony dial/state provider (`none`, `tapi`, `asterisk_ami`)
 
 ## Directory Overview
 
@@ -67,6 +68,8 @@ Notes:
 
 - `GETADDRESS_API_KEY` can be blank for degraded address lookup mode.
 - `STORE_LATITUDE` and `STORE_LONGITUDE` are required.
+- Set `TELEPHONY_PROVIDER=asterisk_ami` for Linux-native call-state/click-to-dial via Asterisk AMI.
+- Keep `TELEPHONY_PROVIDER=none` for HID-only inbound caller pop (no click-to-dial).
 - Config is validated at startup; invalid values cause immediate process exit.
 
 ## Run Locally
@@ -117,6 +120,17 @@ Addresses:
 Telemetry:
 
 - `POST /api/telemetry/client-error`
+
+Menu:
+
+- `GET /api/menu` (public read for POS and kitchen screens)
+- `POST /api/menu`
+- `PUT /api/menu/:id`
+- `DELETE /api/menu/:id`
+
+Menu writes, order history/reprint/delete/cleanup, and customer export/erasure
+require `Authorization: Bearer <ADMIN_API_TOKEN>`. Order creation and kitchen
+status transitions remain available to the trusted POS/KDS clients.
 
 ## Database and Migrations
 

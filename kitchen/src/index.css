@@ -1,0 +1,118 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --radius: 10px;
+  }
+
+  html {
+    font-size: 18px;
+    background: #303338;
+    color: #ffffff;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    min-height: 100vh;
+    overflow: hidden;
+  }
+
+  /* Custom scrollbar — subtle, dark-themed */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #666b73; border-radius: 99px; }
+  ::-webkit-scrollbar-thumb:hover { background: #7a8089; }
+}
+
+@layer components {
+  .order-card {
+    @apply relative bg-[#45494f] rounded-xl border border-[#6b7078] overflow-hidden;
+    @apply shadow-card transition-all duration-300;
+    animation: slideUp 0.25s ease-out;
+  }
+
+  .order-card-priority {
+    @apply shadow-card-priority;
+    animation: slideUp 0.25s ease-out, glowAmber 2s ease-in-out infinite alternate;
+  }
+
+  .order-card-urgent {
+    @apply shadow-card-urgent;
+  }
+
+  /* Left status bar */
+  .status-bar {
+    @apply absolute left-0 top-0 bottom-0 w-1 rounded-l-xl;
+  }
+
+  .status-bar-new      { @apply bg-kitchen-new; }
+  .status-bar-accepted { @apply bg-kitchen-accepted; }
+  .status-bar-cooking  { @apply bg-kitchen-cooking; }
+  .status-bar-ready    { @apply bg-kitchen-ready; }
+
+  /* Action buttons */
+  .action-btn {
+    @apply w-full py-4 rounded-lg font-bold tracking-widest uppercase text-lg
+           transition-all duration-150 active:scale-[0.98] cursor-pointer;
+  }
+
+  .action-btn-new      { @apply bg-kitchen-new/90 hover:bg-kitchen-new text-white; }
+  .action-btn-accepted { @apply bg-kitchen-accepted/90 hover:bg-kitchen-accepted text-black; }
+  .action-btn-cooking  { @apply bg-kitchen-cooking/90 hover:bg-kitchen-cooking text-white; }
+  .action-btn-ready    { @apply bg-kitchen-ready/90 hover:bg-kitchen-ready text-white; }
+  .action-btn-priority {
+    @apply bg-white text-black hover:bg-amber-50 text-xl py-5;
+  }
+
+  /* Chinese text */
+  .zh {
+    font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  }
+
+  /* Modifier chip */
+  .modifier-chip {
+    @apply inline-flex items-center gap-1 text-amber-400 font-bold text-sm;
+  }
+
+  /* Station pip */
+  .station-pip {
+    @apply flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors duration-300;
+  }
+
+  /* Column */
+  .kanban-col {
+    @apply flex flex-col flex-1 min-w-0 min-h-0 bg-[#393d42] rounded-xl border border-[#5d626a];
+  }
+
+  .kanban-col-header {
+    @apply flex items-center justify-between px-4 py-3 border-b border-[#60656d] shrink-0;
+  }
+}
+
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+  .font-chinese {
+    font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  }
+}
+
+/* Glow animation for priority card */
+@keyframes glowAmber {
+  0%   { box-shadow: 0 0 0 2px #f59e0b, 0 0 12px 2px rgba(245,158,11,0.25); }
+  100% { box-shadow: 0 0 0 2px #f59e0b, 0 0 28px 6px rgba(245,158,11,0.55); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulseRed {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+
+.animate-pulse-red { animation: pulseRed 1.2s ease-in-out infinite; }

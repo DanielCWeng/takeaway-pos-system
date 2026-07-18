@@ -1,13 +1,16 @@
-import { useState, useEffect, useCallback, lazy, Suspense, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Plus, Trash2 } from "lucide-react";
 import type { MenuItem, OrderItem, MenuContent } from "../../types";
 import { useOrder } from "../../context/OrderContext";
 import { LeftPanel } from "./left-panel";
 import { RightPanel } from "./right-panel";
 import { PrintQueueBanner } from "./print-queue-banner";
 import { LoaderSplash } from "../ui/loader-splash";
+import { Button } from "../ui/button";
 import { useCallHandler } from "../../hooks/useCallHandler";
 import { useUI } from "../../context/UIContext";
+import { apiClient } from "../../api/client";
 
 const ItemOptionsModal = lazy(() =>
   import("../modals/item-options-modal").then((m) => ({
@@ -29,7 +32,6 @@ const ConfirmationModal = lazy(() =>
     default: m.ConfirmationModal,
   })),
 );
-const RefModal = lazy(() => import("../modals/ref-modal").then((m) => ({ default: m.RefModal })));
 const SetMealChoiceModal = lazy(() =>
   import("../modals/set-meal-choice-modal").then((m) => ({
     default: m.SetMealChoiceModal,
@@ -39,6 +41,11 @@ const AdminPage = lazy(() => import("./admin-page").then((m) => ({ default: m.Ad
 const AddressSelectionModal = lazy(() =>
   import("../modals/address-selection-modal").then((m) => ({
     default: m.AddressSelectionModal,
+  })),
+);
+const ReceiptPreviewModal = lazy(() =>
+  import("../modals/receipt-preview-modal").then((m) => ({
+    default: m.ReceiptPreviewModal,
   })),
 );
 
@@ -93,6 +100,12 @@ const loaderSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180"
         <path d="M 152,135 Q 160,145 168,135" fill="none" stroke="#E2E8F0" stroke-width="4" stroke-linecap="round" />
     </g>
 </svg>`;
+
+function getFallbackEta(orderType: "collection" | "delivery") {
+  const mins = orderType === "delivery" ? 37 : 10;
+  return { mins, low: mins - 5, high: mins + 10 };
+}
+
 export function PosDashboard() {
   const {
     orders,
@@ -108,36 +121,68 @@ export function PosDashboard() {
     setFocItem,
     updateItem,
     setCustomerInfo,
-    updatePayment,
     printOrder,
     setOrderType,
     clearOrder,
+    deleteActiveOrder,
     createNewOrder,
     setActiveOrderIndex,
     isZeroPriceMode,
     isSwapMode,
-    isShortMode,
     setIsZeroPriceMode,
     setIsSwapMode,
-    setIsShortMode,
     decrementItem,
   } = useOrder();
+  const [isDeleteOrderConfirmOpen, setIsDeleteOrderConfirmOpen] = useState(false);
   const { activeModal, openModal, closeModal } = useUI();
-  const { addressOptions, selectAddress, clearCall } = useCallHandler();
+  const {
+    pendingCall,
+    addressOptions,
+    selectAddress,
+    startNewCustomerFromPending,
+    resolvePendingCall,
+    attachPendingCallSelection,
+    clearCall,
+  } = useCallHandler();
 
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [isMenuLoading, setIsMenuLoading] = useState(true);
   const [selectedOrderIndex, setSelectedOrderIndex] = useState<number | null>(null);
+  const selectionStateRef = useRef({
+    orderId: order.clientOrderId,
+    itemCount: order.items.length,
+    manuallySelected: false,
+  });
   const selectedItem = selectedOrderIndex !== null ? order.items[selectedOrderIndex] : undefined;
-  const prevItemsLengthRef = useRef(order.items.length);
 
-  // Auto-select latest item when added
+  // Follow newly added items until the operator deliberately selects another row.
+  // After a removal, select the final remaining row instead of snapping to the top.
   useEffect(() => {
-    if (order.items.length > prevItemsLengthRef.current) {
-      setSelectedOrderIndex(order.items.length - 1);
-    }
-    prevItemsLengthRef.current = order.items.length;
-  }, [order.items.length]);
+    const previous = selectionStateRef.current;
+    const itemCount = order.items.length;
+    const changedOrder = previous.orderId !== order.clientOrderId;
+
+    setSelectedOrderIndex((current) => {
+      if (itemCount === 0) return null;
+      if (changedOrder || itemCount < previous.itemCount) return itemCount - 1;
+      if (itemCount > previous.itemCount && !previous.manuallySelected) return itemCount - 1;
+      if (current === null || current >= itemCount) return itemCount - 1;
+      return current;
+    });
+
+    selectionStateRef.current = {
+      orderId: order.clientOrderId,
+      itemCount,
+      manuallySelected: changedOrder || itemCount < previous.itemCount
+        ? false
+        : previous.manuallySelected,
+    };
+  }, [order.clientOrderId, order.items.length]);
+
+  const handleSelectOrderItem = useCallback((index: number) => {
+    selectionStateRef.current.manuallySelected = true;
+    setSelectedOrderIndex(index);
+  }, []);
 
   // Lazy-load menu data to keep the entry bundle small and show loader long enough to avoid flicker.
   const MIN_LOADER_MS = 1500;
@@ -169,13 +214,6 @@ export function PosDashboard() {
     };
   }, []);
 
-  useEffect(() => {
-    if (selectedOrderIndex === null) return;
-    if (selectedOrderIndex < 0 || selectedOrderIndex >= order.items.length) {
-      setSelectedOrderIndex(null);
-    }
-  }, [order.items.length, selectedOrderIndex]);
-
   // Modal States
   const [configuringItem, setConfiguringItem] = useState<MenuItem | null>(null);
   const [modifyingItem, setModifyingItem] = useState<{
@@ -185,13 +223,14 @@ export function PosDashboard() {
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
-  const [isRefModalOpen, setIsRefModalOpen] = useState(false);
   const [pendingSetMeal, setPendingSetMeal] = useState<{
     parentUniqueId: string;
     choices: MenuContent[];
     currentChoiceIndex: number;
   } | null>(null);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewEta, setPreviewEta] = useState<{ mins: number; low: number; high: number } | null>(null);
 
   const generateId = () => Math.random().toString(36).substring(2, 11);
 
@@ -364,13 +403,20 @@ export function PosDashboard() {
       setIsSwapMode((p) => !p);
     }
   }, [isHappyMealSelected, setIsIncMode, setIsSwapMode]);
-  const handleToggleShortMode = useCallback(() => setIsShortMode((p) => !p), [setIsShortMode]);
+
+  const handleDialCustomerPhone = useCallback(async (phone: string) => {
+    try {
+      await apiClient.dial(phone);
+    } catch (error) {
+      console.error("Failed to initiate dial command", error);
+    }
+  }, []);
 
   return (
-    <div className="h-screen">
-      <div className="mx-auto flex h-full max-w-[1600px] flex-col gap-2 px-2 py-2">
+    <div className="h-screen w-screen bg-background">
+      <div className="flex h-full w-full flex-col gap-4 p-2">
         <PrintQueueBanner />
-        <div className="grid h-full min-h-0 gap-2 xl:grid-cols-[minmax(320px,0.38fr)_minmax(420px,0.62fr)]">
+        <div className="grid h-full min-h-0 grid-cols-[minmax(0,38fr)_3rem_minmax(0,62fr)] gap-1 overflow-hidden">
           <motion.div
             initial={{ opacity: 0, x: -16 }}
             animate={{ opacity: 1, x: 0 }}
@@ -381,10 +427,9 @@ export function PosDashboard() {
               orders={orders}
               activeOrderIndex={activeOrderIndex}
               onSelectOrder={setActiveOrderIndex}
-              onNewOrder={createNewOrder}
               items={order.items}
               selectedIndex={selectedOrderIndex}
-              onSelectIndex={setSelectedOrderIndex}
+              onSelectIndex={handleSelectOrderItem}
               onDecrementSelected={handleDecrementSelected}
               onClearOrder={clearOrder}
               subtotal={subtotal}
@@ -393,11 +438,28 @@ export function PosDashboard() {
               onAccept={() => {
                 setCheckoutError(null);
                 setIsCheckoutModalOpen(true);
+                setPreviewEta(getFallbackEta(order.orderType));
+                const topLevelCount = order.items
+                  .filter((i) => !i.parentId)
+                  .reduce((sum, item) => sum + (item.quantity ?? 1), 0);
+                if (topLevelCount > 0) {
+                  apiClient
+                    .fetchEta(order.orderType, topLevelCount)
+                    .then((result) =>
+                      setPreviewEta({
+                        mins: result.predictedMins,
+                        low: result.rangeLow,
+                        high: result.rangeHigh,
+                      }),
+                    )
+                    .catch(() => {/* non-fatal */});
+                }
               }}
               orderType={order.orderType}
               onChangeOrderType={setOrderType}
               customerInfo={order.customerInfo}
               onCustomerInfoClick={() => openModal("customer")}
+              onDialPhone={handleDialCustomerPhone}
               onDuplicateItem={handleDuplicateItem}
               onModifyItem={handleModifyItem}
               onFocItem={handleFocItem}
@@ -409,11 +471,43 @@ export function PosDashboard() {
               isHappyMealSelected={isHappyMealSelected}
               isSetMealItemSelected={isSetMealItemSelected}
               onToggleSwapMode={handleToggleSwapMode}
-              isShortMode={isShortMode}
-              onToggleShortMode={handleToggleShortMode}
+              onPreview={() => {
+                setIsPreviewOpen(true);
+                setPreviewEta(getFallbackEta(order.orderType));
+                const topLevelCount = order.items.filter((i) => !i.parentId).reduce((s, i) => s + (i.quantity ?? 1), 0);
+                if (topLevelCount > 0) {
+                  apiClient.fetchEta(order.orderType, topLevelCount)
+                    .then((r) => setPreviewEta({ mins: r.predictedMins, low: r.rangeLow, high: r.rangeHigh }))
+                    .catch(() => {/* non-fatal */});
+                }
+              }}
               onOpenAdmin={() => setIsAdminOpen(true)}
             />
           </motion.div>
+
+          <div className="pos-panel-divider relative h-full">
+            <Button
+              variant="secondary"
+              size="sm"
+              className="absolute left-1/2 top-2/3 h-12 w-10 -translate-x-1/2 -translate-y-1/2 px-1 text-[11px]"
+              onClick={createNewOrder}
+              aria-label="New order"
+              title="New order"
+            >
+              <Plus className="h-6 w-6" aria-hidden="true" />
+            </Button>
+            <Button
+              variant="destructive-solid"
+              size="sm"
+              className="absolute left-1/2 h-12 w-10 -translate-x-1/2 -translate-y-1/2 px-1"
+              style={{ top: "calc(66.6667% + 3.5rem)" }}
+              onClick={() => setIsDeleteOrderConfirmOpen(true)}
+              aria-label="Delete active order"
+              title="Delete active order"
+            >
+              <Trash2 className="h-5 w-5" aria-hidden="true" />
+            </Button>
+          </div>
 
           <AnimatePresence mode="wait">
             {isMenuLoading ? (
@@ -443,13 +537,62 @@ export function PosDashboard() {
                 <RightPanel
                   menuItems={menuItems}
                   onAddItem={handleAddItem}
-                  onOpenMenuRef={() => setIsRefModalOpen(true)}
                 />
               </motion.div>
             )}
           </AnimatePresence>
         </div>
       </div>
+
+      <AnimatePresence>
+        {isDeleteOrderConfirmOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-order-title"
+          >
+            <motion.div
+              initial={{ scale: 0.96, y: 8 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.96, y: 8 }}
+              className="pos-panel w-full max-w-sm bg-gray-300 p-4"
+            >
+              <h2 id="delete-order-title" className="text-center text-lg font-bold">
+                Are you sure?
+                <span className="mt-1 block text-base">确定吗？</span>
+              </h2>
+              <p className="mt-2 text-center text-sm">
+                {order.id === 1
+                  ? "Order 1 will be cleared and its customer and collection details reset."
+                  : `Order ${order.id} and its tab will be deleted.`}
+                <span className="mt-1 block">
+                  {order.id === 1
+                    ? "一号订单将被清空，顾客、地址及取餐资料将会重置。"
+                    : `订单 ${order.id} 及其分页按钮将被删除。`}
+                </span>
+              </p>
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <Button variant="secondary" onClick={() => setIsDeleteOrderConfirmOpen(false)}>
+                  No / 否
+                </Button>
+                <Button
+                  variant="destructive-solid"
+                  onClick={() => {
+                    deleteActiveOrder();
+                    setIsDeleteOrderConfirmOpen(false);
+                  }}
+                >
+                  Yes / 是
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Modals */}
       <AnimatePresence>
@@ -477,14 +620,19 @@ export function PosDashboard() {
             <DeliveryAddressModal
               key="address-modal"
               customerInfo={order.customerInfo || {}}
+              pendingCall={pendingCall}
+              onUsePendingCall={resolvePendingCall}
+              onDismissPendingCall={resolvePendingCall}
               onSave={(info) => {
+                attachPendingCallSelection(info, info.deliveryInstructions);
                 setCustomerInfo(info);
                 setIsAddressModalOpen(false);
                 closeModal();
+                resolvePendingCall();
               }}
               onClose={() => {
                 setIsAddressModalOpen(false);
-                closeModal();
+                clearCall();
               }}
             />
           )}
@@ -494,6 +642,7 @@ export function PosDashboard() {
               key="address-selection-modal"
               addresses={addressOptions}
               onSelect={selectAddress}
+              onCreateNew={startNewCustomerFromPending}
               onClose={clearCall}
             />
           )}
@@ -503,14 +652,21 @@ export function PosDashboard() {
               key="checkout-modal"
               orderTotal={total}
               errorMessage={checkoutError}
+              receiptPreview={{
+                items: order.items,
+                orderType: order.orderType,
+                customerInfo: order.customerInfo,
+                subtotal,
+                deliveryFee: deliveryCharge,
+                total,
+                etaMins: previewEta?.mins,
+                etaRangeLow: previewEta?.low,
+                etaRangeHigh: previewEta?.high,
+              }}
               onConfirm={async (details) => {
                 setCheckoutError(null);
-                updatePayment({
-                  method: "cash",
-                  amount: details.amountPaid,
-                });
                 try {
-                  await printOrder();
+                  await printOrder(undefined, { method: "cash", amount: details.amountPaid });
                   setCheckoutError(null);
                   setIsCheckoutModalOpen(false);
                 } catch (error) {
@@ -529,15 +685,6 @@ export function PosDashboard() {
             />
           )}
 
-          {isRefModalOpen && (
-            <RefModal
-              key="ref-modal"
-              menuItems={menuItems}
-              onSelect={handleAddItem}
-              onClose={() => setIsRefModalOpen(false)}
-            />
-          )}
-
           {pendingSetMeal && (
             <SetMealChoiceModal
               key={`choice-${pendingSetMeal.currentChoiceIndex}`}
@@ -548,6 +695,22 @@ export function PosDashboard() {
           )}
 
           {isAdminOpen && <AdminPage onClose={() => setIsAdminOpen(false)} />}
+
+          {isPreviewOpen && (
+            <ReceiptPreviewModal
+              key="receipt-preview-modal"
+              items={order.items}
+              orderType={order.orderType}
+              customerInfo={order.customerInfo}
+              subtotal={subtotal}
+              deliveryFee={deliveryCharge}
+              total={total}
+              etaMins={previewEta?.mins}
+              etaRangeLow={previewEta?.low}
+              etaRangeHigh={previewEta?.high}
+              onClose={() => setIsPreviewOpen(false)}
+            />
+          )}
         </Suspense>
       </AnimatePresence>
     </div>

@@ -31,6 +31,32 @@ describe("SetMealChoiceModal", () => {
     expect(onConfirm).toHaveBeenCalledWith(["Hot & Sour", "Chicken"]);
   });
 
+  it("allows the same option to supply both portions", () => {
+    const onConfirm = vi.fn();
+
+    render(
+      <SetMealChoiceModal
+        choice={{
+          type: "choice",
+          description: "Choose 2 Soups",
+          options: ["Hot & Sour", "Chicken", "Sweetcorn"],
+        }}
+        onConfirm={onConfirm}
+        onClose={vi.fn()}
+      />,
+    );
+
+    const soupButton = screen.getByRole("button", { name: /Hot & Sour/ });
+    fireEvent.click(soupButton);
+    fireEvent.click(soupButton);
+
+    const confirmButton = screen.getByRole("button", { name: "Confirm Selection" });
+    expect((confirmButton as HTMLButtonElement).disabled).toBe(false);
+    fireEvent.click(confirmButton);
+
+    expect(onConfirm).toHaveBeenCalledWith(["Hot & Sour", "Hot & Sour"]);
+  });
+
   it("does not allow selections beyond required count", () => {
     render(
       <SetMealChoiceModal

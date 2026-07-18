@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "../ui/button";
 
 interface OrderControlsProps {
@@ -14,9 +15,10 @@ interface OrderControlsProps {
   onToggleSwapMode: () => void;
   isHappyMealSelected: boolean;
   isSetMealItemSelected: boolean;
-  isShortMode: boolean;
-  onToggleShortMode: () => void;
+  onPreview: () => void;
 }
+
+const CLEAR_ARM_MS = 2500;
 
 export function OrderControls({
   onDuplicateItem,
@@ -32,11 +34,26 @@ export function OrderControls({
   onToggleSwapMode,
   isHappyMealSelected,
   isSetMealItemSelected,
-  isShortMode,
-  onToggleShortMode,
+  onPreview,
 }: OrderControlsProps) {
+  const [clearArmed, setClearArmed] = useState(false);
+  const armTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleClearClick = useCallback(() => {
+    if (clearArmed) {
+      if (armTimerRef.current) clearTimeout(armTimerRef.current);
+      setClearArmed(false);
+      onDeleteOrder();
+    } else {
+      setClearArmed(true);
+      armTimerRef.current = setTimeout(() => setClearArmed(false), CLEAR_ARM_MS);
+    }
+  }, [clearArmed, onDeleteOrder]);
+
+  useEffect(() => () => { if (armTimerRef.current) clearTimeout(armTimerRef.current); }, []);
+
   return (
-    <div className="pos-order-controls grid grid-cols-5 grid-rows-2 auto-rows-[minmax(3.25rem,1fr)] gap-1 p-2 border-b border-border/60">
+    <div className="pos-order-controls grid grid-cols-5 grid-rows-2 auto-rows-[2.25rem] gap-1 border-t border-border/60 pt-1">
       <Button
         variant="utility"
         className="row-span-2 h-full text-xl"
@@ -54,12 +71,12 @@ export function OrderControls({
         -
       </Button>
       <Button
-        variant={isShortMode ? "info" : "utility"}
+        variant="utility"
         className="flex h-full flex-col gap-0 leading-none"
-        onClick={onToggleShortMode}
+        onClick={onPreview}
       >
-        <span className="text-xs">Short</span>
-        <span className="text-[10px] opacity-70">短式</span>
+        <span className="text-xs">Preview</span>
+        <span className="text-[10px] opacity-70">预览</span>
       </Button>
 
       <Button
@@ -91,12 +108,12 @@ export function OrderControls({
       </Button>
 
       <Button
-        variant={isItemSelected ? "destructive-solid" : "destructive"}
+        variant={clearArmed ? "destructive-solid" : "destructive"}
         className="flex h-full flex-col gap-0 leading-none"
-        onClick={onDeleteOrder}
+        onClick={handleClearClick}
       >
-        <span className="text-xs font-semibold">Clear</span>
-        <span className="text-[10px] opacity-80">清空</span>
+        <span className="text-xs font-semibold">{clearArmed ? "Sure?" : "Clear"}</span>
+        <span className="text-[10px] opacity-80">{clearArmed ? "确认" : "清空"}</span>
       </Button>
 
       <Button

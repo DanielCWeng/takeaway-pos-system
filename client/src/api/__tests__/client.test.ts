@@ -1,5 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
+vi.mock("../../lib/runtime-monitor", () => ({
+  reportClientError: vi.fn(),
+}));
+
 import { apiClient } from "../client";
+import { reportClientError } from "../../lib/runtime-monitor";
 import type { FullOrder } from "../../types";
 
 function jsonResponse(body: unknown, init?: ResponseInit): Response {
@@ -13,6 +18,7 @@ function jsonResponse(body: unknown, init?: ResponseInit): Response {
 describe("apiClient", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.clearAllMocks();
   });
 
   it("submits orders to /orders/print and returns parsed payload", async () => {
@@ -68,17 +74,62 @@ describe("apiClient", () => {
       details: { field: "postcode" },
       status: 400,
     });
+    expect(reportClientError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "api.error",
+        source: "/addresses/lookup",
+      }),
+    );
   });
 
   it("falls back to UNKNOWN_ERROR when backend response is not json", async () => {
     global.fetch = vi
       .fn()
-      .mockResolvedValue(new Response("not-json", { status: 500, statusText: "Internal Server Error" }));
+      .mockResolvedValue(
+        new Response("not-json", { status: 500, statusText: "Internal Server Error" }),
+      );
 
     await expect(apiClient.fetchOrders()).rejects.toMatchObject({
       code: "UNKNOWN_ERROR",
       message: "Internal Server Error",
       status: 500,
     });
+  });
+
+  it("sends redacted telemetry for sensitive GDPR endpoints", async () => {
+    global.fetch = vi.fn().mockResolvedValue(
+      jsonResponse(
+        {
+          error: {
+            code: "FORBIDDEN",
+            message: "Admin authentication required",
+          },
+        },
+        { status: 403, statusText: "Forbidden" },
+      ),
+    );
+
+    await expect(apiClient.exportCustomer("07911123456")).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      status: 403,
+    });
+    expect(reportClientError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "api.error",
+        source: "/customers/[redacted]/export",
+      }),
+    );
+  });
+
+  it("posts dial commands to /calls/dial", async () => {
+    global.fetch = vi.fn().mockResolvedValue(jsonResponse({ ok: true, phone: "07123456789" }));
+
+    const result = await apiClient.dial("07 123 456 789");
+
+    expect(result).toEqual({ ok: true, phone: "07123456789" });
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/calls/dial"),
+      expect.objectContaining({ method: "POST" }),
+    );
   });
 });

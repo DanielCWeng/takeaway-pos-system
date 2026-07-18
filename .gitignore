@@ -20,6 +20,8 @@ server/data/*.db
 !server/data/postcodes.db
 
 !server/data/.gitkeep
+tapi-bridge/bin/
+tapi-bridge/obj/
 *.md
 !README.md
 !client/README.md
