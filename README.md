@@ -93,7 +93,9 @@ separate identity provider.
 
 The server CORS policy allows `PATCH` because the kitchen display advances
 order statuses through `PATCH /api/orders/:id/status`. If the client and server
-origins differ, set `CORS_ORIGIN` to the exact client origin.
+origins differ, set `CORS_ORIGIN` to the client origin. For multiple trusted
+origins, use a comma-separated list such as
+`http://localhost:5173,http://192.168.1.50:5173`.
 
 ## Formatting
 

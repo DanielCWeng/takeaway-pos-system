@@ -52,7 +52,7 @@ describe("server lifecycle", () => {
     vi.doMock("../../src/config/index.js", () => ({
       config: {
         port: 4444,
-        corsOrigin: "http://localhost:5173",
+        corsOrigins: ["http://localhost:5173"],
         security: {
           adminApiToken: "test-admin-token",
           trustProxy: false,

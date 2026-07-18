@@ -23,7 +23,10 @@ const envSchema = z.object({
     .transform(Number)
     .pipe(z.number().int().min(1).max(65535)),
 
-  CORS_ORIGIN: z.string().url("CORS_ORIGIN must be a valid URL").default("http://localhost:5173"),
+  CORS_ORIGIN: z
+    .string()
+    .min(1, "CORS_ORIGIN must contain at least one URL")
+    .default("http://localhost:5173"),
 
   DB_PATH: z.string().min(1, "DB_PATH must be a non-empty path"),
 
@@ -224,13 +227,29 @@ if (!result.success) {
 
 const env = result.data;
 
+const corsOrigins = env.CORS_ORIGIN.split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+for (const origin of corsOrigins) {
+  try {
+    new URL(origin);
+  } catch {
+    process.stderr.write(
+      `\n[FATAL] Server configuration is invalid. Fix the following before starting:\n\n` +
+        `  • CORS_ORIGIN: invalid URL "${origin}"\n\n` +
+        `Use a single URL or a comma-separated list, e.g. http://localhost:5173,http://192.168.1.50:5173\n\n`,
+    );
+    process.exit(1);
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Exported config — the single source of truth for all env-derived values
 // ---------------------------------------------------------------------------
 
 export const config = {
   port: env.PORT,
-  corsOrigin: env.CORS_ORIGIN,
+  corsOrigins,
 
   db: {
     path: env.DB_PATH,
