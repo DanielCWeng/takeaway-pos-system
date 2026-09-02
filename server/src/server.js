@@ -26,7 +26,6 @@ import { logger } from "./infrastructure/logger.js";
 import { apiRouter, globalErrorHandler } from "./api/router.js";
 import { createWsServer, broadcast, closeWsServer } from "./api/websocket.js";
 import { createRateLimiter } from "./shared/middleware/rateLimit.js";
-import { closePostcodeDb } from "./shared/postcodes.js";
 import {
   startListening as startCallerIdListening,
   stopListening as stopCallerIdListening,
@@ -57,6 +56,12 @@ runMigrations();
 if (!config.security.adminApiToken) {
   logger.warn(
     "ADMIN_API_TOKEN is not configured. GDPR/admin endpoints are disabled and will return 503.",
+  );
+}
+
+if (!config.address.apiKey) {
+  logger.warn(
+    "GETADDRESS_API_KEY is not configured. Cached lookups and manual address entry remain available.",
   );
 }
 
@@ -186,11 +191,6 @@ function shutdown(signal) {
   }
   try {
     stopTelephonyListening();
-  } catch (e) {
-    // ignore shutdown cleanup errors
-  }
-  try {
-    closePostcodeDb();
   } catch (e) {
     // ignore shutdown cleanup errors
   }

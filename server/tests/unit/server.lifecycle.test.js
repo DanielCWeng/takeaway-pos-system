@@ -34,7 +34,6 @@ describe("server lifecycle", () => {
     const createWsServer = vi.fn();
     const broadcast = vi.fn();
     const closeWsServer = vi.fn();
-    const closePostcodeDb = vi.fn();
     const startListening = vi.fn().mockResolvedValue(undefined);
     const stopListening = vi.fn();
     const startTelephonyListening = vi.fn();
@@ -53,6 +52,7 @@ describe("server lifecycle", () => {
       config: {
         port: 4444,
         corsOrigins: ["http://localhost:5173"],
+        address: { apiKey: "test-key" },
         security: {
           adminApiToken: "test-admin-token",
           trustProxy: false,
@@ -77,7 +77,6 @@ describe("server lifecycle", () => {
       broadcast,
       closeWsServer,
     }));
-    vi.doMock("../../src/shared/postcodes.js", () => ({ closePostcodeDb }));
     vi.doMock("../../src/hardware/callerIdDevice.js", () => ({
       startListening,
       stopListening,
@@ -116,7 +115,6 @@ describe("server lifecycle", () => {
       createWsServer,
       broadcast,
       closeWsServer,
-      closePostcodeDb,
       startListening,
       stopListening,
       startTelephonyListening,
@@ -169,7 +167,6 @@ describe("server lifecycle", () => {
 
     expect(ctx.stopListening).toHaveBeenCalledTimes(1);
     expect(ctx.stopTelephonyListening).toHaveBeenCalledTimes(1);
-    expect(ctx.closePostcodeDb).toHaveBeenCalledTimes(1);
     expect(ctx.closeWsServer).toHaveBeenCalledTimes(1);
     expect(ctx.server.closeAllConnections).toHaveBeenCalledTimes(1);
     expect(ctx.server.closeIdleConnections).toHaveBeenCalledTimes(1);

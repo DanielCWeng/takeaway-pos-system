@@ -11,8 +11,8 @@
  */
 
 import Database from "better-sqlite3";
-import { readFileSync, readdirSync } from "fs";
-import { join, dirname } from "path";
+import { mkdirSync, readFileSync, readdirSync } from "fs";
+import { join, dirname, resolve } from "path";
 import { fileURLToPath } from "url";
 import { config } from "../config/index.js";
 import { logger } from "./logger.js";
@@ -52,6 +52,10 @@ export function getDb() {
  */
 export function openDb(dbPath) {
   const path = dbPath ?? config.db.path;
+
+  if (path !== ":memory:") {
+    mkdirSync(dirname(resolve(path)), { recursive: true });
+  }
 
   _db = new Database(path, {
     // No verbose logging in production — debug-level SQL logs are noisy.

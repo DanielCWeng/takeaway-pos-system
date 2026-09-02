@@ -30,12 +30,8 @@ const envSchema = z.object({
 
   DB_PATH: z.string().min(1, "DB_PATH must be a non-empty path"),
 
-  POSTCODES_DB_PATH: z.string().min(1, "POSTCODES_DB_PATH must be a non-empty path"),
-
   // Optional — system runs in degraded mode without it
   GETADDRESS_API_KEY: z.string().optional().default(""),
-
-  STORE_POSTCODE: z.string().min(1, "STORE_POSTCODE must be set (e.g. NG9 8GF)"),
 
   STORE_LATITUDE: z
     .string()
@@ -253,12 +249,10 @@ export const config = {
 
   db: {
     path: env.DB_PATH,
-    postcodesPath: env.POSTCODES_DB_PATH,
   },
 
   address: {
     apiKey: env.GETADDRESS_API_KEY,
-    storePostcode: env.STORE_POSTCODE,
     storeLatitude: env.STORE_LATITUDE,
     storeLongitude: env.STORE_LONGITUDE,
   },

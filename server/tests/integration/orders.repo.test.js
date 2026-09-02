@@ -152,9 +152,8 @@ describe("Orders Repository (Integration)", () => {
           customerInfo: {
             name: "Alice",
             phone: "07911123456",
-            address: "42 Main Street",
-            houseNumber: "42",
-            street: "Main Street",
+            line1: "42 Main Street",
+            line2: "Flat 2",
             town: "Beeston",
             postcode: "NG9 8GF",
             latitude: 52.95,
@@ -176,9 +175,8 @@ describe("Orders Repository (Integration)", () => {
       expect(updated.data.customerInfo).toEqual({
         name: "ANONYMISED",
         phone: "ANON-test-id",
-        address: "REMOVED",
-        houseNumber: "REMOVED",
-        street: "REMOVED",
+        line1: "REMOVED",
+        line2: "REMOVED",
         town: "REMOVED",
         postcode: "REMOVED",
         latitude: null,

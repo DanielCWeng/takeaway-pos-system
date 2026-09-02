@@ -101,7 +101,10 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 
 export const apiClient = {
   // Orders
-  async submitOrder(order: FullOrder, clientOrderId?: string): Promise<{ orderId: number; printed: boolean }> {
+  async submitOrder(
+    order: FullOrder,
+    clientOrderId?: string,
+  ): Promise<{ orderId: number; printed: boolean }> {
     return request("/orders/print", {
       method: "POST",
       body: JSON.stringify({ order, payment: order.payment, clientOrderId }),
@@ -144,7 +147,7 @@ export const apiClient = {
   },
 
   // Customers
-  async fetchCustomer(phone: string): Promise<{ customer: Customer }> {
+  async fetchCustomer(phone: string): Promise<{ customer: Customer; addresses: Address[] }> {
     return request(`/customers/${phone}`);
   },
 
@@ -214,25 +217,18 @@ export const apiClient = {
   },
 
   // ETA
-  async fetchEta(orderType: "collection" | "delivery", itemCount: number): Promise<{ predictedMins: number; rangeLow: number; rangeHigh: number; queueDepth: number }> {
+  async fetchEta(
+    orderType: "collection" | "delivery",
+    itemCount: number,
+  ): Promise<{ predictedMins: number; rangeLow: number; rangeHigh: number; queueDepth: number }> {
     return request(`/eta?orderType=${orderType}&itemCount=${itemCount}`);
   },
 
   // Addresses
-  async lookupPostcode(postcode: string): Promise<{ addresses: Address[]; source: string }> {
+  async lookupPostcode(postcode: string): Promise<{ addresses: Address[] }> {
     return request("/addresses/lookup", {
       method: "POST",
       body: JSON.stringify({ postcode }),
-    });
-  },
-
-  async verifyAddress(
-    phone: string,
-    addressData: Partial<Address>,
-  ): Promise<{ customer: Customer }> {
-    return request("/addresses/verify", {
-      method: "POST",
-      body: JSON.stringify({ phone, addressData }),
     });
   },
 

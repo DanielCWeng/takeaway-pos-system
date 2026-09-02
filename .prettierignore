@@ -2,7 +2,6 @@ node_modules/
 dist/
 build/
 server/data/*.db
-!server/data/postcodes.db
 .DS_Store
 Thumbs.db
 .env

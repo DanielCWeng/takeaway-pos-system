@@ -1,114 +1,31 @@
-/**
- * domains/customers/customers.router.js
- *
- * Express route handlers for /customers.
- *
- * Rules:
- *  - Request body validation via zod (shape only, not business rules)
- *  - Delegation to customers.service.js for all business logic
- *  - No business logic in this file
- */
-
 import { Router } from "express";
-import { z } from "zod";
 import * as service from "./customers.service.js";
 import { requireAdminAuth } from "../../shared/middleware/requireAdminAuth.js";
 
 export const customersRouter = Router();
 
-// ---------------------------------------------------------------------------
-// Request body schemas
-// ---------------------------------------------------------------------------
-
-const updateAddressSchema = z.object({
-  houseNumber: z.string().optional(),
-  street: z.string().optional(),
-  town: z.string().optional(),
-  postcode: z.string().optional(),
-  address: z.string().optional(),
-  latitude: z.number().nullable().optional(),
-  longitude: z.number().nullable().optional(),
-  distance: z.number().nullable().optional(),
-});
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-// ---------------------------------------------------------------------------
-// Routes
-// ---------------------------------------------------------------------------
-
-/**
- * POST /api/customers/:phone/address
- * Update address fields for an existing customer.
- */
-customersRouter.post("/:phone/address", (req, res, next) => {
-  const parsed = updateAddressSchema.safeParse(req.body);
-  if (!parsed.success) {
-    const details = parsed.error.flatten().fieldErrors;
-    return res
-      .status(400)
-      .json({ error: { code: "VALIDATION_ERROR", message: "Invalid request body", details } });
-  }
-
-  try {
-    const customer = service.updateCustomerAddress(req.params.phone, parsed.data);
-    return res.json({ customer });
-  } catch (err) {
-    next(err);
-  }
-});
-
-/**
- * GET /api/customers/:phone/export
- * Gather all data for a customer (Right of Access).
- */
 customersRouter.get("/:phone/export", requireAdminAuth, (req, res, next) => {
   try {
-    const data = service.exportCustomerData(req.params.phone);
-    return res.json(data);
-  } catch (err) {
-    next(err);
+    return res.json(service.exportCustomerData(req.params.phone));
+  } catch (error) {
+    next(error);
   }
 });
 
-/**
- * GET /api/customers/:phone
- * Fetch a customer by phone number. Returns 404 if not found.
- *
- * This stays after /export because Express matches routes in declaration order.
- */
 customersRouter.get("/:phone", (req, res, next) => {
-  const { phone } = req.params;
-
-  if (!phone || phone.length < 10) {
-    return res.status(400).json({
-      error: {
-        code: "VALIDATION_ERROR",
-        message: "Phone number must contain between 10 and 13 digits",
-        details: { phone: ["Phone number is too short or missing"] },
-      },
-    });
-  }
-
   try {
-    const customer = service.getCustomerByPhone(phone);
-    return res.json({ customer });
-  } catch (err) {
-    next(err);
+    const customer = service.getCustomerByPhone(req.params.phone);
+    const addresses = service.listCustomerAddresses(req.params.phone);
+    return res.json({ customer, addresses });
+  } catch (error) {
+    next(error);
   }
 });
 
-/**
- * DELETE /api/customers/:phone
- * Permanently delete a customer and anonymize orders (Right to Erasure).
- */
 customersRouter.delete("/:phone", requireAdminAuth, (req, res, next) => {
   try {
-    const result = service.deleteCustomerData(req.params.phone);
-    return res.json(result);
-  } catch (err) {
-    next(err);
+    return res.json(service.deleteCustomerData(req.params.phone));
+  } catch (error) {
+    next(error);
   }
 });

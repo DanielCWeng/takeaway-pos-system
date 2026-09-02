@@ -14,6 +14,7 @@
 
 import * as repo from "./orders.repo.js";
 import * as customers from "../customers/customers.service.js";
+import { validatePostcode } from "../addresses/addresses.service.js";
 import * as etaService from "../eta/eta.service.js";
 import { config } from "../../config/index.js";
 import { getDb } from "../../infrastructure/db.js";
@@ -124,13 +125,14 @@ function validateOrder(order) {
   // NOTE: Phone number is intentionally optional for delivery as some customers call with no ID.
   if (order.orderType === "delivery") {
     const info = order.customerInfo;
-    if (!info || !info.address || !info.postcode) {
+    if (!info || !info.line1?.trim() || !info.postcode) {
       throw new ValidationError(
         "Delivery orders require a valid customer address and postcode. " +
           "Confirm the address before submitting.",
         { field: "customerInfo", orderType: "delivery" },
       );
     }
+    validatePostcode(info.postcode);
   }
 }
 
@@ -145,16 +147,43 @@ function validateOrder(order) {
  * @returns {{ id: number, data: object, archivedAt: string }}
  * @throws {ValidationError} if the order fails business rules
  */
-export function createOrder(orderData, clientOrderId) {
+function persistOrder(orderData, clientOrderId) {
   validateOrder(orderData);
-  const normalizedOrderData = recalculateTotals(orderData);
+  const normalizedOrderData = recalculateTotals({
+    ...orderData,
+    customerInfo: orderData.customerInfo
+      ? {
+          ...orderData.customerInfo,
+          postcode: orderData.customerInfo.postcode
+            ? validatePostcode(orderData.customerInfo.postcode)
+            : undefined,
+        }
+      : undefined,
+  });
 
-  // Auto-sync the customer profile so that Name/Address aren't missing in future searches/exports
-  if (normalizedOrderData.customerInfo) {
-    customers.syncCustomerFromOrder(normalizedOrderData.customerInfo);
-  }
+  const persistTx = getDb().transaction(() => {
+    // Insert first so an order failure cannot leave customer/history rows behind.
+    // The repository reports the UNIQUE/idempotency outcome authoritatively, so
+    // even a concurrent retry cannot increment history or recreate order status.
+    const inserted = repo.createOrderWithResult({ data: normalizedOrderData, clientOrderId });
+    if (!inserted.created) return inserted;
 
-  return repo.createOrder({ data: normalizedOrderData, clientOrderId });
+    // Customer identity may accompany either order type, but address history is
+    // evidence of a confirmed delivery only.
+    if (normalizedOrderData.customerInfo) {
+      customers.syncCustomerFromOrder(normalizedOrderData.customerInfo, {
+        includeAddress: normalizedOrderData.orderType === "delivery",
+      });
+    }
+    return inserted;
+  });
+
+  const persisted = persistTx();
+  return { archived: persisted.order, created: persisted.created };
+}
+
+export function createOrder(orderData, clientOrderId) {
+  return persistOrder(orderData, clientOrderId).archived;
 }
 
 /**
@@ -168,16 +197,28 @@ export function createOrder(orderData, clientOrderId) {
  * @returns {Promise<{ orderId: number, printed: boolean, status: string, archivedAt: string }>}
  */
 export async function printAndArchiveOrder(orderData, clientOrderId) {
-  const archived = createOrder(orderData, clientOrderId);
+  const { archived, created } = persistOrder(orderData, clientOrderId);
+
+  if (!created) {
+    const snapshot = repo.getOrderStatusSnapshot(archived.id);
+    return {
+      orderId: archived.id,
+      // The original response was not observed, so avoid claiming that the
+      // physical receipt definitely printed and never print it a second time.
+      printed: false,
+      status: snapshot?.status ?? "new",
+      archivedAt: archived.archivedAt,
+      estimatedReadyAt: snapshot?.estimatedReadyAt ?? null,
+      created: false,
+    };
+  }
 
   // Determine initial kitchen status:
   //  - Collection + empty kitchen → auto-start cooking (no one needs to accept it)
   //  - Everything else → 'new' (staff decide, or hold delivery for batching)
   const activeOrders = repo.getActiveOrders();
   const initialStatus =
-    orderData.orderType === "collection" && activeOrders.length === 0
-      ? "cooking"
-      : "new";
+    orderData.orderType === "collection" && activeOrders.length === 0 ? "cooking" : "new";
 
   // Compute RLS-based ETA and store metadata for self-updating model
   const isDelivery = orderData.orderType === "delivery";
@@ -206,7 +247,14 @@ export async function printAndArchiveOrder(orderData, clientOrderId) {
     });
   }
 
-  return { orderId: archived.id, printed, status: initialStatus, archivedAt: archived.archivedAt, estimatedReadyAt };
+  return {
+    orderId: archived.id,
+    printed,
+    status: initialStatus,
+    archivedAt: archived.archivedAt,
+    estimatedReadyAt,
+    created: true,
+  };
 }
 
 // ---------------------------------------------------------------------------

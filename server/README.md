@@ -20,8 +20,8 @@ Backend service for the takeaway POS platform.
 ## What This Service Does
 
 - Archives orders and supports reprint flow
-- Manages customer records and address updates
-- Looks up addresses from local postcode DB and optional getaddress.io API
+- Manages customer identities and operator-confirmed address history
+- Looks up addresses through getAddress.io with one persistent cache in `orders.db`
 - Broadcasts incoming caller events to connected clients over WebSocket
 - Integrates with optional hardware adapters:
   - USB ESC/POS thermal printer
@@ -37,7 +37,7 @@ Backend service for the takeaway POS platform.
 - `src/shared` - reusable errors, utilities, middleware
 - `tests/unit` - isolated unit tests
 - `tests/integration` - DB/API/WebSocket integration tests
-- `scripts` - migration and postcode seeding scripts
+- `scripts` - database migration and hardware diagnostic scripts
 
 ## Prerequisites
 
@@ -66,7 +66,7 @@ cp .env.example .env
 
 Notes:
 
-- `GETADDRESS_API_KEY` can be blank for degraded address lookup mode.
+- `GETADDRESS_API_KEY` is required for uncached lookups. Cached lookups and manual address entry remain available without it.
 - `STORE_LATITUDE` and `STORE_LONGITUDE` are required.
 - Set `TELEPHONY_PROVIDER=asterisk_ami` for Linux-native call-state/click-to-dial via Asterisk AMI.
 - Keep `TELEPHONY_PROVIDER=none` for HID-only inbound caller pop (no click-to-dial).
@@ -94,7 +94,6 @@ Default API base URL: `http://localhost:4000/api`
 - `npm run format` - prettier write
 - `npm run format:check` - prettier check
 - `npm run migrate` - run DB migrations
-- `npm run db:seed-postcodes` - seed postcode DB from source JSON
 
 ## API Summary
 
@@ -109,13 +108,11 @@ Orders:
 
 Customers:
 
-- `GET /api/customers/:phone`
-- `POST /api/customers/:phone/address`
+- `GET /api/customers/:phone` (identity plus confirmed address history)
 
 Addresses:
 
 - `POST /api/addresses/lookup`
-- `POST /api/addresses/verify`
 
 Telemetry:
 
@@ -134,9 +131,15 @@ status transitions remain available to the trusted POS/KDS clients.
 
 ## Database and Migrations
 
-- Orders and customers are stored in SQLite (`DB_PATH`)
+- Orders, customer identities, confirmed customer history, and the address lookup cache are stored in SQLite (`DB_PATH`)
+- `address_lookup_cache` is a cache of successful getAddress.io responses, not an authoritative postcode database
+- Failed and not-found lookups are not cached; operators can enter a syntactically valid postcode and address manually
 - Migrations are SQL files in `src/infrastructure/migrations`
 - Migrations are applied on startup and are safe to rerun
+
+### Fresh deployment for the address-schema change
+
+This release intentionally has no compatibility migration for legacy address data. Stop all POS processes, delete `orders.db` plus its `-wal`/`-shm` sidecars, and delete any legacy `postcodes.db` plus sidecars before starting the release. Startup creates a fresh database. Do not restore or import the retired postcode/customer/order data into the new runtime. The client draft and retry-queue storage keys are also versioned forward so pre-reset orders cannot be replayed.
 
 ## Testing
 
@@ -150,5 +153,5 @@ Unit tests cover domain logic; integration tests cover API/DB/WebSocket behavior
 
 - Server exits on boot: verify `.env` values and formats
 - Native module install failures: install platform build dependencies
-- Address lookup returns empty: check `GETADDRESS_API_KEY` and network access
+- Uncached address lookup is unavailable: check `GETADDRESS_API_KEY` and network access, or enter the address manually
 - Reprint reports `printed: false`: backend archived order, but printer adapter could not confirm device transfer

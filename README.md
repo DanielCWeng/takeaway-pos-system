@@ -76,6 +76,12 @@ Default URLs:
 - Server API: `http://localhost:4000/api`
 - Server WebSocket: `ws://localhost:4000`
 
+## Address lookup
+
+The server uses getAddress.io for postcode lookup and persists successful responses in the main `orders.db` database. There is no seeded postcode database or postcode-validation dataset. Customer addresses are operator-confirmed history; lookup failures never guess an address and the POS remains usable through manual address entry.
+
+The address-schema release requires an intentional fresh start: stop all POS processes and remove the existing `server/data/orders.db` (including WAL/SHM sidecars) and any legacy `postcodes.db` before first startup. Existing orders, customers, calls, address history, client drafts, and queued print retries are not migrated.
+
 ## Testing
 
 ```bash
@@ -119,21 +125,21 @@ This enables the repo pre-commit hook that runs Prettier on staged files before 
 
 Added as part of the kitchen display screen feature branch:
 
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/api/orders/active` | All non-complete/non-cancelled orders with live kitchen status |
-| `PATCH` | `/api/orders/:id/status` | Advance an order through the kitchen state machine |
+| Method  | Path                     | Description                                                    |
+| ------- | ------------------------ | -------------------------------------------------------------- |
+| `GET`   | `/api/orders/active`     | All non-complete/non-cancelled orders with live kitchen status |
+| `PATCH` | `/api/orders/:id/status` | Advance an order through the kitchen state machine             |
 
 Valid statuses: `new → accepted → cooking → ready → complete / cancelled`
 
 ### New WebSocket events
 
-| Event type | Payload |
-|------------|---------|
-| `order_created` | `{ orderId, order, archivedAt, status }` |
+| Event type             | Payload                                          |
+| ---------------------- | ------------------------------------------------ |
+| `order_created`        | `{ orderId, order, archivedAt, status }`         |
 | `order_status_changed` | `{ orderId, previousStatus, status, updatedAt }` |
-| `order_cancelled` | `{ orderId }` |
-| `order_eta_updated` | `{ orderId, estimatedReadyAt }` |
+| `order_cancelled`      | `{ orderId }`                                    |
+| `order_eta_updated`    | `{ orderId, estimatedReadyAt }`                  |
 
 The `WebSocketMessage` type in `client/src/types/index.ts` has been updated to include all four new event types alongside the existing `incoming_call` event.
 

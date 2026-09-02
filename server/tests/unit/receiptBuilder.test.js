@@ -34,8 +34,7 @@ describe("receiptBuilder", () => {
             },
           ],
           customerInfo: {
-            houseNumber: "12",
-            street: "Main Street",
+            line1: "12 Main Street",
             town: "Toton & Chilwell Meadows Extra",
             postcode: "ng9 8gf",
             phone: "07911123456",
@@ -62,7 +61,7 @@ describe("receiptBuilder", () => {
     expect(rendered).toContain("Total 18.20");
     expect(rendered).toContain("Map ref: A-12");
     expect(rendered).toContain("Mileage: 1.24 miles");
-    expect(rendered).toContain("12, Main Street");
+    expect(rendered).toContain("12 Main Street");
     expect(rendered).toContain("Toton & Chilwell");
     expect(rendered).toContain("NG9 8GF");
   });

@@ -25,28 +25,23 @@ describe("Caller ID Service", () => {
     const mockCustomer = {
       phone,
       name: "Alice",
-      postcode: "NG9 8GF",
-      distance: "1.20",
     };
     const mockAddress = { line1: "10 High St" };
 
     customerService.getOrCreateCustomer.mockReturnValue(mockCustomer);
-    customerService.enrichCustomerAddress.mockResolvedValue({
-      customer: mockCustomer,
-      addresses: [mockAddress],
-    });
+    customerService.listCustomerAddresses.mockReturnValue([mockAddress]);
 
     await handlePhoneDetected(phone);
 
     expect(customerService.getOrCreateCustomer).toHaveBeenCalledWith(phone);
-    expect(customerService.enrichCustomerAddress).toHaveBeenCalledWith(phone, "NG9 8GF");
+    expect(customerService.listCustomerAddresses).toHaveBeenCalledWith(phone);
     expect(broadcast).toHaveBeenCalledWith(
       "incoming_call",
       expect.objectContaining({
         phone,
         customer: mockCustomer,
         addresses: [mockAddress],
-        distance: "1.20",
+        distance: null,
         mode: "single_address",
       }),
     );
@@ -58,6 +53,7 @@ describe("Caller ID Service", () => {
     const mockCustomer = { phone: normPhone };
 
     customerService.getOrCreateCustomer.mockReturnValue(mockCustomer);
+    customerService.listCustomerAddresses.mockReturnValue([]);
 
     await handlePhoneDetected(rawPhone);
 
@@ -74,6 +70,7 @@ describe("Caller ID Service", () => {
   it("debounces rapid-fire events for the same phone number", async () => {
     const phone = "07911123456";
     customerService.getOrCreateCustomer.mockReturnValue({});
+    customerService.listCustomerAddresses.mockReturnValue([]);
 
     await handlePhoneDetected(phone);
     await handlePhoneDetected(phone);
@@ -102,10 +99,10 @@ describe("Caller ID Service", () => {
 
   it("emits incoming_call_multi_address when customer-linked addresses are multiple", async () => {
     const phone = "07911123456";
-    const mockCustomer = { phone, postcode: "NG9 8GF" };
+    const mockCustomer = { phone };
     const addresses = [{ line1: "1 A St" }, { line1: "2 B St" }];
     customerService.getOrCreateCustomer.mockReturnValue(mockCustomer);
-    customerService.enrichCustomerAddress.mockResolvedValue({ customer: mockCustomer, addresses });
+    customerService.listCustomerAddresses.mockReturnValue(addresses);
 
     await handlePhoneDetected(phone, { callId: 42, source: "tapi" });
 

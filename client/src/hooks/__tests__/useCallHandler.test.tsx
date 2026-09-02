@@ -56,13 +56,6 @@ function makeCustomer(overrides: Partial<Customer> = {}): Customer {
   return {
     phone: "07000",
     name: null,
-    postcode: null,
-    houseNumber: null,
-    street: null,
-    town: null,
-    latitude: null,
-    longitude: null,
-    distance: null,
     firstCall: "",
     lastCall: "",
     callCount: 1,
@@ -105,13 +98,6 @@ describe("useCallHandler", () => {
         customer: {
           phone: "07000",
           name: "Alex",
-          postcode: null,
-          town: null,
-          houseNumber: null,
-          street: null,
-          latitude: null,
-          longitude: null,
-          distance: null,
           firstCall: "",
           lastCall: "",
           callCount: 1,
@@ -133,7 +119,7 @@ describe("useCallHandler", () => {
     expect(result.current.ui.activeModal).toBe("address-selection");
   });
 
-  it("auto-applies single address payload when there is no active order", async () => {
+  it("requires explicit selection for a single saved address", async () => {
     const { result } = renderHook(() => useCombined(), {
       wrapper: Providers,
     });
@@ -144,7 +130,7 @@ describe("useCallHandler", () => {
         type: "incoming_call",
         payload: {
           phone: "07111",
-          customer: makeCustomer({ phone: "07111", name: "Sam", postcode: null }),
+          customer: makeCustomer({ phone: "07111", name: "Sam" }),
           addresses: [
             makeAddress({ line1: "10 High St", town: "Nottingham", postcode: "NG9 8GF" }),
           ],
@@ -154,13 +140,13 @@ describe("useCallHandler", () => {
       MockWebSocket.instances[0].triggerMessage(payload);
     });
 
-    expect(result.current.call.pendingCall).toBeNull();
-    expect(result.current.order.order.customerInfo?.address).toContain("10 High St");
-    expect(result.current.order.order.orderType).toBe("delivery");
-    expect(result.current.ui.activeModal).toBe("none");
+    expect(result.current.call.pendingCall?.phone).toBe("07111");
+    expect(result.current.call.addressOptions).toHaveLength(1);
+    expect(result.current.order.order.customerInfo?.line1).toBeUndefined();
+    expect(result.current.ui.activeModal).toBe("address-selection");
   });
 
-  it("keeps collection mode when call has no addresses and no postcode data", async () => {
+  it("opens manual customer entry when a call has no saved addresses", async () => {
     const { result } = renderHook(() => useCombined(), { wrapper: Providers });
     await waitFor(() => expect(MockWebSocket.instances.length).toBe(1));
 
@@ -177,8 +163,9 @@ describe("useCallHandler", () => {
       MockWebSocket.instances[0].triggerMessage(payload);
     });
 
-    expect(result.current.order.order.customerInfo?.phone).toBe("07222");
-    expect(result.current.order.order.orderType).toBe("collection");
+    expect(result.current.call.pendingCall?.phone).toBe("07222");
+    expect(result.current.ui.activeModal).toBe("customer");
+    expect(result.current.order.order.customerInfo?.line1).toBeUndefined();
   });
 
   it("opens customer modal instead of address picker when an order is already active", async () => {

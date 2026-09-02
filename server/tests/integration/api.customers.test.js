@@ -32,9 +32,8 @@ describe("Customers API Integration", () => {
         customerInfo: {
           name: "Alice",
           phone: "07911123456",
-          address: "42 Main Street, Beeston",
-          houseNumber: "42",
-          street: "Main Street",
+          line1: "42 Main Street",
+          line2: "",
           town: "Beeston",
           postcode: "NG9 8GF",
           latitude: 52.95,
@@ -47,6 +46,12 @@ describe("Customers API Integration", () => {
       }),
       "2026-01-03T12:00:00.000Z",
     );
+    db.prepare(
+      `INSERT INTO customer_addresses (
+         customer_phone, line1, line2, town, postcode, latitude, longitude,
+         last_used_at, created_at, updated_at
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run("07911123456", "42 Main Street", "", "Beeston", "NG9 8GF", 52.95, -1.21, now, now, now);
   });
 
   afterAll(() => {
@@ -60,7 +65,9 @@ describe("Customers API Integration", () => {
     expect(res.body.customer.phone).toBe("07911123456");
     expect(res.body.customer.name).toBe("Alice");
     expect(res.body.customer.callCount).toBe(1);
-    expect(res.body.customer.latitude).toBeNull();
+    expect(res.body.customer).not.toHaveProperty("postcode");
+    expect(res.body.addresses).toHaveLength(1);
+    expect(res.body.addresses[0].line1).toBe("42 Main Street");
   });
 
   it("GET /api/customers/:phone — returns 404 for unknown phone", async () => {
@@ -78,41 +85,12 @@ describe("Customers API Integration", () => {
     expect(res.body.error.message).toMatch(/between 10 and 13 digits/);
   });
 
-  it("POST /api/customers/:phone/address — returns 400 for invalid body", async () => {
+  it("POST /api/customers/:phone/address — is retired", async () => {
     const res = await request(app)
       .post("/api/customers/07911123456/address")
-      .send({ distance: "two miles" }); // Distance must be numeric
-
-    expect(res.status).toBe(400);
-    expect(res.body.error.code).toBe("VALIDATION_ERROR");
-  });
-
-  it("POST /api/customers/:phone/address — updates and returns 200", async () => {
-    const payload = {
-      houseNumber: "42",
-      postcode: "W1A 1AA",
-      distance: 2.5,
-    };
-
-    const res = await request(app).post("/api/customers/07911123456/address").send(payload);
-
-    expect(res.status).toBe(200);
-    expect(res.body.customer.phone).toBe("07911123456");
-    expect(res.body.customer.houseNumber).toBe("42");
-    expect(res.body.customer.postcode).toBe("W1A 1AA");
-    expect(res.body.customer.distance).toBe(2.5);
-
-    // Name should not have been cleared by the update
-    expect(res.body.customer.name).toBe("Alice");
-  });
-
-  it("POST /api/customers/:phone/address — returns 404 for unknown customer", async () => {
-    const res = await request(app)
-      .post("/api/customers/00000000000/address")
-      .send({ houseNumber: "1" });
+      .send({ line1: "Changed elsewhere" });
 
     expect(res.status).toBe(404);
-    expect(res.body.error.code).toBe("NOT_FOUND");
   });
 
   it("GET /api/customers/:phone/export — requires admin auth", async () => {
@@ -157,7 +135,8 @@ describe("Customers API Integration", () => {
     const order = JSON.parse(row.data);
     expect(order.customerInfo.name).toBe("ANONYMISED");
     expect(order.customerInfo.phone).toMatch(/^ANON-/);
-    expect(order.customerInfo.address).toBe("REMOVED");
+    expect(order.customerInfo.line1).toBe("REMOVED");
+    expect(order.customerInfo.line2).toBe("REMOVED");
     expect(order.customerInfo.town).toBe("REMOVED");
     expect(order.customerInfo.latitude).toBeNull();
     expect(order.customerInfo.longitude).toBeNull();

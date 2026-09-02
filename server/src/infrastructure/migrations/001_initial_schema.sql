@@ -13,13 +13,6 @@ CREATE INDEX IF NOT EXISTS idx_orders_archived_at ON orders(archived_at DESC);
 CREATE TABLE IF NOT EXISTS customers (
   phone         TEXT    PRIMARY KEY,   -- UK mobile or landline number (e.g. 07911123456)
   name          TEXT,
-  postcode      TEXT,
-  house_number  TEXT,
-  street        TEXT,
-  town          TEXT,
-  latitude      REAL,
-  longitude     REAL,
-  distance      REAL,                             -- Miles or null
   first_call    TEXT    NOT NULL,      -- ISO 8601 timestamp
   last_call     TEXT    NOT NULL,      -- ISO 8601 timestamp
   call_count    INTEGER NOT NULL DEFAULT 1

@@ -61,9 +61,8 @@ export type OrderType = "collection" | "delivery";
 export interface CustomerInfo {
   name?: string;
   phone?: string;
-  address?: string;
-  houseNumber?: string;
-  street?: string;
+  line1?: string;
+  line2?: string;
   town?: string;
   postcode?: string;
   distance?: number | null;
@@ -110,13 +109,6 @@ export interface ArchivedOrder {
 export interface Customer {
   phone: string;
   name: string | null;
-  postcode: string | null;
-  houseNumber: string | null;
-  street: string | null;
-  town: string | null;
-  latitude: number | null;
-  longitude: number | null;
-  distance: number | null;
   firstCall: string;
   lastCall: string;
   callCount: number;
@@ -127,8 +119,9 @@ export interface Address {
   line2?: string;
   town?: string;
   postcode: string;
-  latitude: number;
-  longitude: number;
+  latitude: number | null;
+  longitude: number | null;
+  distance?: number | null;
 }
 
 export interface CallDetectedPayload {
@@ -140,19 +133,24 @@ export interface CallDetectedPayload {
   mode?: "none" | "single_address" | "multi_address";
 }
 
-export type OrderStatus =
-  | "new"
-  | "accepted"
-  | "cooking"
-  | "ready"
-  | "complete"
-  | "cancelled";
+export type OrderStatus = "new" | "accepted" | "cooking" | "ready" | "complete" | "cancelled";
 
 export type WebSocketMessage =
   | { type: "incoming_call"; payload: CallDetectedPayload }
   | { type: "incoming_call_multi_address"; payload: CallDetectedPayload }
-  | { type: "order_created"; payload: { orderId: number; order: FullOrder; archivedAt: string; status: OrderStatus } }
-  | { type: "order_status_changed"; payload: { orderId: number; previousStatus: OrderStatus; status: OrderStatus; updatedAt: string } }
+  | {
+      type: "order_created";
+      payload: { orderId: number; order: FullOrder; archivedAt: string; status: OrderStatus };
+    }
+  | {
+      type: "order_status_changed";
+      payload: {
+        orderId: number;
+        previousStatus: OrderStatus;
+        status: OrderStatus;
+        updatedAt: string;
+      };
+    }
   | { type: "order_cancelled"; payload: { orderId: number } }
   | { type: "order_eta_updated"; payload: { orderId: number; estimatedReadyAt: string } };
 

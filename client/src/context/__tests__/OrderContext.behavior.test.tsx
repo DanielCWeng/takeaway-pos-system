@@ -75,9 +75,9 @@ describe("OrderContext behaviors", () => {
 
   it("restores persisted draft and ignores mismatched draft versions", () => {
     window.localStorage.setItem(
-      "pos.order-draft.v1",
+      "pos.order-draft.v2",
       JSON.stringify({
-        version: 1,
+        version: 2,
         activeOrderIndex: 0,
         orders: [
           {
@@ -98,7 +98,7 @@ describe("OrderContext behaviors", () => {
 
     restored.unmount();
     window.localStorage.setItem(
-      "pos.order-draft.v1",
+      "pos.order-draft.v2",
       JSON.stringify({ version: 999, orders: [{ id: 44, items: [{ name: "Old" }] }] }),
     );
 
@@ -151,7 +151,7 @@ describe("OrderContext behaviors", () => {
 
   it("flushes persisted queue entries when retryQueuedPrints succeeds", async () => {
     window.localStorage.setItem(
-      "pos.print-queue.v1",
+      "pos.print-queue.v2",
       JSON.stringify([
         {
           clientOrderId: "queued-1",

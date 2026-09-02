@@ -21,31 +21,30 @@ export function CustomerCard({
     : customerInfo?.phone || empty;
   const canDial = Boolean(customerInfo?.phone && !customerInfo.phone.startsWith("UNKNOWN-"));
   const addressValue =
-    customerInfo?.address ||
-    [customerInfo?.houseNumber, customerInfo?.street, customerInfo?.town, customerInfo?.postcode]
+    [customerInfo?.line1, customerInfo?.line2, customerInfo?.town, customerInfo?.postcode]
       .filter(Boolean)
-      .join(", ") ||
-    empty;
+      .join(", ") || empty;
 
   return (
     <div className="pos-panel flex h-full flex-col p-2">
-      <Tabs
-        value={orderType}
-        onValueChange={(value) => onChangeOrderType(value as OrderType)}
-      >
+      <Tabs value={orderType} onValueChange={(value) => onChangeOrderType(value as OrderType)}>
         <TabsList className="h-14 w-full gap-1 border-2 border-b-gray-500 border-r-gray-500 border-l-gray-100 border-t-gray-100 bg-gray-300 p-1">
           <TabsTrigger
             className="pos-order-type-trigger h-full flex-1 gap-2 border-2 border-b-gray-500 border-r-gray-500 border-l-gray-100 border-t-gray-100 bg-gray-300 px-2 text-base font-bold text-black"
             value="collection"
           >
-            <span className="text-xl" aria-hidden="true">🏪</span>
+            <span className="text-xl" aria-hidden="true">
+              🏪
+            </span>
             <span>Collection</span>
           </TabsTrigger>
           <TabsTrigger
             className="pos-order-type-trigger h-full flex-1 gap-2 border-2 border-b-gray-500 border-r-gray-500 border-l-gray-100 border-t-gray-100 bg-gray-300 px-2 text-base font-bold text-black"
             value="delivery"
           >
-            <span className="text-xl" aria-hidden="true">🚚</span>
+            <span className="text-xl" aria-hidden="true">
+              🚚
+            </span>
             <span>Delivery</span>
           </TabsTrigger>
         </TabsList>
