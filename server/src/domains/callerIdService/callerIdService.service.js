@@ -6,7 +6,7 @@
  * Responsibilities:
  *  - Debounce rapid-fire events from the HID device (common on LAN/USB).
  *  - Trigger customer lookup/creation.
- *  - Trigger address enrichment if a postcode is known.
+ *  - Load operator-confirmed customer address history.
  *  - Broadcast the result to all connected clients via WebSocket.
  *
  * The `broadcast` function is injected via `init()` rather than imported
@@ -74,23 +74,14 @@ export async function handlePhoneDetected(phone, context = {}) {
   logger.info("Handling incoming call", { phone: normPhone });
 
   let customer = null;
-  let enrichedCustomer = null;
   let addresses = [];
 
   try {
     // 1. Get or create the customer record
     customer = await customerService.getOrCreateCustomer(normPhone);
 
-    // 2. If the customer has a postcode, ask the customer service to enrich it.
-    enrichedCustomer = customer;
-    if (customer.postcode) {
-      const enrichedResult = await customerService.enrichCustomerAddress(
-        normPhone,
-        customer.postcode,
-      );
-      enrichedCustomer = enrichedResult.customer;
-      addresses = enrichedResult.addresses || [];
-    }
+    // 2. Load confirmed history only. Caller-ID never performs postcode lookup.
+    addresses = customerService.listCustomerAddresses(normPhone);
   } catch (err) {
     logger.error("Failed to lookup/enrich customer for incoming call", {
       phone: normPhone,
@@ -105,9 +96,9 @@ export async function handlePhoneDetected(phone, context = {}) {
       addresses.length > 1 ? "multi_address" : addresses.length === 1 ? "single_address" : "none";
     const payload = {
       phone: normPhone,
-      customer: enrichedCustomer || customer,
+      customer,
       addresses,
-      distance: enrichedCustomer?.distance ?? customer?.distance ?? null,
+      distance: null,
       callId: Number.isFinite(context.callId) ? Number(context.callId) : undefined,
       mode,
     };

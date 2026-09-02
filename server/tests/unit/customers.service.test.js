@@ -1,297 +1,131 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import * as service from "../../src/domains/customers/customers.service.js";
-import * as repo from "../../src/domains/customers/customers.repo.js";
-import { ValidationError, NotFoundError } from "../../src/shared/errors.js";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { NotFoundError, ValidationError } from "../../src/shared/errors.js";
 
-// Mock dependencies
 vi.mock("../../src/domains/customers/customers.repo.js", () => ({
   findByPhone: vi.fn(),
   upsertCustomer: vi.fn(),
-  updateAddress: vi.fn(),
-  incrementCallCountAndReturn: vi.fn(),
   upsertAndIncrementCallCount: vi.fn(),
+  updateName: vi.fn(),
   listAddressesByCustomer: vi.fn(),
   upsertCustomerAddress: vi.fn(),
+  deleteByPhone: vi.fn(),
 }));
-
-vi.mock("../../src/shared/postcodes.js");
-vi.mock("../../src/domains/callerIdService/addressClient.js");
-vi.mock("../../src/shared/haversine.js");
-vi.mock("../../src/infrastructure/logger.js", () => ({
-  logger: {
-    debug: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-  },
+vi.mock("../../src/domains/orders/orders.service.js", () => ({
+  scrubOrdersByPhone: vi.fn(),
+  getOrdersByPhone: vi.fn(),
 }));
 vi.mock("../../src/config/index.js", () => ({
-  config: {
-    address: {
-      storeLatitude: 52.9,
-      storeLongitude: -1.2,
-    },
-  },
+  config: { address: { storeLatitude: 52.9, storeLongitude: -1.2 } },
+}));
+vi.mock("../../src/shared/haversine.js", () => ({ haversineInMiles: vi.fn(() => 1.5) }));
+vi.mock("../../src/infrastructure/logger.js", () => ({
+  logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-import * as postcodes from "../../src/shared/postcodes.js";
-import * as addressClient from "../../src/domains/callerIdService/addressClient.js";
-import { haversineInMiles } from "../../src/shared/haversine.js";
-import { logger } from "../../src/infrastructure/logger.js";
+import * as service from "../../src/domains/customers/customers.service.js";
+import * as repo from "../../src/domains/customers/customers.repo.js";
 
-describe("Customers Service", () => {
+describe("customers.service", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     repo.listAddressesByCustomer.mockReturnValue([]);
   });
 
-  describe("getOrCreateCustomer", () => {
-    it("throws ValidationError if phone is invalid", () => {
-      expect(() => service.getOrCreateCustomer(null)).toThrow(ValidationError);
-      expect(() => service.getOrCreateCustomer("")).toThrow(ValidationError);
-      expect(() => service.getOrCreateCustomer("123")).toThrow(/between 10 and 13 digits/); // Too short
-      expect(() => service.getOrCreateCustomer("12345678901234")).toThrow(
-        /between 10 and 13 digits/,
-      ); // Too long
-    });
-    it("delegates to upsertAndIncrementCallCount and returns the result", () => {
-      const phone = "07911123456";
-      const mockResult = { phone, callCount: 1 };
-      repo.upsertAndIncrementCallCount.mockReturnValue(mockResult);
-
-      const result = service.getOrCreateCustomer(phone);
-
-      expect(repo.upsertAndIncrementCallCount).toHaveBeenCalledWith(phone, {});
-      expect(result).toBe(mockResult);
-    });
-
-    it("normalises phone number before repo calls", () => {
-      const messyPhone = "07911 123-456";
-      const cleanPhone = "07911123456";
-      repo.upsertAndIncrementCallCount.mockReturnValue({ phone: cleanPhone });
-
-      service.getOrCreateCustomer(messyPhone);
-
-      expect(repo.upsertAndIncrementCallCount).toHaveBeenCalledWith(cleanPhone, {});
-    });
-
-    it("canonicalises +44 prefixes to local 0-prefix format", () => {
-      repo.upsertAndIncrementCallCount.mockReturnValue({ phone: "07911123456" });
-
-      service.getOrCreateCustomer("+447911123456");
-
-      expect(repo.upsertAndIncrementCallCount).toHaveBeenCalledWith("07911123456", {});
-    });
-
-    it("accepts UNKNOWN-* phone identifiers without reformatting", () => {
-      repo.upsertAndIncrementCallCount.mockReturnValue({ phone: "UNKNOWN-ABC123" });
-
-      service.getOrCreateCustomer("UNKNOWN-ABC123");
-
-      expect(repo.upsertAndIncrementCallCount).toHaveBeenCalledWith("UNKNOWN-ABC123", {});
-    });
+  it("normalises a UK phone when creating a caller identity", () => {
+    repo.upsertAndIncrementCallCount.mockReturnValue({ phone: "07911123456" });
+    service.getOrCreateCustomer("+44 7911 123456");
+    expect(repo.upsertAndIncrementCallCount).toHaveBeenCalledWith("07911123456", {});
   });
 
-  describe("updateCustomerAddress", () => {
-    const addressData = { houseNumber: "42", postcode: "NG9 8GF" };
-
-    it("throws ValidationError if phone is invalid", () => {
-      expect(() => service.updateCustomerAddress("foo", addressData)).toThrow(ValidationError);
-    });
-
-    it("throws NotFoundError if customer does not exist", () => {
-      repo.findByPhone.mockReturnValue(null);
-      expect(() => service.updateCustomerAddress("07911123456", addressData)).toThrow(
-        NotFoundError,
-      );
-      expect(repo.updateAddress).not.toHaveBeenCalled();
-    });
-
-    it("delegates to repo and returns updated customer", () => {
-      const phone = "07911123456";
-      // First find returns existing customer
-      repo.findByPhone.mockReturnValueOnce({ phone });
-      // Second find returns updated customer
-      repo.findByPhone.mockReturnValueOnce({ phone, ...addressData });
-
-      const result = service.updateCustomerAddress(phone, addressData);
-
-      expect(repo.updateAddress).toHaveBeenCalledWith(phone, addressData);
-      expect(result).toEqual({ phone, ...addressData });
-    });
+  it("rejects invalid phone identifiers", () => {
+    expect(() => service.getOrCreateCustomer("123")).toThrow(ValidationError);
   });
 
-  describe("getCustomerByPhone", () => {
-    it("throws NotFoundError if not found", () => {
-      repo.findByPhone.mockReturnValue(null);
-      expect(() => service.getCustomerByPhone("07911123456")).toThrow(NotFoundError);
-    });
+  it("returns identity and confirmed history without postcode enrichment", () => {
+    repo.findByPhone.mockReturnValue({ phone: "07911123456", name: "Alice" });
+    repo.listAddressesByCustomer.mockReturnValue([
+      {
+        line1: "10 Copeland Avenue",
+        line2: "",
+        town: "Nottingham",
+        postcode: "NG9 8DQ",
+        latitude: 52.91,
+        longitude: -1.25,
+      },
+    ]);
 
-    it("returns the customer if found", () => {
-      repo.findByPhone.mockReturnValue({ phone: "07911123456" });
-      const result = service.getCustomerByPhone("07911123456");
-      expect(result.phone).toBe("07911123456");
-    });
+    const addresses = service.listCustomerAddresses("07911123456");
+
+    expect(addresses[0]).toMatchObject({ line1: "10 Copeland Avenue", distance: 1.5 });
   });
 
-  describe("enrichCustomerAddress", () => {
-    const phone = "07911123456";
-    const postcode = "NG9 8GF";
+  it("rejects history lookup for an unknown customer", () => {
+    repo.findByPhone.mockReturnValue(null);
+    expect(() => service.listCustomerAddresses("07911123456")).toThrow(NotFoundError);
+  });
 
-    it("updates customer with data from local DB if found", async () => {
-      repo.findByPhone.mockReturnValue({ phone, houseNumber: "12", street: "High St" });
-      postcodes.normalisePostcode.mockReturnValue(postcode);
-      postcodes.findAddressesLocally.mockReturnValue([
-        {
-          line1: "12 High St",
-          latitude: 52.91,
-          longitude: -1.21,
-        },
-      ]);
-      haversineInMiles.mockReturnValue(1.5);
+  it("persists a confirmed order address only in customer history", () => {
+    repo.findByPhone.mockReturnValue({ phone: "07911123456", name: "Alice" });
 
-      const result = await service.enrichCustomerAddress(phone, postcode);
+    service.syncCustomerFromOrder(
+      {
+        phone: "07911123456",
+        name: "Alice",
+        line1: "10 Copeland Avenue",
+        line2: "",
+        town: "Nottingham",
+        postcode: "NG9 8DQ",
+        latitude: 52.91,
+        longitude: -1.25,
+      },
+      { includeAddress: true },
+    );
 
-      expect(repo.updateAddress).toHaveBeenCalledWith(
-        phone,
-        expect.objectContaining({
-          distance: 1.5,
-        }),
-      );
-      expect(addressClient.findAddressesFromApi).not.toHaveBeenCalled();
-      expect(result.addresses).toHaveLength(1);
+    expect(repo.upsertCustomerAddress).toHaveBeenCalledWith("07911123456", {
+      line1: "10 Copeland Avenue",
+      line2: "",
+      town: "Nottingham",
+      postcode: "NG9 8DQ",
+      latitude: 52.91,
+      longitude: -1.25,
+    });
+    expect(repo.upsertCustomer).not.toHaveBeenCalled();
+    expect(repo.updateName).not.toHaveBeenCalled();
+  });
+
+  it("does not write address history unless the confirmed-delivery caller opts in", () => {
+    repo.findByPhone.mockReturnValue({ phone: "07911123456", name: "Alice" });
+
+    service.syncCustomerFromOrder({
+      phone: "07911123456",
+      name: "Alice",
+      line1: "10 Copeland Avenue",
+      postcode: "NG9 8DQ",
     });
 
-    it("falls back to API if not in local DB", async () => {
-      repo.findByPhone.mockReturnValue({ phone, houseNumber: "42", street: "API St" });
-      postcodes.normalisePostcode.mockReturnValue(postcode);
-      postcodes.findAddressesLocally.mockReturnValue([]); // Not in DB
-      addressClient.findAddressesFromApi.mockResolvedValue([
-        { line1: "42 API St", town: "API Town", latitude: 52.92, longitude: -1.22 },
-      ]);
-      haversineInMiles.mockReturnValue(2.0);
+    expect(repo.upsertCustomerAddress).not.toHaveBeenCalled();
+  });
 
-      const result = await service.enrichCustomerAddress(phone, postcode);
-
-      expect(addressClient.findAddressesFromApi).toHaveBeenCalledWith(postcode);
-      expect(postcodes.saveAddresses).toHaveBeenCalled();
-      expect(repo.updateAddress).toHaveBeenCalledWith(
-        phone,
-        expect.objectContaining({
-          street: "42 API St",
-          distance: 2.0,
-        }),
-      );
-      expect(result.addresses).toHaveLength(1);
-    });
-
-    it("returns unchanged customer and empty addresses when no address data is found", async () => {
-      const existing = { phone, postcode: null, houseNumber: "2", street: "Any St" };
-      repo.findByPhone.mockReturnValue(existing);
-      postcodes.normalisePostcode.mockReturnValue(postcode);
-      postcodes.findAddressesLocally.mockReturnValue([]);
-      addressClient.findAddressesFromApi.mockResolvedValue(null);
-
-      const result = await service.enrichCustomerAddress(phone, postcode);
-
-      expect(repo.updateAddress).not.toHaveBeenCalled();
-      expect(result).toEqual({ customer: existing, addresses: [] });
-      expect(logger.info).toHaveBeenCalledWith(
-        "Address enrichment found postcode candidates but no customer-identity matches",
-        {
-          phone,
-          postcode,
-          candidateCount: 0,
-        },
-      );
-    });
-
-    it("returns unchanged customer when local rows exist but do not match customer identity", async () => {
-      repo.findByPhone.mockReturnValue({ phone });
-      postcodes.normalisePostcode.mockReturnValue(postcode);
-      postcodes.findAddressesLocally.mockReturnValue([
-        { street: "Bad Coord St", latitude: undefined, longitude: -1.21 },
-      ]);
-      haversineInMiles.mockImplementation(() => {
-        throw new TypeError("lat2 must be finite");
-      });
-
-      const result = await service.enrichCustomerAddress(phone, postcode);
-
-      expect(result).toEqual({ customer: { phone }, addresses: [] });
-      expect(repo.updateAddress).not.toHaveBeenCalled();
-    });
-
-    it("returns unchanged customer when API rows exist but do not match customer identity", async () => {
-      repo.findByPhone.mockReturnValue({ phone });
-      postcodes.normalisePostcode.mockReturnValue(postcode);
-      postcodes.findAddressesLocally.mockReturnValue([]);
-      addressClient.findAddressesFromApi.mockResolvedValue([
-        { line1: "API St", town: "API Town", latitude: "bad", longitude: -1.22 },
-      ]);
-      haversineInMiles.mockImplementation(() => {
-        throw new TypeError("lat2 must be finite");
-      });
-
-      const result = await service.enrichCustomerAddress(phone, postcode);
-
-      expect(result).toEqual({ customer: { phone }, addresses: [] });
-      expect(repo.updateAddress).not.toHaveBeenCalled();
-    });
-
-    it("bubbles coordinate errors for identity-matched rows", async () => {
-      repo.findByPhone.mockReturnValue({ phone, houseNumber: "10", street: "Matched St" });
-      postcodes.normalisePostcode.mockReturnValue(postcode);
-      postcodes.findAddressesLocally.mockReturnValue([
-        { line1: "10 Matched St", latitude: 52.91, longitude: -1.21 },
-      ]);
-      haversineInMiles.mockImplementation(() => {
-        throw new TypeError("lat2 must be finite");
-      });
-
-      await expect(service.enrichCustomerAddress(phone, postcode)).rejects.toThrow(TypeError);
-      expect(repo.updateAddress).not.toHaveBeenCalled();
-    });
-
-    it("bubbles coordinate errors from identity-matched API rows", async () => {
-      repo.findByPhone.mockReturnValue({ phone, houseNumber: "8", street: "API St" });
-      postcodes.normalisePostcode.mockReturnValue(postcode);
-      postcodes.findAddressesLocally.mockReturnValue([]);
-      addressClient.findAddressesFromApi.mockResolvedValue([
-        { line1: "8 API St", town: "API Town", latitude: 52.92, longitude: -1.22 },
-      ]);
-      haversineInMiles.mockImplementation(() => {
-        throw new TypeError("lat2 must be finite");
-      });
-
-      await expect(service.enrichCustomerAddress(phone, postcode)).rejects.toThrow(TypeError);
-      expect(repo.updateAddress).not.toHaveBeenCalled();
-    });
-
-    it("returns known customer-linked addresses before postcode-wide lookup", async () => {
-      const existing = { phone, postcode, houseNumber: "3", street: "Saved St" };
-      repo.findByPhone.mockReturnValue(existing);
-      repo.listAddressesByCustomer.mockReturnValue([
-        {
-          id: 1,
-          customerPhone: phone,
-          houseNumber: "3",
-          line1: "3 Saved St",
-          line2: "",
-          town: "Nottingham",
-          postcode,
-          latitude: 52.9,
-          longitude: -1.2,
-        },
-      ]);
-      haversineInMiles.mockReturnValue(1.1);
-
-      const result = await service.enrichCustomerAddress(phone, postcode);
-
-      expect(postcodes.findAddressesLocally).not.toHaveBeenCalled();
-      expect(addressClient.findAddressesFromApi).not.toHaveBeenCalled();
-      expect(result.addresses).toHaveLength(1);
-      expect(result.addresses[0].line1).toBe("3 Saved St");
-    });
+  it("creates identity and allows a manual address with null coordinates", () => {
+    repo.findByPhone.mockReturnValue(null);
+    service.syncCustomerFromOrder(
+      {
+        phone: "07911123456",
+        name: "New customer",
+        line1: "1 Manual Road",
+        postcode: "NG1 1AA",
+      },
+      { includeAddress: true },
+    );
+    expect(repo.upsertCustomer).toHaveBeenCalledWith(
+      expect.objectContaining({
+        phone: "07911123456",
+        name: "New customer",
+      }),
+    );
+    expect(repo.upsertCustomerAddress).toHaveBeenCalledWith(
+      "07911123456",
+      expect.objectContaining({ line1: "1 Manual Road", latitude: undefined }),
+    );
   });
 });

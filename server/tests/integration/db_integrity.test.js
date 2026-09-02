@@ -26,33 +26,43 @@ describe("Database Integrity (Phase 2 Hardening)", () => {
 
   it("rejects latitudes outside [-90, 90]", () => {
     const db = getDb();
+    db.prepare(`INSERT INTO customers (phone, first_call, last_call) VALUES (?, ?, ?)`).run(
+      "0123456789",
+      "now",
+      "now",
+    );
     const insert = db.prepare(`
-      INSERT INTO customers (phone, first_call, last_call, latitude, longitude)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO customer_addresses
+        (customer_phone, line1, postcode, latitude, longitude, last_used_at, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     // Valid
-    expect(() => insert.run("0123456789", "now", "now", 45, 45)).not.toThrow();
+    expect(() =>
+      insert.run("0123456789", "Valid", "NG1 1AA", 45, 45, "now", "now", "now"),
+    ).not.toThrow();
 
     // Invalid
-    expect(() => insert.run("0123456780", "now", "now", 91, 0)).toThrow(/CHECK constraint failed/);
-    expect(() => insert.run("0123456781", "now", "now", -91, 0)).toThrow(/CHECK constraint failed/);
+    expect(() =>
+      insert.run("0123456789", "Too north", "NG1 1AA", 91, 0, "now", "now", "now"),
+    ).toThrow(/CHECK constraint failed/);
+    expect(() =>
+      insert.run("0123456789", "Too south", "NG1 1AA", -91, 0, "now", "now", "now"),
+    ).toThrow(/CHECK constraint failed/);
   });
 
   it("rejects longitudes outside [-180, 180]", () => {
     const db = getDb();
     const insert = db.prepare(`
-      INSERT INTO customers (phone, first_call, last_call, latitude, longitude)
+      INSERT INTO address_lookup_cache (postcode, addresses_json, latitude, longitude, fetched_at)
       VALUES (?, ?, ?, ?, ?)
     `);
 
     // Valid
-    expect(() => insert.run("0223456789", "now", "now", 0, 179)).not.toThrow();
+    expect(() => insert.run("NG1 1AA", '[{"line1":"Valid"}]', 0, 179, "now")).not.toThrow();
 
     // Invalid
-    expect(() => insert.run("0223456780", "now", "now", 0, 181)).toThrow(/CHECK constraint failed/);
-    expect(() => insert.run("0223456781", "now", "now", 0, -181)).toThrow(
-      /CHECK constraint failed/,
-    );
+    expect(() => insert.run("NG1 1AB", "[]", 0, 181, "now")).toThrow(/CHECK constraint failed/);
+    expect(() => insert.run("NG1 1AC", "[]", 0, -181, "now")).toThrow(/CHECK constraint failed/);
   });
 });

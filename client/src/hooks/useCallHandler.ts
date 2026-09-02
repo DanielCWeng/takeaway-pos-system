@@ -2,10 +2,8 @@
  * client/src/hooks/useCallHandler.ts
  *
  * Listens for incoming call events and prepares the UI + order context.
- * The logic mirrors the legacy flow:
- *  - Auto-apply caller details when no active order exists.
- *  - Prompt (via UIContext) if there is a background order in progress.
- *  - Auto-select the single known address or open the address-selection modal when multiple options are provided.
+ * Saved addresses are always presented for explicit operator selection.
+ * Calls without history open editable customer/address entry.
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -26,30 +24,23 @@ export function useCallHandler() {
 
   const hasActiveOrder = useMemo(() => order.items.length > 0, [order.items]);
 
-  const buildCustomerInfo = useCallback((payload: CallDetectedPayload, address?: Address) => {
-    const customerHouseNumber = payload.customer?.houseNumber ?? undefined;
-    const customerStreet = payload.customer?.street ?? undefined;
-    const resolvedStreet = address?.line1 ?? customerStreet;
-    const resolvedTown = address?.town ?? payload.customer?.town ?? undefined;
-    const fallbackAddress = [customerHouseNumber, resolvedStreet].filter(Boolean).join(" ");
-    const resolvedAddress =
-      address && address.line1
-        ? [customerHouseNumber, address.line1, address.line2, address.town]
-            .filter(Boolean)
-            .join(", ")
-        : fallbackAddress || undefined;
+  const formatAddress = useCallback(
+    (address?: Partial<Address> | CustomerInfo) =>
+      [address?.line1, address?.line2, address?.town, address?.postcode].filter(Boolean).join(", "),
+    [],
+  );
 
+  const buildCustomerInfo = useCallback((payload: CallDetectedPayload, address?: Address) => {
     return {
       phone: payload.phone,
       name: payload.customer?.name ?? undefined,
-      address: resolvedAddress,
-      houseNumber: customerHouseNumber,
-      street: resolvedStreet,
-      town: resolvedTown,
-      postcode: address?.postcode ?? payload.customer?.postcode ?? undefined,
-      distance: payload.distance ?? payload.customer?.distance ?? undefined,
-      latitude: address?.latitude ?? payload.customer?.latitude ?? undefined,
-      longitude: address?.longitude ?? payload.customer?.longitude ?? undefined,
+      line1: address?.line1,
+      line2: address?.line2,
+      town: address?.town,
+      postcode: address?.postcode,
+      distance: address?.distance ?? undefined,
+      latitude: address?.latitude ?? undefined,
+      longitude: address?.longitude ?? undefined,
     } satisfies CustomerInfo;
   }, []);
 
@@ -60,17 +51,17 @@ export function useCallHandler() {
         void apiClient.updateCallSession(payload.callId, {
           selectedCustomerPhone: info.phone,
           selectedCustomerName: info.name,
-          selectedAddress: info.address,
+          selectedAddress: formatAddress(info),
         });
       }
       setCustomerInfo(info);
-      const wantsDelivery = Boolean(address) || Boolean(info.postcode) || Boolean(info.address);
+      const wantsDelivery = Boolean(address);
       setOrderType(wantsDelivery ? "delivery" : "collection");
       closeModal();
       setPendingCall(null);
       setAddressOptions([]);
     },
-    [buildCustomerInfo, closeModal, setCustomerInfo, setOrderType],
+    [buildCustomerInfo, closeModal, formatAddress, setCustomerInfo, setOrderType],
   );
 
   const handleIncomingCall = useCallback(
@@ -80,8 +71,6 @@ export function useCallHandler() {
       setAddressOptions([]);
 
       const addresses = payload.addresses ?? [];
-      const hasMultipleAddresses = addresses.length > 1;
-
       if (hasActiveOrder) {
         setPendingCall(payload);
         setAddressOptions(addresses);
@@ -89,16 +78,17 @@ export function useCallHandler() {
         return;
       }
 
-      if (hasMultipleAddresses) {
+      if (addresses.length > 0) {
         setPendingCall(payload);
         setAddressOptions(addresses);
         openModal("address-selection");
         return;
       }
 
-      resolveCustomerInfo(payload, addresses[0]);
+      setPendingCall(payload);
+      openModal("customer");
     },
-    [hasActiveOrder, openModal, resolveCustomerInfo],
+    [hasActiveOrder, openModal],
   );
 
   useEffect(() => {
@@ -128,12 +118,9 @@ export function useCallHandler() {
 
   const startNewCustomerFromPending = useCallback(() => {
     if (!pendingCall) return;
-    const singleAddress =
-      pendingCall.addresses?.length === 1 ? pendingCall.addresses[0] : undefined;
-    const info = buildCustomerInfo(pendingCall, singleAddress);
+    const info = buildCustomerInfo(pendingCall);
     setCustomerInfo(info);
-    const wantsDelivery = Boolean(singleAddress) || Boolean(info.postcode) || Boolean(info.address);
-    setOrderType(wantsDelivery ? "delivery" : "collection");
+    setOrderType("delivery");
     setAddressOptions([]);
     openModal("customer");
   }, [buildCustomerInfo, openModal, pendingCall, setCustomerInfo, setOrderType]);
@@ -149,11 +136,11 @@ export function useCallHandler() {
       void apiClient.updateCallSession(pendingCall.callId, {
         selectedCustomerPhone: info.phone,
         selectedCustomerName: info.name,
-        selectedAddress: info.address,
+        selectedAddress: formatAddress(info),
         notes,
       });
     },
-    [pendingCall],
+    [formatAddress, pendingCall],
   );
 
   return {

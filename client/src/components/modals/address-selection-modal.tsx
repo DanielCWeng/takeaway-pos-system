@@ -71,7 +71,7 @@ export function AddressSelectionModal({
               Cancel
             </Button>
             <Button className="h-12 text-base" onClick={onCreateNew}>
-              None / New Customer
+              Enter Manually
             </Button>
           </div>
         </div>

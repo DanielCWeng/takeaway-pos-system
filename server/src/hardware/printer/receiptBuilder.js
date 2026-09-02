@@ -450,11 +450,8 @@ export function buildReceiptBuffer(archivedOrder, deps) {
   }
 
   if (toText(info?.name)) receiptParts.push(Buffer.from(`${toText(info.name)}\n`));
-  if (toText(info?.houseNumber) && toText(info?.street)) {
-    receiptParts.push(Buffer.from(`${toText(info.houseNumber)}, ${toText(info.street)}\n`));
-  } else if (toText(info?.address)) {
-    receiptParts.push(Buffer.from(`${toText(info.address)}\n`));
-  }
+  if (toText(info?.line1)) receiptParts.push(Buffer.from(`${toText(info.line1)}\n`));
+  if (toText(info?.line2)) receiptParts.push(Buffer.from(`${toText(info.line2)}\n`));
 
   if (toText(info?.town)) {
     // Truncate town to max 3 words depending on exact spaces (e.g. Toton & Chilwell Meadows -> Toton & Chilwell)

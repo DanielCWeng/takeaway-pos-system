@@ -56,7 +56,7 @@ const ordersPayload = {
       archivedAt: "2026-04-04T10:30:00.000Z",
       data: makeOrder({
         orderType: "delivery",
-        customerInfo: { name: "Bob", phone: "0711", street: "Main", postcode: "NG9" },
+        customerInfo: { name: "Bob", phone: "0711", line1: "Main", postcode: "NG9" },
         items: [makeItem({ uniqueId: "line-2", id: "ITEM-2", name: "Rice", price: 4 })],
         payment: { method: "card", amount: 4 },
         total: 4,

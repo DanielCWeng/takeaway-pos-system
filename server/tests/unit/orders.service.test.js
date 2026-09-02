@@ -7,6 +7,7 @@ import { ValidationError, NotFoundError } from "../../src/shared/errors.js";
 // Mock the repo
 vi.mock("../../src/domains/orders/orders.repo.js", () => ({
   createOrder: vi.fn(),
+  createOrderWithResult: vi.fn(),
   findOrderById: vi.fn(),
   findAllOrders: vi.fn(),
   findOrdersByDate: vi.fn(),
@@ -14,6 +15,7 @@ vi.mock("../../src/domains/orders/orders.repo.js", () => ({
   deleteOrdersByDate: vi.fn(),
   getActiveOrders: vi.fn(() => []),
   initOrderStatus: vi.fn(),
+  getOrderStatusSnapshot: vi.fn(),
 }));
 
 // Mock the DB for transactions
@@ -51,6 +53,10 @@ describe("Orders Service", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     getDb.mockReturnValue(mockDb);
+    repo.createOrderWithResult.mockImplementation((data) => ({
+      order: repo.createOrder(data),
+      created: true,
+    }));
   });
 
   describe("createOrder (validation)", () => {
@@ -116,7 +122,7 @@ describe("Orders Service", () => {
         service.createOrder({
           orderType: "delivery",
           items: [{ name: "Chips", price: 2, quantity: 1 }],
-          customerInfo: { name: "Bob", address: "123 Fake St" },
+          customerInfo: { name: "Bob", line1: "123 Fake St" },
         }),
       ).toThrow(/require a valid customer address/);
     });
@@ -126,7 +132,7 @@ describe("Orders Service", () => {
         service.createOrder({
           orderType: "delivery",
           items: [{ name: "Chips", price: 2, quantity: 1 }],
-          customerInfo: { address: "123 Fake St", postcode: "NG9 8GF" },
+          customerInfo: { line1: "123 Fake St", postcode: "NG9 8GF" },
         }),
       ).not.toThrow();
     });
@@ -137,7 +143,7 @@ describe("Orders Service", () => {
         service.createOrder({
           orderType: "delivery",
           items: [{ name: "Chips", price: 2, quantity: 1 }],
-          customerInfo: { name: "Bob", address: "123 Fake St", postcode: "NG9 8GF" },
+          customerInfo: { name: "Bob", line1: "123 Fake St", postcode: "NG9 8GF" },
         }),
       ).not.toThrow();
     });

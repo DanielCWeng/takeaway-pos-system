@@ -112,11 +112,8 @@ export function ReceiptPreviewModal({
                 )}
                 {customerInfo.name && <p>{customerInfo.name}</p>}
                 {customerInfo.phone && <p>{customerInfo.phone}</p>}
-                {(customerInfo.houseNumber || customerInfo.street) && (
-                  <p>
-                    {[customerInfo.houseNumber, customerInfo.street].filter(Boolean).join(" ")}
-                  </p>
-                )}
+                {customerInfo.line1 && <p>{customerInfo.line1}</p>}
+                {customerInfo.line2 && <p>{customerInfo.line2}</p>}
                 {customerInfo.town && <p>{customerInfo.town}</p>}
                 {customerInfo.postcode && <p>{customerInfo.postcode}</p>}
               </div>
@@ -211,7 +208,5 @@ export function ReceiptPreviewModal({
 }
 
 function Divider() {
-  return (
-    <div className="my-2 border-t border-dashed border-border/50" />
-  );
+  return <div className="my-2 border-t border-dashed border-border/50" />;
 }

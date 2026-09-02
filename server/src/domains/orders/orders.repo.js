@@ -49,7 +49,9 @@ const stmts = {
 function getStmts() {
   const db = getDb();
   if (!stmts.insert) {
-    stmts.insert = db.prepare("INSERT INTO orders (data, archived_at, client_order_id) VALUES (?, ?, ?)");
+    stmts.insert = db.prepare(
+      "INSERT INTO orders (data, archived_at, client_order_id) VALUES (?, ?, ?)",
+    );
     stmts.findById = db.prepare("SELECT * FROM orders WHERE id = ?");
     stmts.findByClientOrderId = db.prepare("SELECT * FROM orders WHERE client_order_id = ?");
     stmts.findAll = db.prepare("SELECT * FROM orders ORDER BY archived_at DESC LIMIT 500");
@@ -108,9 +110,7 @@ function getStmts() {
       WHERE s.status NOT IN ('complete', 'cancelled')
       ORDER BY o.archived_at ASC
     `);
-    stmts.getPrevStatus = db.prepare(
-      "SELECT status FROM order_status WHERE order_id = ?",
-    );
+    stmts.getPrevStatus = db.prepare("SELECT status FROM order_status WHERE order_id = ?");
   }
   return stmts;
 }
@@ -151,25 +151,38 @@ function rowToOrder(row) {
  * Insert a new order into the database.
  *
  * @param {{ data: object, archivedAt?: string }} orderData
- * @returns {{ id: number, data: object, archivedAt: string }}
+ * @returns {{ order: { id: number, data: object, archivedAt: string }, created: boolean }}
  */
-export function createOrder({ data, archivedAt, clientOrderId }) {
+export function createOrderWithResult({ data, archivedAt, clientOrderId }) {
   const { insert, findByClientOrderId } = getStmts();
   const at = archivedAt ?? new Date().toISOString();
 
   try {
     // Use lastInsertRowid — never MAX(id)+1 — fixing the old race condition
     const result = insert.run(JSON.stringify(data), at, clientOrderId ?? null);
-    return { id: Number(result.lastInsertRowid), data, archivedAt: at };
+    return {
+      order: { id: Number(result.lastInsertRowid), data, archivedAt: at },
+      created: true,
+    };
   } catch (err) {
     // A duplicate clientOrderId means the client is retrying a request we already stored.
     // Return the original row so the response is idempotent.
     if (err.code === "SQLITE_CONSTRAINT_UNIQUE" && clientOrderId) {
       const existing = findByClientOrderId.get(clientOrderId);
-      if (existing) return rowToOrder(existing);
+      if (existing) return { order: rowToOrder(existing), created: false };
     }
     throw err;
   }
+}
+
+/**
+ * Insert an order while preserving the repository's original return contract.
+ *
+ * @param {{ data: object, archivedAt?: string, clientOrderId?: string }} orderData
+ * @returns {{ id: number, data: object, archivedAt: string }}
+ */
+export function createOrder(orderData) {
+  return createOrderWithResult(orderData).order;
 }
 
 /**
@@ -284,9 +297,8 @@ export function anonymizeOrdersByPhone(phone, anonId) {
         data.customerInfo = {
           name: "ANONYMISED",
           phone: anonId,
-          address: "REMOVED",
-          houseNumber: "REMOVED",
-          street: "REMOVED",
+          line1: "REMOVED",
+          line2: "REMOVED",
           town: "REMOVED",
           postcode: "REMOVED",
           latitude: null,
@@ -346,7 +358,12 @@ export function findOrdersByPhone(phone) {
  * @param {string|null} estimatedReadyAt - ISO string from the RLS model
  * @param {{ itemCount: number, complexity: number, queueDepth: number, isDelivery: boolean, predictedMins: number }|null} etaData
  */
-export function initOrderStatus(orderId, initialStatus = "new", estimatedReadyAt = null, etaData = null) {
+export function initOrderStatus(
+  orderId,
+  initialStatus = "new",
+  estimatedReadyAt = null,
+  etaData = null,
+) {
   const { initStatus } = getStmts();
   initStatus.run(
     orderId,
@@ -355,7 +372,7 @@ export function initOrderStatus(orderId, initialStatus = "new", estimatedReadyAt
     etaData?.itemCount ?? null,
     etaData?.complexity ?? null,
     etaData?.queueDepth ?? null,
-    etaData?.isDelivery ? 1 : (etaData ? 0 : null),
+    etaData?.isDelivery ? 1 : etaData ? 0 : null,
     etaData?.predictedMins ?? null,
   );
 }
@@ -440,4 +457,22 @@ export function getPreviousStatus(orderId) {
   const { getPrevStatus } = getStmts();
   const row = getPrevStatus.get(orderId);
   return row?.status ?? null;
+}
+
+/**
+ * Return the status fields needed to answer an idempotent print retry without
+ * inserting another status row or printing the receipt a second time.
+ *
+ * @param {number} orderId
+ * @returns {{ status: string, estimatedReadyAt: string|null } | null}
+ */
+export function getOrderStatusSnapshot(orderId) {
+  const row = getDb()
+    .prepare("SELECT status, estimated_ready_at FROM order_status WHERE order_id = ?")
+    .get(orderId);
+  if (!row) return null;
+  return {
+    status: row.status,
+    estimatedReadyAt: row.estimated_ready_at ?? null,
+  };
 }

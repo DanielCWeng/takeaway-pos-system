@@ -5,10 +5,7 @@
 
 process.env.PORT ||= "4000";
 process.env.DB_PATH ||= ":memory:";
-process.env.POSTCODES_DB_PATH ||= "./data/postcodes.db";
-
 process.env.GETADDRESS_API_KEY ||= "";
-process.env.STORE_POSTCODE ||= "NG9 8GF";
 process.env.STORE_LATITUDE ||= "52.9";
 process.env.STORE_LONGITUDE ||= "-1.2";
 

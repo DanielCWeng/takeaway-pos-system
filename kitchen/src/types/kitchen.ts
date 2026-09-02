@@ -31,15 +31,15 @@ export interface StationConfig {
 }
 
 export const STATION_CONFIG: Record<StationType, StationConfig> = {
-  dark_fryer:           { slots: 1, portionCapacity: 5 },
-  light_fryer:          { slots: 1, portionCapacity: 5 },
-  oil_wok:              { slots: 2, portionCapacity: 2 },
-  wet_wok:              { slots: 2, portionCapacity: 1 },
-  noodle_machine:       { slots: 2, portionCapacity: 1 },
+  dark_fryer: { slots: 1, portionCapacity: 5 },
+  light_fryer: { slots: 1, portionCapacity: 5 },
+  oil_wok: { slots: 2, portionCapacity: 2 },
+  wet_wok: { slots: 2, portionCapacity: 1 },
+  noodle_machine: { slots: 2, portionCapacity: 1 },
   noodle_machine_spicy: { slots: 1, portionCapacity: 1 },
-  microwave:            { slots: 1, portionCapacity: 3 },
-  boiler:               { slots: 1, portionCapacity: 4 },
-  sauce:                { slots: 1, portionCapacity: 99 },
+  microwave: { slots: 1, portionCapacity: 3 },
+  boiler: { slots: 1, portionCapacity: 4 },
+  sauce: { slots: 1, portionCapacity: 99 },
 };
 
 // Stations shown on the load panel — sauce and boiler excluded
@@ -55,15 +55,15 @@ export const TRACKED_STATIONS: StationType[] = [
 ];
 
 export const STATION_LABELS: Record<StationType, string> = {
-  dark_fryer:           "DARK FRY",
-  light_fryer:          "LIGHT FRY",
-  oil_wok:              "OIL WOKS",
-  wet_wok:              "WET WOKS",
-  noodle_machine:       "NOODLE",
+  dark_fryer: "DARK FRY",
+  light_fryer: "LIGHT FRY",
+  oil_wok: "OIL WOKS",
+  wet_wok: "WET WOKS",
+  noodle_machine: "NOODLE",
   noodle_machine_spicy: "SPICY NDL",
-  microwave:            "MICROWAVE",
-  boiler:               "BOILER",
-  sauce:                "SAUCE",
+  microwave: "MICROWAVE",
+  boiler: "BOILER",
+  sauce: "SAUCE",
 };
 
 // ---------------------------------------------------------------------------
@@ -97,16 +97,15 @@ export interface OrderItem {
 export interface CustomerInfo {
   name?: string;
   phone?: string;
-  address?: string;
-  houseNumber?: string;
-  street?: string;
+  line1?: string;
+  line2?: string;
   town?: string;
   postcode?: string;
   deliveryInstructions?: string;
   deliveryTime?: string;
   latitude?: number | null;
   longitude?: number | null;
-  distance?: number | null;  // miles from store
+  distance?: number | null; // miles from store
 }
 
 export interface FullOrder {
@@ -140,13 +139,7 @@ export interface MenuItem {
 // Kitchen domain
 // ---------------------------------------------------------------------------
 
-export type OrderStatus =
-  | "new"
-  | "accepted"
-  | "cooking"
-  | "ready"
-  | "complete"
-  | "cancelled";
+export type OrderStatus = "new" | "accepted" | "cooking" | "ready" | "complete" | "cancelled";
 
 export interface KitchenOrder {
   orderId: number;
@@ -154,8 +147,8 @@ export interface KitchenOrder {
   status: OrderStatus;
   archivedAt: string;
   estimatedReadyAt: string; // calculated client-side from cookTimeSeconds
-  actualReadyAt?: string;   // set when status → 'ready'
-  deadline: string;         // customer expectation window — drives priority
+  actualReadyAt?: string; // set when status → 'ready'
+  deadline: string; // customer expectation window — drives priority
 }
 
 export interface QueueSummary {
@@ -167,9 +160,9 @@ export interface QueueSummary {
 }
 
 export interface StationLoad {
-  used: number;     // slot-uses currently occupied
+  used: number; // slot-uses currently occupied
   capacity: number; // total slots
-  queued: number;   // items waiting because station is full
+  queued: number; // items waiting because station is full
 }
 
 export type StationLoadMap = Partial<Record<StationType, StationLoad>>;
@@ -179,8 +172,25 @@ export type StationLoadMap = Partial<Record<StationType, StationLoad>>;
 // ---------------------------------------------------------------------------
 
 export type KitchenSocketEvent =
-  | { type: "order_created";       payload: { orderId: number; order: FullOrder; archivedAt: string; status: OrderStatus; estimatedReadyAt?: string | null } }
-  | { type: "order_status_changed"; payload: { orderId: number; previousStatus: OrderStatus; status: OrderStatus; updatedAt: string } }
-  | { type: "order_cancelled";      payload: { orderId: number } }
-  | { type: "order_eta_updated";    payload: { orderId: number; estimatedReadyAt: string } }
-  | { type: "incoming_call";        payload: unknown }; // passthrough — kitchen ignores this
+  | {
+      type: "order_created";
+      payload: {
+        orderId: number;
+        order: FullOrder;
+        archivedAt: string;
+        status: OrderStatus;
+        estimatedReadyAt?: string | null;
+      };
+    }
+  | {
+      type: "order_status_changed";
+      payload: {
+        orderId: number;
+        previousStatus: OrderStatus;
+        status: OrderStatus;
+        updatedAt: string;
+      };
+    }
+  | { type: "order_cancelled"; payload: { orderId: number } }
+  | { type: "order_eta_updated"; payload: { orderId: number; estimatedReadyAt: string } }
+  | { type: "incoming_call"; payload: unknown }; // passthrough — kitchen ignores this

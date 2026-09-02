@@ -114,9 +114,9 @@ type PrintQueueItem = {
   lastError?: string;
 };
 
-const PRINT_QUEUE_STORAGE_KEY = "pos.print-queue.v1";
-const ORDER_DRAFT_STORAGE_KEY = "pos.order-draft.v1";
-const ORDER_DRAFT_VERSION = 1;
+const PRINT_QUEUE_STORAGE_KEY = "pos.print-queue.v2";
+const ORDER_DRAFT_STORAGE_KEY = "pos.order-draft.v2";
+const ORDER_DRAFT_VERSION = 2;
 
 function generateClientOrderId() {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
@@ -321,7 +321,10 @@ const generateInitialOrder = (id: number): OrderState => ({
 const OrderContext = createContext<OrderContextType | undefined>(undefined);
 
 function deriveTotals(order: OrderState) {
-  const subtotal = order.items.reduce((sum, item) => sum + (item.finalPrice ?? item.price) * item.quantity, 0);
+  const subtotal = order.items.reduce(
+    (sum, item) => sum + (item.finalPrice ?? item.price) * item.quantity,
+    0,
+  );
   const deliveryCharge =
     order.orderType === "delivery" ? calculateDeliveryCharge(order.customerInfo?.distance) : 0;
 
@@ -604,7 +607,8 @@ export function OrderProvider({ children }: { children: ReactNode }) {
           ? prev.items.find((candidate) => candidate.uniqueId === item.parentId)
           : item;
         const groupId = groupParent?.uniqueId ?? item.uniqueId;
-        const isGrouped = Boolean(item.parentId) || prev.items.some((candidate) => candidate.parentId === groupId);
+        const isGrouped =
+          Boolean(item.parentId) || prev.items.some((candidate) => candidate.parentId === groupId);
 
         if (isGrouped) {
           return {
@@ -650,9 +654,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
             price: item.preFocPrice ?? item.price,
             isFoc: false,
             preFocPrice: undefined,
-            name: item.name.endsWith(" (FOC)")
-              ? item.name.slice(0, -6)
-              : item.name,
+            name: item.name.endsWith(" (FOC)") ? item.name.slice(0, -6) : item.name,
           };
         } else {
           // Apply FOC — zero price, stash original

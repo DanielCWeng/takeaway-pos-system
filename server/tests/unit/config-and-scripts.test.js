@@ -12,9 +12,7 @@ function makeValidEnv(overrides = {}) {
     PORT: "4000",
     CORS_ORIGIN: "http://localhost:5173",
     DB_PATH: ":memory:",
-    POSTCODES_DB_PATH: "./data/postcodes.db",
     GETADDRESS_API_KEY: "",
-    STORE_POSTCODE: "NG9 8GF",
     STORE_LATITUDE: "52.9",
     STORE_LONGITUDE: "-1.2",
     PRINTER_VENDOR_ID: "0x154f",
@@ -59,16 +57,5 @@ describe("config and scripts", () => {
 
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("Server configuration is invalid");
-  });
-
-  it("seedPostcodes script exits with code 1 when source json is missing", () => {
-    const result = spawnSync(process.execPath, ["scripts/seedPostcodes.js"], {
-      cwd: serverRoot,
-      env: makeValidEnv(),
-      encoding: "utf8",
-    });
-
-    expect(result.status).toBe(1);
-    expect(result.stderr).toContain("Source file not found");
   });
 });

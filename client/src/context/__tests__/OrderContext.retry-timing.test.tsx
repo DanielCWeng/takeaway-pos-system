@@ -34,7 +34,7 @@ function Providers({ children }: { children: ReactNode }) {
 
 function seedQueue() {
   window.localStorage.setItem(
-    "pos.print-queue.v1",
+    "pos.print-queue.v2",
     JSON.stringify([
       {
         clientOrderId: "queued-1",

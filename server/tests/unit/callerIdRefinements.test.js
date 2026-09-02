@@ -5,10 +5,8 @@ import {
   clearDebounceMap,
 } from "../../src/domains/callerIdService/callerIdService.service.js";
 import * as customerService from "../../src/domains/customers/customers.service.js";
-import * as postcodes from "../../src/shared/postcodes.js";
 
 vi.mock("../../src/domains/customers/customers.service.js");
-vi.mock("../../src/shared/postcodes.js");
 vi.mock("../../src/infrastructure/logger.js");
 
 const broadcast = vi.fn();
@@ -29,7 +27,7 @@ describe("CallerID Service Refinements", () => {
   it("evicts entries from debounce map after DEBOUNCE_MS", async () => {
     const phone = "0123456789";
     customerService.getOrCreateCustomer.mockResolvedValue({ phone });
-    postcodes.findAddressesLocally.mockReturnValue([]);
+    customerService.listCustomerAddresses.mockReturnValue([]);
 
     // First call
     await handlePhoneDetected(phone);
@@ -47,16 +45,13 @@ describe("CallerID Service Refinements", () => {
     expect(customerService.getOrCreateCustomer).toHaveBeenCalledTimes(2);
   });
 
-  it("uses the new findAddressesLocally array contract", async () => {
+  it("broadcasts confirmed customer history without postcode enrichment", async () => {
     const phone = "0123456789";
-    const mockCustomer = { phone, postcode: "NG9 8GF" };
+    const mockCustomer = { phone };
     const mockAddresses = [{ line1: "123 Fake St", town: "Springfield" }];
 
     customerService.getOrCreateCustomer.mockResolvedValue(mockCustomer);
-    customerService.enrichCustomerAddress.mockResolvedValue({
-      customer: mockCustomer,
-      addresses: mockAddresses,
-    });
+    customerService.listCustomerAddresses.mockReturnValue(mockAddresses);
 
     await handlePhoneDetected(phone);
 
@@ -88,6 +83,7 @@ describe("CallerID Service Refinements", () => {
   it("clearDebounceMap cancels pending eviction timers so they do not fire after clear", async () => {
     const phone = "07700900001";
     customerService.getOrCreateCustomer.mockResolvedValue({ phone });
+    customerService.listCustomerAddresses.mockReturnValue([]);
 
     await handlePhoneDetected(phone);
     // Phone is now in the debounce map with a pending eviction timer

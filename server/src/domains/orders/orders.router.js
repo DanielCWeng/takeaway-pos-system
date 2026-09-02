@@ -65,18 +65,16 @@ const customerInfoSchema = z
     name: z.string().optional(),
     phone: z.string().optional(),
     postcode: z.string().optional(),
-    address: z.string().optional(),
-    houseNumber: z.string().optional(),
-    street: z.string().optional(),
+    line1: z.string().optional(),
+    line2: z.string().optional(),
     town: z.string().optional(),
-    distance: z.coerce.number().optional(),
-    latitude: z.coerce.number().optional(),
-    longitude: z.coerce.number().optional(),
+    distance: z.number().finite().nullable().optional(),
+    latitude: z.number().finite().nullable().optional(),
+    longitude: z.number().finite().nullable().optional(),
     mapRef: z.string().optional(),
     deliveryInstructions: z.string().optional(),
     deliveryTime: z.string().optional(),
   })
-  .passthrough()
   .optional();
 
 const createOrderSchema = z.object({
@@ -120,19 +118,17 @@ const printableOrderSchema = z
       .object({
         name: z.string().optional(),
         phone: z.string().optional(),
-        address: z.string().optional(),
-        houseNumber: z.string().optional(),
-        street: z.string().optional(),
+        line1: z.string().optional(),
+        line2: z.string().optional(),
         town: z.string().optional(),
         postcode: z.string().optional(),
-        distance: z.coerce.number().optional(),
-        latitude: z.coerce.number().optional(),
-        longitude: z.coerce.number().optional(),
+        distance: z.number().finite().nullable().optional(),
+        latitude: z.number().finite().nullable().optional(),
+        longitude: z.number().finite().nullable().optional(),
         mapRef: z.string().optional(),
         deliveryInstructions: z.string().optional(),
         deliveryTime: z.string().optional(),
       })
-      .passthrough()
       .optional(),
     payment: paymentSchema.optional(),
     paymentDetails: z
@@ -214,13 +210,15 @@ ordersRouter.post("/print", async (req, res, next) => {
 
   try {
     const result = await service.printAndArchiveOrder(orderData, clientOrderId);
-    broadcast("order_created", {
-      orderId: result.orderId,
-      order: orderData,
-      archivedAt: result.archivedAt,
-      status: result.status,
-      estimatedReadyAt: result.estimatedReadyAt ?? null,
-    });
+    if (result.created !== false) {
+      broadcast("order_created", {
+        orderId: result.orderId,
+        order: orderData,
+        archivedAt: result.archivedAt,
+        status: result.status,
+        estimatedReadyAt: result.estimatedReadyAt ?? null,
+      });
+    }
     return res.status(200).json({ orderId: result.orderId, printed: result.printed });
   } catch (err) {
     next(err);

@@ -15,10 +15,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "migrate": "node scripts/migrate.js",
-    "db:seed-postcodes": "node scripts/seedPostcodes.js",
     "caller-id:diagnose": "node scripts/diagnoseCallerId.js",
-    "caller-id:listen": "node scripts/diagnoseCallerId.js --listen",
-    "contacts:import-bt": "node scripts/importBtContacts.js"
+    "caller-id:listen": "node scripts/diagnoseCallerId.js --listen"
   },
   "dependencies": {
     "better-sqlite3": "^12.6.2",
@@ -26,9 +24,7 @@
     "cors": "^2.8.6",
     "dotenv": "^16.4.5",
     "express": "^5.1.0",
-    "lru-cache": "^11.2.7",
     "node-hid": "^3.2.0",
-    "proj4": "^2.20.4",
     "usb": "^2.15.0",
     "ws": "^8.19.0",
     "zod": "^3.23.8"

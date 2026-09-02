@@ -16,9 +16,6 @@ Thumbs.db
 # Database files
 server/data/*.db
 
-# Shared lookup database (public data only, no PII)
-!server/data/postcodes.db
-
 !server/data/.gitkeep
 tapi-bridge/bin/
 tapi-bridge/obj/
